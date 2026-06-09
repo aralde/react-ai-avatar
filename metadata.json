@@ -1,0 +1,10 @@
+{
+  "name": "Realtime Avatar Demo",
+  "description": "A React component for a real-time conversational avatar using Gemini Live API.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
