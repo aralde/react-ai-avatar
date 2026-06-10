@@ -14,6 +14,45 @@ export interface RealtimeAvatarProps {
   subtitle?: string;
   thought?: string;
   showSubtitle?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+
+  // Customizable Animation Parameters
+  maxMouthOpening?: number;
+  blinkIntervalMin?: number;
+  blinkIntervalMax?: number;
+  blinkDuration?: number;
+  mouseTrackingIntensity?: number;
+
+  // Customizable Theming
+  stateColors?: {
+    idle?: string;
+    listening?: string;
+    thinking?: string;
+    speaking?: string;
+  };
+  stateLabels?: {
+    idle?: string;
+    listening?: string;
+    thinking?: string;
+    speaking?: string;
+  };
+}
+
+function hexToRgba(color: string, opacity: number): string {
+  if (!color || !color.startsWith('#')) return color || 'transparent';
+  const cleanHex = color.replace('#', '');
+  let r = 0, g = 0, b = 0;
+  if (cleanHex.length === 3) {
+    r = parseInt(cleanHex[0] + cleanHex[0], 16);
+    g = parseInt(cleanHex[1] + cleanHex[1], 16);
+    b = parseInt(cleanHex[2] + cleanHex[2], 16);
+  } else if (cleanHex.length === 6) {
+    r = parseInt(cleanHex.substring(0, 2), 16);
+    g = parseInt(cleanHex.substring(2, 4), 16);
+    b = parseInt(cleanHex.substring(4, 6), 16);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
 export function RealtimeAvatar({ 
@@ -23,11 +62,30 @@ export function RealtimeAvatar({
   variant = 'default', 
   subtitle, 
   thought, 
-  showSubtitle = true 
+  showSubtitle = true,
+  className = '',
+  style,
+  maxMouthOpening,
+  blinkIntervalMin,
+  blinkIntervalMax,
+  blinkDuration,
+  mouseTrackingIntensity,
+  stateColors,
+  stateLabels
 }: RealtimeAvatarProps) {
+  const avatarProps = { 
+    state, 
+    analyser, 
+    size,
+    maxMouthOpening,
+    blinkIntervalMin,
+    blinkIntervalMax,
+    blinkDuration,
+    mouseTrackingIntensity,
+    stateColors
+  };
+
   let AvatarComponent;
-  const avatarProps = { state, analyser, size };
-  
   if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
   } else if (variant === 'developer2') {
@@ -44,12 +102,26 @@ export function RealtimeAvatar({
   const glowOpacityValue = useMotionValue(0.15);
   const requestRef = useRef<number | null>(null);
 
-  // State colors for unified indicator & glow
-  const stateColors = {
-    idle: '#4b5563', // gray-600
-    listening: '#3b82f6', // blue-500
-    thinking: '#8b5cf6', // purple-500
-    speaking: '#10b981' // emerald-500
+  // Resolved theme mappings with standard fallbacks
+  const resolvedStateColors = {
+    idle: stateColors?.idle ?? '#4b5563', // gray-600
+    listening: stateColors?.listening ?? '#3b82f6', // blue-500
+    thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
+    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
+  };
+
+  const resolvedStateLabels = {
+    idle: stateLabels?.idle ?? 'Idle',
+    listening: stateLabels?.listening ?? 'Listening',
+    thinking: stateLabels?.thinking ?? 'Thinking...',
+    speaking: stateLabels?.speaking ?? 'Speaking'
+  };
+
+  const glowShadows = {
+    idle: hexToRgba(resolvedStateColors.idle, 0.15),
+    listening: hexToRgba(resolvedStateColors.listening, 0.35),
+    thinking: hexToRgba(resolvedStateColors.thinking, 0.4),
+    speaking: hexToRgba(resolvedStateColors.speaking, 0.45)
   };
 
   useEffect(() => {
@@ -85,23 +157,8 @@ export function RealtimeAvatar({
     };
   }, [analyser, state, scaleValue, glowScaleValue, glowOpacityValue]);
 
-  const stateLabels = {
-    idle: 'Idle',
-    listening: 'Listening',
-    thinking: 'Thinking...',
-    speaking: 'Speaking'
-  };
-
-  // State glows / shadows
-  const glowShadows = {
-    idle: 'rgba(75, 85, 99, 0.15)',
-    listening: 'rgba(59, 130, 246, 0.35)',
-    thinking: 'rgba(139, 92, 246, 0.4)',
-    speaking: 'rgba(16, 185, 129, 0.45)'
-  };
-
   return (
-    <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+    <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
       
       {/* Futuristic Holographic Projection Ring / Aura Behind Avatar */}
       <motion.div
@@ -109,7 +166,7 @@ export function RealtimeAvatar({
         style={{
           width: size * 1.05,
           height: size * 1.05,
-          borderColor: stateColors[state] + '40',
+          borderColor: hexToRgba(resolvedStateColors[state], 0.25),
           scale: scaleValue,
         }}
         animate={{
@@ -125,7 +182,7 @@ export function RealtimeAvatar({
         style={{
           width: size * 0.9,
           height: size * 0.9,
-          backgroundColor: stateColors[state],
+          backgroundColor: resolvedStateColors[state],
           scale: glowScaleValue,
           opacity: glowOpacityValue,
         }}
@@ -163,14 +220,14 @@ export function RealtimeAvatar({
       <motion.div
         className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
         animate={{
-          backgroundColor: stateColors[state],
+          backgroundColor: resolvedStateColors[state],
           boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
         }}
         transition={{ duration: 0.3 }}
       >
         <span className="flex items-center gap-1.5">
           <span className={`w-2 h-2 rounded-full bg-white ${state === 'speaking' || state === 'thinking' ? 'animate-ping' : ''}`} />
-          {stateLabels[state]}
+          {resolvedStateLabels[state]}
         </span>
       </motion.div>
 

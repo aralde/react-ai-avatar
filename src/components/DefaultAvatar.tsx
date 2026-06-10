@@ -6,9 +6,33 @@ export interface AvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  maxMouthOpening?: number;
+  blinkIntervalMin?: number;
+  blinkIntervalMax?: number;
+  blinkDuration?: number;
+  mouseTrackingIntensity?: number;
+  stateColors?: {
+    idle?: string;
+    listening?: string;
+    thinking?: string;
+    speaking?: string;
+  };
 }
 
-export function DefaultAvatar({ state, analyser, size = 200 }: AvatarProps) {
+export function DefaultAvatar({ 
+  state, 
+  analyser, 
+  size = 200,
+  className = '',
+  style,
+  maxMouthOpening = 30,
+  blinkIntervalMin = 2000,
+  blinkIntervalMax = 6000,
+  blinkDuration = 100,
+  stateColors
+}: AvatarProps) {
   const mouthControls = useAnimation();
   const eyeControls = useAnimation();
   const requestRef = useRef<number | null>(null);
@@ -21,9 +45,25 @@ export function DefaultAvatar({ state, analyser, size = 200 }: AvatarProps) {
     }
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+    const sampleRate = analyser.context.sampleRate || 24000;
+    const Nyquist = sampleRate / 2;
+    const binWidth = Nyquist / analyser.frequencyBinCount;
+
+    const lowStart = Math.round(200 / binWidth);
+    const lowEnd = Math.round(800 / binWidth);
+    const midStart = Math.round(800 / binWidth);
+    const midEnd = Math.round(1800 / binWidth);
+    const highStart = Math.round(1800 / binWidth);
+    const highEnd = Math.round(3200 / binWidth);
+
+    let currentWidthMult = 1.0;
+    let currentHeightMult = 1.0;
 
     const updateMouth = () => {
       analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(frequencyData);
       
       // Calculate peak deviation from 128 (normalized volume between 0 and 1)
       let maxVal = 0;
@@ -35,10 +75,39 @@ export function DefaultAvatar({ state, analyser, size = 200 }: AvatarProps) {
       }
       
       const normalizedVolume = Math.min(1.0, maxVal / 128);
+
+      let targetWidthMult = 1.0;
+      let targetHeightMult = 1.0;
+
+      if (normalizedVolume > 0.05) {
+        let energyLow = 0;
+        for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData[i];
+        let energyMid = 0;
+        for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData[i];
+        let energyHigh = 0;
+        for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData[i];
+
+        const totalEnergy = energyLow + energyMid + energyHigh + 0.001;
+        const ratioHigh = energyHigh / totalEnergy;
+        const ratioMid = energyMid / totalEnergy;
+
+        if (ratioHigh > 0.35) {
+          // "E" viseme (Smile / Stretch)
+          targetWidthMult = 1.4;
+          targetHeightMult = 0.55;
+        } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
+          // "O" viseme (Round / Narrow)
+          targetWidthMult = 0.65;
+          targetHeightMult = 1.35;
+        }
+      }
+
+      currentWidthMult += (targetWidthMult - currentWidthMult) * 0.25;
+      currentHeightMult += (targetHeightMult - currentHeightMult) * 0.25;
       
-      // Map volume to mouth opening (0 to 30) and width (0 to 10)
-      const opening = normalizedVolume * 30;
-      const widthOffset = normalizedVolume * 10;
+      // Map volume to mouth opening (0 to maxMouthOpening) and width (0 to 10)
+      const opening = normalizedVolume * maxMouthOpening * currentHeightMult;
+      const widthOffset = normalizedVolume * 10 * currentWidthMult;
 
       const d = `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70`;
       
@@ -52,39 +121,39 @@ export function DefaultAvatar({ state, analyser, size = 200 }: AvatarProps) {
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [analyser, state, mouthControls]);
+  }, [analyser, state, mouthControls, maxMouthOpening]);
 
   // Blinking logic
   useEffect(() => {
     let active = true;
     const blink = async () => {
       while (active) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 2000));
+        await new Promise(resolve => setTimeout(resolve, Math.random() * (blinkIntervalMax - blinkIntervalMin) + blinkIntervalMin));
         if (!active) break;
-        await eyeControls.start({ scaleY: 0.1, transition: { duration: 0.1 } });
+        await eyeControls.start({ scaleY: 0.1, transition: { duration: blinkDuration / 1000 } });
         if (!active) break;
-        await eyeControls.start({ scaleY: 1, transition: { duration: 0.1 } });
+        await eyeControls.start({ scaleY: 1, transition: { duration: blinkDuration / 1000 } });
       }
     };
     blink();
     return () => { active = false; };
-  }, [eyeControls]);
+  }, [eyeControls, blinkIntervalMin, blinkIntervalMax, blinkDuration]);
 
   // State colors
-  const stateColors = {
-    idle: '#9ca3af', // gray-400
-    listening: '#3b82f6', // blue-500
-    thinking: '#8b5cf6', // purple-500
-    speaking: '#10b981' // emerald-500
+  const resolvedStateColors = {
+    idle: stateColors?.idle ?? '#9ca3af', // gray-400
+    listening: stateColors?.listening ?? '#3b82f6', // blue-500
+    thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
+    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center" style={{ width: size, height: size }}>
+    <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
       {/* Glow Effect */}
       <motion.div
         className="absolute inset-0 rounded-full blur-2xl opacity-50"
         animate={{
-          backgroundColor: stateColors[state],
+          backgroundColor: resolvedStateColors[state],
           scale: state === 'speaking' || state === 'thinking' ? [1, 1.1, 1] : 1
         }}
         transition={{

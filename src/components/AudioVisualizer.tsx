@@ -5,12 +5,51 @@ export interface AudioVisualizerProps {
   analyser: AnalyserNode | null;
   state: AvatarState;
   height?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  stateColors?: {
+    idle?: string;
+    listening?: string;
+    thinking?: string;
+    speaking?: string;
+  };
 }
 
-export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualizerProps) {
+function hexToRgba(color: string, opacity: number): string {
+  if (!color || !color.startsWith('#')) return color || 'transparent';
+  const cleanHex = color.replace('#', '');
+  let r = 0, g = 0, b = 0;
+  if (cleanHex.length === 3) {
+    r = parseInt(cleanHex[0] + cleanHex[0], 16);
+    g = parseInt(cleanHex[1] + cleanHex[1], 16);
+    b = parseInt(cleanHex[2] + cleanHex[2], 16);
+  } else if (cleanHex.length === 6) {
+    r = parseInt(cleanHex.substring(0, 2), 16);
+    g = parseInt(cleanHex.substring(2, 4), 16);
+    b = parseInt(cleanHex.substring(4, 6), 16);
+  }
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+export function AudioVisualizer({ 
+  analyser, 
+  state, 
+  height = 80,
+  className = '',
+  style,
+  stateColors
+}: AudioVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const phaseRef = useRef<number>(0);
+
+  // Resolved state colors
+  const resolvedStateColors = {
+    idle: stateColors?.idle ?? '#9ca3af',
+    listening: stateColors?.listening ?? '#3b82f6',
+    thinking: stateColors?.thinking ?? '#8b5cf6',
+    speaking: stateColors?.speaking ?? '#10b981'
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,9 +96,9 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
 
         // Draw glowing frequency waves
         ctx.lineWidth = 3;
-        ctx.strokeStyle = '#10b981'; // Emerald
+        ctx.strokeStyle = resolvedStateColors.speaking;
         ctx.shadowBlur = 15;
-        ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
+        ctx.shadowColor = hexToRgba(resolvedStateColors.speaking, 0.6);
 
         ctx.beginPath();
         const sliceWidth = w / bufferLength;
@@ -105,9 +144,9 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         ctx.shadowBlur = 12;
         ctx.lineWidth = 2.5;
 
-        // Wave 1 (Blue)
-        ctx.strokeStyle = 'rgba(59, 130, 246, 0.7)'; // Blue
-        ctx.shadowColor = 'rgba(59, 130, 246, 0.4)';
+        // Wave 1
+        ctx.strokeStyle = hexToRgba(resolvedStateColors.listening, 0.7);
+        ctx.shadowColor = hexToRgba(resolvedStateColors.listening, 0.4);
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
           const y = h / 2 + Math.sin(x * 0.02 + phase * 1.5) * Math.sin(x * 0.005) * waveBase1;
@@ -116,9 +155,9 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         }
         ctx.stroke();
 
-        // Wave 2 (Cyan)
-        ctx.strokeStyle = 'rgba(6, 182, 212, 0.5)'; // Cyan
-        ctx.shadowColor = 'rgba(6, 182, 212, 0.3)';
+        // Wave 2
+        ctx.strokeStyle = hexToRgba(resolvedStateColors.listening, 0.5);
+        ctx.shadowColor = hexToRgba(resolvedStateColors.listening, 0.3);
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
           const y = h / 2 + Math.sin(x * 0.015 - phase * 1.2 + Math.PI) * Math.sin(x * 0.005) * waveBase2;
@@ -132,9 +171,9 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
       } else if (state === 'thinking') {
         // Thinking state: Render a slow revolving / breathing wave
         ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(139, 92, 246, 0.4)'; // Purple
+        ctx.shadowColor = hexToRgba(resolvedStateColors.thinking, 0.4);
         ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(139, 92, 246, 0.7)';
+        ctx.strokeStyle = hexToRgba(resolvedStateColors.thinking, 0.7);
 
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
@@ -149,7 +188,7 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
       } else {
         // Idle state: Draw a calm, flat line with a tiny bit of noise
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = 'rgba(156, 163, 175, 0.3)'; // Gray-400
+        ctx.strokeStyle = hexToRgba(resolvedStateColors.idle, 0.3);
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
           const y = h / 2 + Math.sin(x * 0.01 + phase * 0.2) * 2;
@@ -170,25 +209,23 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [analyser, state]);
+  }, [analyser, state, stateColors]);
 
   return (
-    <div className="w-full bg-zinc-950/80 border border-zinc-800/40 rounded-xl overflow-hidden p-2">
+    <div className={`w-full bg-zinc-950/80 border border-zinc-800/40 rounded-xl overflow-hidden p-2 ${className}`} style={style}>
       <div className="flex justify-between items-center px-2 mb-1">
         <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono font-bold">
           Audio Waveform Telemetry
         </span>
         <span className="flex h-2 w-2 relative">
-          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-            state === 'speaking' ? 'bg-emerald-400' :
-            state === 'listening' ? 'bg-blue-400' :
-            state === 'thinking' ? 'bg-purple-400' : 'bg-zinc-400'
-          }`} />
-          <span className={`relative inline-flex rounded-full h-2 w-2 ${
-            state === 'speaking' ? 'bg-emerald-500' :
-            state === 'listening' ? 'bg-blue-500' :
-            state === 'thinking' ? 'bg-purple-500' : 'bg-zinc-500'
-          }`} />
+          <span 
+            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+            style={{ backgroundColor: resolvedStateColors[state] }}
+          />
+          <span 
+            className="relative inline-flex rounded-full h-2 w-2"
+            style={{ backgroundColor: resolvedStateColors[state] }}
+          />
         </span>
       </div>
       <canvas

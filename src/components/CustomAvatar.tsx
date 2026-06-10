@@ -6,6 +6,18 @@ export interface CustomAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
+  className?: string;
+  style?: React.CSSProperties;
+  maxMouthOpening?: number;
+  blinkIntervalMin?: number;
+  blinkIntervalMax?: number;
+  blinkDuration?: number;
+  stateColors?: {
+    idle?: string;
+    listening?: string;
+    thinking?: string;
+    speaking?: string;
+  };
 }
 
 type PathItem = {
@@ -14,7 +26,17 @@ type PathItem = {
   bbox: DOMRect | { x: number; y: number; width: number; height: number };
 };
 
-export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps) {
+export function CustomAvatar({ 
+  state, 
+  analyser, 
+  size = 200,
+  className = '',
+  style,
+  maxMouthOpening = 15,
+  blinkIntervalMin = 2000,
+  blinkIntervalMax = 6000,
+  blinkDuration = 100
+}: CustomAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number | null>(null);
 
@@ -116,38 +138,40 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
     });
 
     // Helper to apply SVG transform mathematically
-    const applyTransform = (item: PathItem, scaleY: number, originY: 'center' | 'top' | 'bottom' = 'center', translateY: number = 0) => {
+    const applyTransform = (item: PathItem, scaleY: number, originY: 'center' | 'top' | 'bottom' = 'center', translateY: number = 0, scaleX: number = 1) => {
       const match = item.originalTransform.match(/translate\(([^,]+),\s*([0-9.]+)\)/);
       if (match) {
         const tx = parseFloat(match[1]);
         const ty = parseFloat(match[2]);
         item.element.setAttribute(
           'transform', 
-          `translate(${tx}, ${ty + translateY}) scale(1, ${scaleY})`
+          `translate(${tx}, ${ty + translateY}) scale(${scaleX}, ${scaleY})`
         );
       } else {
         item.element.setAttribute(
           'transform', 
-          `${item.originalTransform} scale(1, ${scaleY}) translate(0, ${translateY})`
+          `${item.originalTransform} scale(${scaleX}, ${scaleY}) translate(0, ${translateY})`
         );
       }
     };
+
+    let targetEyeScaleY = 1.0;
 
     // Blinking logic
     let isBlinking = true;
     const blink = async () => {
       while (isBlinking) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 2000));
+        await new Promise(resolve => setTimeout(resolve, Math.random() * (blinkIntervalMax - blinkIntervalMin) + blinkIntervalMin));
         if (!isBlinking) break;
         
         // Close eyes
         eyePaths.forEach(item => applyTransform(item, 0.1, 'center'));
         
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, blinkDuration));
         if (!isBlinking) break;
         
-        // Open eyes
-        eyePaths.forEach(item => applyTransform(item, 1, 'center'));
+        // Open eyes to active emotional scale
+        eyePaths.forEach(item => applyTransform(item, targetEyeScaleY, 'center'));
       }
     };
     blink();
@@ -172,18 +196,57 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
     };
     animateHair();
 
+    // Emotion interval timer (Option A: randomized eye micro-expressions)
+    let emotionInterval: NodeJS.Timeout | null = null;
+    if (analyser && state === 'speaking') {
+      emotionInterval = setInterval(() => {
+        const r = Math.random();
+        if (r < 0.55) {
+          targetEyeScaleY = 1.0; // neutral
+        } else if (r < 0.70) {
+          targetEyeScaleY = 1.25; // surprised
+        } else if (r < 0.85) {
+          targetEyeScaleY = 0.75; // concerned / squinted
+        } else {
+          targetEyeScaleY = 0.85; // happy squint
+        }
+        // Apply immediately to eyes (if not blinking)
+        eyePaths.forEach(item => applyTransform(item, targetEyeScaleY, 'center'));
+      }, 3500);
+    }
+
     // Audio to Mouth Scale
     if (!analyser || state !== 'speaking') {
       mouthPaths.forEach(item => applyTransform(item, 1, 'center'));
       if (mouthBg) mouthBg.setAttribute('transform', mouthPaths[0]?.originalTransform || '');
+      eyePaths.forEach(item => applyTransform(item, 1, 'center')); // Reset eye scale
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      return () => { isBlinking = false; };
+      return () => { 
+        isBlinking = false; 
+        if (emotionInterval) clearInterval(emotionInterval);
+      };
     }
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+    const sampleRate = analyser.context.sampleRate || 24000;
+    const Nyquist = sampleRate / 2;
+    const binWidth = Nyquist / analyser.frequencyBinCount;
+
+    const lowStart = Math.round(200 / binWidth);
+    const lowEnd = Math.round(800 / binWidth);
+    const midStart = Math.round(800 / binWidth);
+    const midEnd = Math.round(1800 / binWidth);
+    const highStart = Math.round(1800 / binWidth);
+    const highEnd = Math.round(3200 / binWidth);
+
+    let currentWidthMult = 1.0;
+    let currentHeightMult = 1.0;
     
     const updateMouth = () => {
       analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(frequencyData);
       
       // Calculate peak deviation from 128 (normalized volume between 0 and 1)
       let maxVal = 0;
@@ -195,13 +258,42 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
       }
       
       const volume = Math.min(1.0, maxVal / 128);
+
+      let targetWidthMult = 1.0;
+      let targetHeightMult = 1.0;
+
+      if (volume > 0.05) {
+        let energyLow = 0;
+        for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData[i];
+        let energyMid = 0;
+        for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData[i];
+        let energyHigh = 0;
+        for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData[i];
+
+        const totalEnergy = energyLow + energyMid + energyHigh + 0.001;
+        const ratioHigh = energyHigh / totalEnergy;
+        const ratioMid = energyMid / totalEnergy;
+
+        if (ratioHigh > 0.35) {
+          // "E" viseme (Smile / Stretch)
+          targetWidthMult = 1.35;
+          targetHeightMult = 0.6;
+        } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
+          // "O" viseme (Round / Narrow)
+          targetWidthMult = 0.7;
+          targetHeightMult = 1.3;
+        }
+      }
+
+      currentWidthMult += (targetWidthMult - currentWidthMult) * 0.25;
+      currentHeightMult += (targetHeightMult - currentHeightMult) * 0.25;
       
-      // Move lower lip down instead of just scaling
-      const dropDownAmount = volume * 15; // Max drop 15px
+      // Move lower lip down instead of just scaling, and scale width by currentWidthMult
+      const dropDownAmount = volume * maxMouthOpening * currentHeightMult;
       
       mouthPaths.forEach(item => {
-        // We translate the lip down to reveal the dark background behind it
-        applyTransform(item, 1, 'center', dropDownAmount);
+        // Translate lip down and stretch horizontally
+        applyTransform(item, 1, 'center', dropDownAmount, currentWidthMult);
       });
       
       // Scale the dark background to fill the gap
@@ -211,8 +303,8 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
           originalTransform: mouthPaths[0].originalTransform,
           bbox: mouthPaths[0].bbox
         };
-        // Scale the background vertically to fill the space left by the dropped lip
-        applyTransform(bgItem, 1 + volume * 1.5, 'top');
+        // Scale the background vertically and horizontally
+        applyTransform(bgItem, 1 + volume * 1.5 * currentHeightMult, 'top', 0, currentWidthMult);
       }
       
       requestRef.current = requestAnimationFrame(updateMouth);
@@ -223,13 +315,14 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
     return () => {
       isBlinking = false;
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (emotionInterval) clearInterval(emotionInterval);
     };
-  }, [analyser, state]);
+  }, [analyser, state, maxMouthOpening, blinkIntervalMin, blinkIntervalMax, blinkDuration]);
 
   return (
     <div 
-      style={{ width: size, height: size, perspective: 1000 }}
-      className="flex items-center justify-center drop-shadow-2xl"
+      style={{ width: size, height: size, perspective: 1000, ...style }}
+      className={`flex items-center justify-center drop-shadow-2xl ${className}`}
     >
       <div 
         ref={containerRef}

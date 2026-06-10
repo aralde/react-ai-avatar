@@ -2,13 +2,27 @@ import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation, useMotionValue, useSpring, useTransform, useScroll } from 'motion/react';
 import { AvatarProps } from './DefaultAvatar';
 
-export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
+export function DeveloperAvatar({ 
+  state, 
+  analyser, 
+  size = 200,
+  className = '',
+  style,
+  maxMouthOpening = 30,
+  blinkIntervalMin = 2000,
+  blinkIntervalMax = 6000,
+  blinkDuration = 100,
+  mouseTrackingIntensity = 1.0,
+  stateColors
+}: AvatarProps) {
   const mouthControls = useAnimation();
   const leftEyelidControls = useAnimation();
   const rightEyelidControls = useAnimation();
   const leftEyebrowControls = useAnimation();
   const rightEyebrowControls = useAnimation();
   const requestRef = useRef<number | null>(null);
+  const currentEyelidTargetScaleYLeft = useRef(0);
+  const currentEyelidTargetScaleYRight = useRef(0);
 
   // Gaze tracking
   const mouseX = useMotionValue(0);
@@ -16,8 +30,8 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
   const smoothX = useSpring(mouseX, { stiffness: 100, damping: 20 });
   const smoothY = useSpring(mouseY, { stiffness: 100, damping: 20 });
   
-  const headRotateY = useTransform(smoothX, [-1, 1], [-10, 10]);
-  const headRotateXMouse = useTransform(smoothY, [-1, 1], [10, -10]);
+  const headRotateY = useTransform(smoothX, (v) => v * 10 * mouseTrackingIntensity);
+  const headRotateXMouse = useTransform(smoothY, (v) => -v * 10 * mouseTrackingIntensity);
 
   // Scroll tracking
   const { scrollY } = useScroll();
@@ -39,25 +53,30 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
     let active = true;
     const blink = async () => {
       while (active) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * 4000 + 2000));
+        await new Promise(resolve => setTimeout(resolve, Math.random() * (blinkIntervalMax - blinkIntervalMin) + blinkIntervalMin));
         if (!active) break;
-        leftEyelidControls.start({ scaleY: 1, transition: { duration: 0.1 } });
-        rightEyelidControls.start({ scaleY: 1, transition: { duration: 0.1 } });
-        await new Promise(resolve => setTimeout(resolve, 100));
+        leftEyelidControls.start({ scaleY: 1, transition: { duration: blinkDuration / 1000 } });
+        rightEyelidControls.start({ scaleY: 1, transition: { duration: blinkDuration / 1000 } });
+        await new Promise(resolve => setTimeout(resolve, blinkDuration));
         if (!active) break;
-        leftEyelidControls.start({ scaleY: 0, transition: { duration: 0.1 } });
-        rightEyelidControls.start({ scaleY: 0, transition: { duration: 0.1 } });
+        leftEyelidControls.start({ scaleY: currentEyelidTargetScaleYLeft.current, transition: { duration: blinkDuration / 1000 } });
+        rightEyelidControls.start({ scaleY: currentEyelidTargetScaleYRight.current, transition: { duration: blinkDuration / 1000 } });
       }
     };
     blink();
     return () => { active = false; };
-  }, [leftEyelidControls, rightEyelidControls]);
+  }, [leftEyelidControls, rightEyelidControls, blinkIntervalMin, blinkIntervalMax, blinkDuration]);
 
   // Mouth and Expressions
   useEffect(() => {
     if (!analyser || state !== 'speaking') {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       
+      currentEyelidTargetScaleYLeft.current = 0;
+      currentEyelidTargetScaleYRight.current = 0;
+      leftEyelidControls.start({ scaleY: 0, transition: { duration: 0.3 } });
+      rightEyelidControls.start({ scaleY: 0, transition: { duration: 0.3 } });
+
       if (state === 'listening') {
         // Big Smile
         mouthControls.start({ d: "M 165 225 Q 200 235 235 225 Q 200 245 165 225", transition: { duration: 0.3 } });
@@ -77,14 +96,78 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
       return;
     }
 
-    // Speaking eyebrows
-    leftEyebrowControls.start({ d: "M 135 128 Q 155 118 175 128", transition: { duration: 0.2 } });
-    rightEyebrowControls.start({ d: "M 225 128 Q 245 118 265 128", transition: { duration: 0.2 } });
+    // Micro-expression logic
+    const applyEmotion = (emo: string) => {
+      if (emo === 'neutral') {
+        leftEyebrowControls.start({ d: "M 135 128 Q 155 118 175 128", transition: { duration: 0.4 } });
+        rightEyebrowControls.start({ d: "M 225 128 Q 245 118 265 128", transition: { duration: 0.4 } });
+        currentEyelidTargetScaleYLeft.current = 0;
+        currentEyelidTargetScaleYRight.current = 0;
+      } else if (emo === 'surprised') {
+        leftEyebrowControls.start({ d: "M 135 115 Q 155 95 175 115", transition: { duration: 0.4 } });
+        rightEyebrowControls.start({ d: "M 225 115 Q 245 95 265 115", transition: { duration: 0.4 } });
+        currentEyelidTargetScaleYLeft.current = -0.15;
+        currentEyelidTargetScaleYRight.current = -0.15;
+      } else if (emo === 'concerned') {
+        leftEyebrowControls.start({ d: "M 135 133 Q 155 133 175 123", transition: { duration: 0.4 } });
+        rightEyebrowControls.start({ d: "M 225 123 Q 245 133 265 133", transition: { duration: 0.4 } });
+        currentEyelidTargetScaleYLeft.current = 0.25;
+        currentEyelidTargetScaleYRight.current = 0.25;
+      } else if (emo === 'skeptical') {
+        leftEyebrowControls.start({ d: "M 135 118 Q 155 108 175 118", transition: { duration: 0.4 } });
+        rightEyebrowControls.start({ d: "M 225 133 Q 245 128 265 133", transition: { duration: 0.4 } });
+        currentEyelidTargetScaleYLeft.current = 0;
+        currentEyelidTargetScaleYRight.current = 0.2;
+      } else if (emo === 'happy') {
+        leftEyebrowControls.start({ d: "M 135 124 Q 155 114 175 124", transition: { duration: 0.4 } });
+        rightEyebrowControls.start({ d: "M 225 124 Q 245 114 265 124", transition: { duration: 0.4 } });
+        currentEyelidTargetScaleYLeft.current = 0.15;
+        currentEyelidTargetScaleYRight.current = 0.15;
+      }
+      leftEyelidControls.start({ scaleY: currentEyelidTargetScaleYLeft.current, transition: { duration: 0.4 } });
+      rightEyelidControls.start({ scaleY: currentEyelidTargetScaleYRight.current, transition: { duration: 0.4 } });
+    };
+
+    // Initialize with neutral speaking expression
+    applyEmotion('neutral');
+
+    const triggerRandomEmotion = () => {
+      const r = Math.random();
+      if (r < 0.55) {
+        applyEmotion('neutral');
+      } else if (r < 0.70) {
+        applyEmotion('surprised');
+      } else if (r < 0.82) {
+        applyEmotion('concerned');
+      } else if (r < 0.91) {
+        applyEmotion('skeptical');
+      } else {
+        applyEmotion('happy');
+      }
+    };
+
+    const emotionInterval = setInterval(triggerRandomEmotion, 3500);
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+    const sampleRate = analyser.context.sampleRate || 24000;
+    const Nyquist = sampleRate / 2;
+    const binWidth = Nyquist / analyser.frequencyBinCount;
+
+    const lowStart = Math.round(200 / binWidth);
+    const lowEnd = Math.round(800 / binWidth);
+    const midStart = Math.round(800 / binWidth);
+    const midEnd = Math.round(1800 / binWidth);
+    const highStart = Math.round(1800 / binWidth);
+    const highEnd = Math.round(3200 / binWidth);
+
+    let currentWidthMult = 1.0;
+    let currentHeightMult = 1.0;
 
     const updateMouth = () => {
       analyser.getByteTimeDomainData(dataArray);
+      analyser.getByteFrequencyData(frequencyData);
       
       // Calculate peak deviation from 128 (normalized volume between 0 and 1)
       let maxVal = 0;
@@ -96,8 +179,38 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
       }
       
       const normalizedVolume = Math.min(1.0, maxVal / 128);
-      const opening = normalizedVolume * 30;
-      const widthOffset = normalizedVolume * 10;
+
+      let targetWidthMult = 1.0;
+      let targetHeightMult = 1.0;
+
+      if (normalizedVolume > 0.05) {
+        let energyLow = 0;
+        for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData[i];
+        let energyMid = 0;
+        for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData[i];
+        let energyHigh = 0;
+        for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData[i];
+
+        const totalEnergy = energyLow + energyMid + energyHigh + 0.001;
+        const ratioHigh = energyHigh / totalEnergy;
+        const ratioMid = energyMid / totalEnergy;
+
+        if (ratioHigh > 0.35) {
+          // "E" viseme (Smile / Stretch)
+          targetWidthMult = 1.4;
+          targetHeightMult = 0.55;
+        } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
+          // "O" viseme (Round / Narrow)
+          targetWidthMult = 0.65;
+          targetHeightMult = 1.35;
+        }
+      }
+
+      currentWidthMult += (targetWidthMult - currentWidthMult) * 0.25;
+      currentHeightMult += (targetHeightMult - currentHeightMult) * 0.25;
+
+      const opening = normalizedVolume * maxMouthOpening * currentHeightMult;
+      const widthOffset = normalizedVolume * 10 * currentWidthMult;
 
       const topY = 225 - opening * 0.2;
       const bottomY = 225 + opening;
@@ -114,20 +227,21 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
 
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (emotionInterval) clearInterval(emotionInterval);
     };
-  }, [analyser, state, mouthControls, leftEyebrowControls, rightEyebrowControls]);
+  }, [analyser, state, mouthControls, leftEyebrowControls, rightEyebrowControls, leftEyelidControls, rightEyelidControls, maxMouthOpening]);
 
-  const stateColors = {
-    idle: '#3f3f46',
-    listening: '#3b82f6',
-    thinking: '#8b5cf6',
-    speaking: '#10b981'
+  const resolvedStateColors = {
+    idle: stateColors?.idle ?? '#3f3f46',
+    listening: stateColors?.listening ?? '#3b82f6',
+    thinking: stateColors?.thinking ?? '#8b5cf6',
+    speaking: stateColors?.speaking ?? '#10b981'
   };
 
   return (
     <motion.div 
-      className="relative flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-2xl" 
-      style={{ width: size, height: size, perspective: 1000 }}
+      className={`relative flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-2xl ${className}`} 
+      style={{ width: size, height: size, perspective: 1000, ...style }}
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
     >
@@ -135,7 +249,7 @@ export function DeveloperAvatar({ state, analyser, size = 200 }: AvatarProps) {
       <motion.div
         className="absolute inset-0 opacity-40 mix-blend-overlay"
         animate={{
-          backgroundColor: stateColors[state],
+          backgroundColor: resolvedStateColors[state],
         }}
         transition={{ duration: 1 }}
       />
