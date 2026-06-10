@@ -30,11 +30,12 @@ npm install react-realtime-avatar motion
 
 ## Quick Start
 
-Here is how you use the component. You just need to provide the current `state` of your AI, and the Web Audio API `AnalyserNode` that is playing the AI's voice.
+Here is how you use the component. You just need to provide the current `state` of your AI, and the Web Audio API `AnalyserNode` that is playing the AI's voice. Remember to import the library's CSS for styles and animations.
 
 ```tsx
 import React from 'react';
 import { RealtimeAvatar } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css'; // Essential for styles & animations!
 
 export default function App() {
   // 1. Manage these in your app (via Gemini, OpenAI, etc.)
@@ -47,11 +48,31 @@ export default function App() {
         state={aiState} 
         analyser={audioAnalyser} 
         size={250} 
-        variant="developer2" // Choose your avatar style
+        variant="developer2" // Choose: 'default' | 'developer' | 'developer2' | 'custom'
       />
     </div>
   );
 }
+```
+
+## Public API & Exports
+
+The library exposes the following building blocks:
+
+- **`<RealtimeAvatar />`**: The primary talking avatar component.
+- **`<AudioVisualizer />`**: A stunning, real-time Siri-style audio waveform telemetry visualizer.
+- **`useGeminiLive()`**: A React hook that abstracts WebSockets, microphone streaming, and audio playback for Gemini Live API.
+- **`AudioStreamer`**: Helper class to handle real-time PCM audio playback buffer via Web Audio API.
+- **`MicRecorder`**: Helper class to record user microphone at $16\text{ kHz}$ sample rate.
+
+### Using the Audio Visualizer
+
+```tsx
+import { AudioVisualizer } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css';
+
+// Render a live visualizer synced to the state
+<AudioVisualizer analyser={audioAnalyser} state={aiState} height={80} />
 ```
 
 ## API Reference
@@ -63,8 +84,11 @@ A ready-to-use SVG avatar that reacts to the audio stream and conversation state
 **Props:**
 - `state` (`'idle' | 'listening' | 'thinking' | 'speaking'`): Required. Controls the aura color, idle animations, and whether the mouth should be reading the analyser.
 - `analyser` (`AnalyserNode | null`): Required. The Web Audio API node used to calculate mouth opening and width in real-time. If `null`, the avatar stays in its idle mouth pose.
-- `size` (`number`): Optional. The width and height of the avatar in pixels. Default is `200`.
+- `size` (`number`): Optional. The width and height of the avatar in pixels. Default is `280`.
 - `variant` (`'default' | 'developer' | 'developer2' | 'custom'`): Optional. Selects the avatar style. Default is `'default'`.
+- `subtitle` (`string`): Optional. Text subtitles to display below the avatar.
+- `thought` (`string`): Optional. Thinking processes/internal thoughts to display in a floating bubble above the avatar.
+- `showSubtitle` (`boolean`): Optional. Whether to render subtitles and thoughts. Default is `true`.
 
 ## 🪄 The Avatar Builder CLI (AI-Powered & Agentic)
 

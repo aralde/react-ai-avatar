@@ -3,7 +3,7 @@ import { AudioStreamer, MicRecorder } from '../lib/audio';
 
 export type AvatarState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
-function parseModelText(raw: string): { thought: string; speech: string } {
+export function parseModelText(raw: string): { thought: string; speech: string } {
   let thought = '';
   let speech = '';
 
