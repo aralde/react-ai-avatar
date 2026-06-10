@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarCustomization, darkenColor } from './DefaultAvatar';
 import avatarSvgRaw from '../../mi-av-5.svg?raw';
 
 export interface CustomAvatarProps {
@@ -18,6 +19,7 @@ export interface CustomAvatarProps {
     thinking?: string;
     speaking?: string;
   };
+  customization?: AvatarCustomization;
 }
 
 type PathItem = {
@@ -35,7 +37,8 @@ export function CustomAvatar({
   maxMouthOpening = 15,
   blinkIntervalMin = 2000,
   blinkIntervalMax = 6000,
-  blinkDuration = 100
+  blinkDuration = 100,
+  customization
 }: CustomAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number | null>(null);
@@ -56,6 +59,28 @@ export function CustomAvatar({
     }
 
     const paths = Array.from(containerRef.current.querySelectorAll('path')) as SVGPathElement[];
+    
+    // Apply dynamic cosmetic customization if customization prop is provided
+    if (customization) {
+      const skinColors = ['#F5C7A9', '#E8A885', '#D69471', '#C98A6B']; // Skin tones used in SVG
+      const hairColors = ['#243152', '#1C2740', '#1D2841'];          // Hair tones used in SVG
+      
+      paths.forEach(p => {
+        const fill = p.getAttribute('fill');
+        if (fill) {
+          const upperFill = fill.toUpperCase();
+          if (skinColors.includes(upperFill)) {
+            if (upperFill === '#F5C7A9') {
+              p.setAttribute('fill', customization.skinColor);
+            } else {
+              p.setAttribute('fill', darkenColor(customization.skinColor, 10));
+            }
+          } else if (hairColors.includes(upperFill)) {
+            p.setAttribute('fill', customization.hairColor);
+          }
+        }
+      });
+    }
     
     // Find mouth paths based on fill colors and position
     // We only want the bottom lip to move down to reveal the dark background

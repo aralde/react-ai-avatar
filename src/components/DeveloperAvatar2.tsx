@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation, useMotionValue, useSpring, useTransform, useScroll } from 'motion/react';
-import { AvatarProps } from './DefaultAvatar';
+import { AvatarProps, darkenColor } from './DefaultAvatar';
 
 export function DeveloperAvatar2({ 
   state, 
@@ -13,7 +13,8 @@ export function DeveloperAvatar2({
   blinkIntervalMax = 6000,
   blinkDuration = 100,
   mouseTrackingIntensity = 1.0,
-  stateColors
+  stateColors,
+  customization
 }: AvatarProps) {
   const mouthControls = useAnimation();
   const leftEyelidControls = useAnimation();
@@ -240,19 +241,29 @@ export function DeveloperAvatar2({
     speaking: stateColors?.speaking ?? '#10b981'
   };
 
+  const skin = customization?.skinColor ?? '#e8a885';
+  const hair = customization?.hairColor ?? '#2d2b2c';
+  const bg = customization?.bgColor ?? '#8cbab4';
+  const clothing = customization?.clothingColor ?? '#3a7ca5';
+  const hoodie = customization?.hoodieColor ?? '#3a3b40';
+  const showGlasses = customization?.glasses ?? true;
+  const glassesColor = customization?.glassesColor ?? '#262425';
+  const showHeadphones = customization?.headphones ?? true;
+  const headphonesColor = customization?.headphonesColor ?? '#3a3b40';
+
   // Colors extracted from the image
   const colors = {
-    bg: '#8cbab4',
+    bg,
     monitorBg: '#2a3236',
     monitorScreen: '#1e2528',
     code: '#4ade80',
     desk: '#c28b65',
-    hoodie: '#3a3b40',
-    shirt: '#3a7ca5',
-    skin: '#e8a885',
-    skinShadow: '#d69471',
-    hair: '#2d2b2c',
-    glasses: '#262425',
+    hoodie,
+    shirt: clothing,
+    skin,
+    skinShadow: darkenColor(skin, 10),
+    hair,
+    glasses: glassesColor,
     mouthDark: '#3a1c1c',
     teeth: '#ffffff',
     tongue: '#e06c6c'
@@ -292,69 +303,109 @@ export function DeveloperAvatar2({
             <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow dx="0" dy="4" stdDeviation="4" floodOpacity="0.15" />
             </filter>
+            <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor={colors.bg} />
+              <stop offset="100%" stopColor={darkenColor(colors.bg, 15)} />
+            </radialGradient>
+            <linearGradient id="lightBeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+            </linearGradient>
           </defs>
 
           {/* Background */}
-          <rect width="400" height="400" fill={colors.bg} />
+          <rect width="400" height="400" fill="url(#bgGrad)" />
           
-          {/* Light rays */}
-          <polygon points="150,0 250,0 350,400 50,400" fill="#ffffff" opacity="0.05" />
+          {/* Ceiling Lamp & Beam */}
+          <polygon points="135,15 265,15 370,400 30,400" fill="url(#lightBeamGrad)" />
+          <rect x="130" y="0" width="140" height="15" fill="#1e2528" rx="2" />
+          <line x1="130" y1="15" x2="270" y2="15" stroke="#333d42" strokeWidth="2" />
 
           {/* Monitors */}
           <g opacity="0.85">
-            {/* Left Monitor */}
-            <rect x="-20" y="170" width="200" height="120" rx="4" fill={colors.monitorBg} />
-            <rect x="-10" y="180" width="180" height="100" fill={colors.monitorScreen} />
-            <g opacity="0.6">
-              <line x1="0" y1="190" x2="80" y2="190" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="0" y1="200" x2="120" y2="200" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="0" y1="210" x2="60" y2="210" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="10" y1="220" x2="100" y2="220" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="10" y1="230" x2="140" y2="230" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="10" y1="240" x2="90" y2="240" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="0" y1="250" x2="110" y2="250" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="0" y1="260" x2="70" y2="260" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+            {/* Left Monitor (tilted) */}
+            <g transform="rotate(4 80 230)">
+              <rect x="-20" y="170" width="200" height="120" rx="4" fill={colors.monitorBg} />
+              <rect x="-10" y="180" width="180" height="100" fill={colors.monitorScreen} />
+              <g opacity="0.6">
+                <line x1="0" y1="190" x2="80" y2="190" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="0" y1="200" x2="120" y2="200" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="0" y1="210" x2="60" y2="210" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="10" y1="220" x2="100" y2="220" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="10" y1="230" x2="140" y2="230" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="10" y1="240" x2="90" y2="240" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="0" y1="250" x2="110" y2="250" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="0" y1="260" x2="70" y2="260" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+              </g>
             </g>
-
-            {/* Right Monitor */}
-            <rect x="220" y="170" width="200" height="120" rx="4" fill={colors.monitorBg} />
-            <rect x="230" y="180" width="180" height="100" fill={colors.monitorScreen} />
-            <g opacity="0.6">
-              <line x1="240" y1="190" x2="320" y2="190" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="240" y1="200" x2="360" y2="200" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="240" y1="210" x2="290" y2="210" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="250" y1="220" x2="340" y2="220" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
-              <line x1="250" y1="230" x2="310" y2="230" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+ 
+            {/* Right Monitor (tilted) */}
+            <g transform="rotate(-4 320 230)">
+              <rect x="220" y="170" width="200" height="120" rx="4" fill={colors.monitorBg} />
+              <rect x="230" y="180" width="180" height="100" fill={colors.monitorScreen} />
+              <g opacity="0.6">
+                <line x1="240" y1="190" x2="320" y2="190" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="240" y1="200" x2="360" y2="200" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="240" y1="210" x2="290" y2="210" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="250" y1="220" x2="340" y2="220" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="250" y1="230" x2="310" y2="230" stroke={colors.code} strokeWidth="2.5" strokeLinecap="round" />
+              </g>
             </g>
           </g>
 
           {/* Desk */}
           <rect x="0" y="320" width="400" height="80" fill={colors.desk} />
           <rect x="360" y="330" width="25" height="12" rx="6" fill="#2c2f33" /> {/* Mouse */}
+ 
+          {/* Desk Plants (Cacti matching original illustration) */}
+          {/* Left Plant */}
+          <g>
+            <path d="M 45 320 L 75 320 L 70 345 L 50 345 Z" fill="#b87355" />
+            <rect x="55" y="275" width="10" height="45" rx="5" fill="#4d7c5a" />
+            <path d="M 55 295 L 47 295 L 47 285" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+            <path d="M 65 290 L 73 290 L 73 280" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+          </g>
+          {/* Right Plant */}
+          <g>
+            <path d="M 325 320 L 355 320 L 350 345 L 330 345 Z" fill="#b87355" />
+            <rect x="335" y="275" width="10" height="45" rx="5" fill="#4d7c5a" />
+            <path d="M 335 290 L 327 290 L 327 280" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+            <path d="M 345 295 L 353 295 L 353 285" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+          </g>
 
           {/* Body */}
           <g>
             {/* Shirt */}
             <path d="M 120 400 L 120 290 C 160 320, 240 320, 280 290 L 280 400 Z" fill={colors.shirt} />
+            
+            {/* CPU chip */}
+            <rect x="186" y="342" width="28" height="28" rx="4" fill={colors.shirt} stroke={colors.bg} strokeWidth="2" opacity="0.7" />
+            <rect x="192" y="348" width="16" height="16" rx="2" fill="none" stroke={colors.bg} strokeWidth="1.5" opacity="0.7" />
+ 
             {/* Circuit pattern on shirt */}
-            <g stroke="#8cbab4" strokeWidth="2" opacity="0.6" fill="none">
-              <path d="M 145 400 L 145 365 L 155 355" />
-              <circle cx="155" cy="355" r="2.5" fill="#8cbab4" />
+            <g stroke={colors.bg} strokeWidth="2" opacity="0.6" fill="none">
+              {/* CPU connection pins */}
+              <line x1="186" y1="356" x2="175" y2="356" />
+              <line x1="214" y1="356" x2="225" y2="356" />
               
-              <path d="M 165 400 L 165 375 L 175 365" />
-              <circle cx="175" cy="365" r="2.5" fill="#8cbab4" />
+              {/* Branching lines */}
+              <path d="M 175 356 L 155 356 L 145 365 L 145 400" />
+              <circle cx="155" cy="356" r="2.5" fill={colors.bg} />
               
-              <path d="M 185 400 L 185 350 L 195 340" />
-              <circle cx="195" cy="340" r="2.5" fill="#8cbab4" />
+              <path d="M 175 356 L 165 365 L 165 400" />
+              <circle cx="165" cy="365" r="2.5" fill={colors.bg} />
               
-              <path d="M 215 400 L 215 360 L 205 350" />
-              <circle cx="205" cy="350" r="2.5" fill="#8cbab4" />
+              <path d="M 186 350 L 175 339" />
+              <circle cx="175" cy="339" r="2.5" fill={colors.bg} />
               
-              <path d="M 235 400 L 235 380 L 225 370" />
-              <circle cx="225" cy="370" r="2.5" fill="#8cbab4" />
+              <path d="M 214 350 L 225 339" />
+              <circle cx="225" cy="339" r="2.5" fill={colors.bg} />
               
-              <path d="M 255 400 L 255 365 L 245 355" />
-              <circle cx="245" cy="355" r="2.5" fill="#8cbab4" />
+              <path d="M 225 356 L 235 365 L 235 400" />
+              <circle cx="235" cy="365" r="2.5" fill={colors.bg} />
+              
+              <path d="M 225 356 L 245 356 L 255 365 L 255 400" />
+              <circle cx="245" cy="356" r="2.5" fill={colors.bg} />
             </g>
 
             {/* Hoodie */}
@@ -367,18 +418,24 @@ export function DeveloperAvatar2({
             <line x1="115" y1="320" x2="115" y2="400" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
             <line x1="285" y1="320" x2="285" y2="400" stroke="#ffffff" strokeWidth="5" strokeLinecap="round" />
 
-            {/* Headphones */}
-            <path d="M 100 310 C 100 370, 300 370, 300 310" fill="none" stroke="#262425" strokeWidth="18" strokeLinecap="round" />
-            <g transform="translate(100, 300) rotate(-15)">
-              <rect x="-20" y="-35" width="40" height="70" rx="20" fill="#3a3b40" />
-              <rect x="-10" y="-25" width="30" height="50" rx="15" fill="#1e1f22" />
-            </g>
-            <g transform="translate(300, 300) rotate(15)">
-              <rect x="-20" y="-35" width="40" height="70" rx="20" fill="#3a3b40" />
-              <rect x="-20" y="-25" width="30" height="50" rx="15" fill="#1e1f22" />
-            </g>
-            {/* Headphone wire */}
-            <path d="M 215 365 Q 210 380 200 400" fill="none" stroke="#1e1f22" strokeWidth="2" />
+            {/* Headphones (Refined elliptical cushions) */}
+            {showHeadphones && (
+              <>
+                <path d="M 100 275 C 100 335, 300 335, 300 275" fill="none" stroke="#262425" strokeWidth="18" strokeLinecap="round" />
+                <g transform="translate(100, 265) rotate(-15)">
+                  <ellipse cx="0" cy="0" rx="22" ry="32" fill={headphonesColor} />
+                  <ellipse cx="0" cy="0" rx="15" ry="24" fill="#1e1f22" />
+                  <rect x="-5" y="-36" width="10" height="8" rx="2" fill="#262425" />
+                </g>
+                <g transform="translate(300, 265) rotate(15)">
+                  <ellipse cx="0" cy="0" rx="22" ry="32" fill={headphonesColor} />
+                  <ellipse cx="0" cy="0" rx="15" ry="24" fill="#1e1f22" />
+                  <rect x="-5" y="-36" width="10" height="8" rx="2" fill="#262425" />
+                </g>
+                {/* Headphone wire */}
+                <path d="M 215 330 Q 210 345 200 400" fill="none" stroke="#1e1f22" strokeWidth="2" />
+              </>
+            )}
           </g>
 
           {/* Head */}
@@ -391,8 +448,8 @@ export function DeveloperAvatar2({
             <path d="M 120 145 C 105 145, 105 185, 125 195 Z" fill={colors.skinShadow} />
             <path d="M 280 145 C 295 145, 295 185, 275 195 Z" fill={colors.skinShadow} />
             {/* Inner ear details */}
-            <path d="M 115 160 Q 120 170 115 180" fill="none" stroke="#c98a6b" strokeWidth="2" strokeLinecap="round" />
-            <path d="M 285 160 Q 280 170 285 180" fill="none" stroke="#c98a6b" strokeWidth="2" strokeLinecap="round" />
+            <path d="M 115 160 Q 120 170 115 180" fill="none" stroke={colors.skinShadow} strokeWidth="2" strokeLinecap="round" />
+            <path d="M 285 160 Q 280 170 285 180" fill="none" stroke={colors.skinShadow} strokeWidth="2" strokeLinecap="round" />
 
             {/* Face Base */}
             <path d="M 125 130 C 125 240, 150 260, 200 260 C 250 260, 275 240, 275 130 C 275 80, 250 60, 200 60 C 150 60, 125 80, 125 130 Z" fill={colors.skin} />
@@ -410,6 +467,11 @@ export function DeveloperAvatar2({
             <path d="M 170 35 Q 180 20 195 30" fill="none" stroke={colors.hair} strokeWidth="6" strokeLinecap="round" />
             <path d="M 220 35 Q 240 20 255 40" fill="none" stroke={colors.hair} strokeWidth="5" strokeLinecap="round" />
             <path d="M 115 90 Q 100 110 115 130" fill="none" stroke={colors.hair} strokeWidth="5" strokeLinecap="round" />
+ 
+            {/* Hair Highlights (translucent white overlays for volume) */}
+            <path d="M 140 70 C 160 50, 190 50, 210 65 Q 180 55, 140 70 Z" fill="#ffffff" opacity="0.08" />
+            <path d="M 170 45 C 190 30, 220 30, 235 45 Q 200 35, 170 45 Z" fill="#ffffff" opacity="0.08" />
+            <path d="M 210 80 Q 235 65 265 80 Q 240 70 210 80 Z" fill="#ffffff" opacity="0.08" />
 
             {/* Beard Base */}
             <path d="M 123 150 C 120 200, 130 265, 200 265 C 270 265, 280 200, 277 150 C 270 180, 250 200, 200 200 C 150 200, 130 180, 123 150 Z" fill={colors.hair} />
@@ -465,14 +527,18 @@ export function DeveloperAvatar2({
             <motion.path d="M 135 120 Q 155 110 175 120" fill="none" stroke={colors.hair} strokeWidth="8" strokeLinecap="round" animate={leftEyebrowControls} />
             <motion.path d="M 225 120 Q 245 110 265 120" fill="none" stroke={colors.hair} strokeWidth="8" strokeLinecap="round" animate={rightEyebrowControls} />
 
-            {/* Glasses (Thick round frames) */}
-            <circle cx="160" cy="145" r="30" fill="none" stroke={colors.glasses} strokeWidth="7" />
-            <circle cx="240" cy="145" r="30" fill="none" stroke={colors.glasses} strokeWidth="7" />
-            {/* Bridge */}
-            <path d="M 190 135 Q 200 130 210 135" fill="none" stroke={colors.glasses} strokeWidth="6" strokeLinecap="round" />
-            {/* Arms */}
-            <line x1="130" y1="140" x2="115" y2="135" stroke={colors.glasses} strokeWidth="6" strokeLinecap="round" />
-            <line x1="270" y1="140" x2="285" y2="135" stroke={colors.glasses} strokeWidth="6" strokeLinecap="round" />
+            {/* Glasses (Thin round frames matching original PNG) */}
+            {showGlasses && (
+              <>
+                <circle cx="160" cy="145" r="30" fill="none" stroke={colors.glasses} strokeWidth="3.5" />
+                <circle cx="240" cy="145" r="30" fill="none" stroke={colors.glasses} strokeWidth="3.5" />
+                {/* Bridge */}
+                <path d="M 190 135 Q 200 130 210 135" fill="none" stroke={colors.glasses} strokeWidth="3" strokeLinecap="round" />
+                {/* Arms */}
+                <line x1="130" y1="140" x2="115" y2="135" stroke={colors.glasses} strokeWidth="3" strokeLinecap="round" />
+                <line x1="270" y1="140" x2="285" y2="135" stroke={colors.glasses} strokeWidth="3" strokeLinecap="round" />
+              </>
+            )}
 
             {/* Mouth (Animatable) */}
             <g clipPath="url(#mouthClip2)">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { DefaultAvatar } from './DefaultAvatar';
+import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
 import { DeveloperAvatar } from './DeveloperAvatar';
 import { DeveloperAvatar2 } from './DeveloperAvatar2';
 import { CustomAvatar } from './CustomAvatar';
@@ -37,6 +37,7 @@ export interface RealtimeAvatarProps {
     thinking?: string;
     speaking?: string;
   };
+  customization?: AvatarCustomization;
 }
 
 function hexToRgba(color: string, opacity: number): string {
@@ -71,7 +72,8 @@ export function RealtimeAvatar({
   blinkDuration,
   mouseTrackingIntensity,
   stateColors,
-  stateLabels
+  stateLabels,
+  customization
 }: RealtimeAvatarProps) {
   const avatarProps = { 
     state, 
@@ -82,7 +84,8 @@ export function RealtimeAvatar({
     blinkIntervalMax,
     blinkDuration,
     mouseTrackingIntensity,
-    stateColors
+    stateColors,
+    customization
   };
 
   let AvatarComponent;

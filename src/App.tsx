@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useGeminiLive } from './hooks/useGeminiLive';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
+import { AvatarCustomization } from './components/DefaultAvatar';
 
 export default function App() {
   const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
@@ -37,7 +38,19 @@ export default function App() {
   const [blinkDuration, setBlinkDuration] = useState<number>(100);
 
   // Active configuration control tab
-  const [controlTab, setControlTab] = useState<'variant' | 'calibrate' | 'theme'>('variant');
+  const [controlTab, setControlTab] = useState<'variant' | 'calibrate' | 'theme' | 'builder'>('variant');
+
+  const [customization, setCustomization] = useState<AvatarCustomization>({
+    skinColor: '#f5c7a9',
+    hairColor: '#2c2c2c',
+    clothingColor: '#3b7b9b',
+    hoodieColor: '#3a3e45',
+    bgColor: '#88c0b7',
+    glasses: true,
+    glassesColor: '#2c2c2c',
+    headphones: true,
+    headphonesColor: '#3a3b40'
+  });
 
   // Configurable state colors and labels
   const [stateColors, setStateColors] = useState({
@@ -89,6 +102,17 @@ function MyAvatarComponent() {
         listening: '${stateLabels.listening}',
         thinking: '${stateLabels.thinking}',
         speaking: '${stateLabels.speaking}'
+      }}
+      customization={{
+        skinColor: '${customization.skinColor}',
+        hairColor: '${customization.hairColor}',
+        clothingColor: '${customization.clothingColor}',
+        hoodieColor: '${customization.hoodieColor}',
+        bgColor: '${customization.bgColor}',
+        glasses: ${customization.glasses},
+        glassesColor: '${customization.glassesColor}',
+        headphones: ${customization.headphones},
+        headphonesColor: '${customization.headphonesColor}'
       }}
     />
   );
@@ -221,6 +245,14 @@ function MyAvatarComponent() {
                   }`}
                 >
                   THEME
+                </button>
+                <button 
+                  onClick={() => setControlTab('builder')}
+                  className={`flex-1 py-3 text-[10px] font-mono font-bold tracking-wider transition-all border-b-2 cursor-pointer ${
+                    controlTab === 'builder' ? 'border-emerald-500 text-emerald-400 bg-zinc-900/10' : 'border-transparent text-zinc-500 hover:text-zinc-400'
+                  }`}
+                >
+                  BUILDER
                 </button>
               </div>
 
@@ -445,6 +477,159 @@ function MyAvatarComponent() {
                     </div>
                   </div>
                 )}
+
+                {controlTab === 'builder' && (
+                  <div className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-[10px] font-bold font-mono uppercase tracking-widest text-emerald-400">Cosmetics Editor</span>
+                      <button 
+                        onClick={() => {
+                          setCustomization({
+                            skinColor: '#f5c7a9',
+                            hairColor: '#2c2c2c',
+                            clothingColor: '#3b7b9b',
+                            hoodieColor: '#3a3e45',
+                            bgColor: '#88c0b7',
+                            glasses: true,
+                            glassesColor: '#2c2c2c',
+                            headphones: true,
+                            headphonesColor: '#3a3b40'
+                          });
+                        }}
+                        className="text-[9px] bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white px-2 py-0.5 rounded font-mono transition-colors border border-zinc-800/60 cursor-pointer"
+                      >
+                        RESET
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                      {/* Skin Color */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Skin tone</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={customization.skinColor} 
+                            onChange={(e) => setCustomization(prev => ({ ...prev, skinColor: e.target.value }))}
+                            className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer bg-zinc-950 p-1"
+                          />
+                          <span className="text-xs font-mono text-zinc-300 uppercase">{customization.skinColor}</span>
+                        </div>
+                      </div>
+
+                      {/* Hair Color */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Hair color</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={customization.hairColor} 
+                            onChange={(e) => setCustomization(prev => ({ ...prev, hairColor: e.target.value }))}
+                            className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer bg-zinc-950 p-1"
+                          />
+                          <span className="text-xs font-mono text-zinc-300 uppercase">{customization.hairColor}</span>
+                        </div>
+                      </div>
+
+                      {/* Shirt Color */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Shirt color</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={customization.clothingColor} 
+                            onChange={(e) => setCustomization(prev => ({ ...prev, clothingColor: e.target.value }))}
+                            className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer bg-zinc-950 p-1"
+                          />
+                          <span className="text-xs font-mono text-zinc-300 uppercase">{customization.clothingColor}</span>
+                        </div>
+                      </div>
+
+                      {/* Hoodie Color */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Hoodie color</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={customization.hoodieColor} 
+                            onChange={(e) => setCustomization(prev => ({ ...prev, hoodieColor: e.target.value }))}
+                            className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer bg-zinc-950 p-1"
+                          />
+                          <span className="text-xs font-mono text-zinc-300 uppercase">{customization.hoodieColor}</span>
+                        </div>
+                      </div>
+
+                      {/* Bg Color */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Stage BG color</label>
+                        <div className="flex gap-2 items-center">
+                          <input 
+                            type="color" 
+                            value={customization.bgColor} 
+                            onChange={(e) => setCustomization(prev => ({ ...prev, bgColor: e.target.value }))}
+                            className="w-8 h-8 rounded-lg overflow-hidden border border-zinc-800 cursor-pointer bg-zinc-950 p-1"
+                          />
+                          <span className="text-xs font-mono text-zinc-300 uppercase">{customization.bgColor}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Accessories Checkboxes */}
+                    <div className="border-t border-zinc-800/40 mt-2 pt-3 flex flex-col gap-3">
+                      <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wider">Accessories</span>
+
+                      {/* Glasses Toggle */}
+                      <div className="flex items-center justify-between bg-zinc-950/45 border border-zinc-800 p-2.5 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            id="glasses-toggle"
+                            checked={customization.glasses}
+                            onChange={(e) => setCustomization(prev => ({ ...prev, glasses: e.target.checked }))}
+                            className="rounded bg-zinc-900 border-zinc-800 text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <label htmlFor="glasses-toggle" className="text-xs font-bold text-zinc-200 cursor-pointer">Glasses</label>
+                        </div>
+                        {customization.glasses && (
+                          <div className="flex items-center gap-1.5">
+                            <input 
+                              type="color" 
+                              value={customization.glassesColor} 
+                              onChange={(e) => setCustomization(prev => ({ ...prev, glassesColor: e.target.value }))}
+                              className="w-6 h-6 rounded border border-zinc-800 cursor-pointer bg-zinc-900 p-0.5"
+                            />
+                            <span className="text-[10px] font-mono text-zinc-400 uppercase">{customization.glassesColor}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Headphones Toggle */}
+                      <div className="flex items-center justify-between bg-zinc-950/45 border border-zinc-800 p-2.5 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="checkbox" 
+                            id="headphones-toggle"
+                            checked={customization.headphones}
+                            onChange={(e) => setCustomization(prev => ({ ...prev, headphones: e.target.checked }))}
+                            className="rounded bg-zinc-900 border-zinc-800 text-emerald-500 focus:ring-emerald-500"
+                          />
+                          <label htmlFor="headphones-toggle" className="text-xs font-bold text-zinc-200 cursor-pointer">Headphones</label>
+                        </div>
+                        {customization.headphones && (
+                          <div className="flex items-center gap-1.5">
+                            <input 
+                              type="color" 
+                              value={customization.headphonesColor} 
+                              onChange={(e) => setCustomization(prev => ({ ...prev, headphonesColor: e.target.value }))}
+                              className="w-6 h-6 rounded border border-zinc-800 cursor-pointer bg-zinc-900 p-0.5"
+                            />
+                            <span className="text-[10px] font-mono text-zinc-400 uppercase">{customization.headphonesColor}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -563,6 +748,7 @@ function MyAvatarComponent() {
                 blinkDuration={blinkDuration}
                 stateColors={stateColors}
                 stateLabels={stateLabels}
+                customization={customization}
               />
             </div>
 

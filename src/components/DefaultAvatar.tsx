@@ -2,6 +2,33 @@ import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'motion/react';
 import { AvatarState } from '../hooks/useGeminiLive';
 
+export interface AvatarCustomization {
+  skinColor: string;
+  hairColor: string;
+  clothingColor: string;
+  hoodieColor: string;
+  bgColor: string;
+  glasses: boolean;
+  glassesColor: string;
+  headphones: boolean;
+  headphonesColor: string;
+}
+
+export function darkenColor(hex: string, percent: number): string {
+  const cleanHex = hex.replace("#", "");
+  const num = parseInt(cleanHex, 16);
+  const amt = Math.round(2.55 * percent);
+  const R = (num >> 16) - amt;
+  const G = ((num >> 8) & 0x00ff) - amt;
+  const B = (num & 0x0000ff) - amt;
+  return "#" + (
+    0x1000000 +
+    (R < 0 ? 0 : R > 255 ? 255 : R) * 0x10000 +
+    (G < 0 ? 0 : G > 255 ? 255 : G) * 0x100 +
+    (B < 0 ? 0 : B > 255 ? 255 : B)
+  ).toString(16).slice(1);
+}
+
 export interface AvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
@@ -19,6 +46,7 @@ export interface AvatarProps {
     thinking?: string;
     speaking?: string;
   };
+  customization?: AvatarCustomization;
 }
 
 export function DefaultAvatar({ 
@@ -31,7 +59,8 @@ export function DefaultAvatar({
   blinkIntervalMin = 2000,
   blinkIntervalMax = 6000,
   blinkDuration = 100,
-  stateColors
+  stateColors,
+  customization
 }: AvatarProps) {
   const mouthControls = useAnimation();
   const eyeControls = useAnimation();
@@ -176,7 +205,7 @@ export function DefaultAvatar({
         }}
       >
         {/* Head */}
-        <circle cx="50" cy="50" r="45" fill="#fcd34d" />
+        <circle cx="50" cy="50" r="45" fill={customization?.skinColor ?? '#fcd34d'} />
         
         {/* Eyes */}
         <motion.g animate={eyeControls} style={{ transformOrigin: '50px 40px' }}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation, useMotionValue, useSpring, useTransform, useScroll } from 'motion/react';
-import { AvatarProps } from './DefaultAvatar';
+import { AvatarProps, darkenColor } from './DefaultAvatar';
 
 export function DeveloperAvatar({ 
   state, 
@@ -13,7 +13,8 @@ export function DeveloperAvatar({
   blinkIntervalMax = 6000,
   blinkDuration = 100,
   mouseTrackingIntensity = 1.0,
-  stateColors
+  stateColors,
+  customization
 }: AvatarProps) {
   const mouthControls = useAnimation();
   const leftEyelidControls = useAnimation();
@@ -238,6 +239,18 @@ export function DeveloperAvatar({
     speaking: stateColors?.speaking ?? '#10b981'
   };
 
+  const skin = customization?.skinColor ?? '#f5c7a9';
+  const skinShadow = darkenColor(skin, 10);
+  const skinShadowDarker = darkenColor(skin, 20);
+  const hair = customization?.hairColor ?? '#2c2c2c';
+  const bg = customization?.bgColor ?? '#88c0b7';
+  const clothing = customization?.clothingColor ?? '#3b7b9b';
+  const hoodie = customization?.hoodieColor ?? '#3a3e45';
+  const showGlasses = customization?.glasses ?? true;
+  const glassesColor = customization?.glassesColor ?? '#2c2c2c';
+  const showHeadphones = customization?.headphones ?? true;
+  const headphonesColor = customization?.headphonesColor ?? '#3a3b40';
+
   return (
     <motion.div 
       className={`relative flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-2xl ${className}`} 
@@ -269,120 +282,191 @@ export function DeveloperAvatar({
             <clipPath id="mouthClip">
               <motion.path d="M 165 225 Q 200 225 235 225 Q 200 225 165 225" animate={mouthControls} />
             </clipPath>
+            <radialGradient id="bgGrad" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor={bg} />
+              <stop offset="100%" stopColor={darkenColor(bg, 15)} />
+            </radialGradient>
+            <linearGradient id="lightBeamGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
+              <stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+            </linearGradient>
           </defs>
 
           {/* Background */}
-          <rect width="400" height="400" fill="#88c0b7" />
-          <polygon points="100,0 300,0 350,400 50,400" fill="#ffffff" opacity="0.1" />
+          <rect width="400" height="400" fill="url(#bgGrad)" />
+          
+          {/* Ceiling Lamp & Beam */}
+          <polygon points="135,15 265,15 370,400 30,400" fill="url(#lightBeamGrad)" />
+          <rect x="130" y="0" width="140" height="15" fill="#1e2528" rx="2" />
+          <line x1="130" y1="15" x2="270" y2="15" stroke="#333d42" strokeWidth="2" />
 
           {/* Monitors */}
           <g opacity="0.9">
-            {/* Left Monitor */}
-            <rect x="20" y="180" width="170" height="110" rx="4" fill="#2a3b38" stroke="#1f2c2a" strokeWidth="2" />
-            <rect x="30" y="190" width="150" height="90" fill="#1f2c2a" />
-            <line x1="40" y1="200" x2="100" y2="200" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="40" y1="210" x2="140" y2="210" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="40" y1="220" x2="80" y2="220" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="50" y1="230" x2="120" y2="230" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="50" y1="240" x2="160" y2="240" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-
-            {/* Right Monitor */}
-            <rect x="210" y="180" width="170" height="110" rx="4" fill="#2a3b38" stroke="#1f2c2a" strokeWidth="2" />
-            <rect x="220" y="190" width="150" height="90" fill="#1f2c2a" />
-            <line x1="230" y1="200" x2="300" y2="200" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="230" y1="210" x2="350" y2="210" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="230" y1="220" x2="280" y2="220" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
-            <line x1="240" y1="230" x2="320" y2="230" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+            {/* Left Monitor (tilted) */}
+            <g transform="rotate(4 105 235)">
+              <rect x="20" y="180" width="170" height="110" rx="4" fill="#2a3b38" stroke="#1f2c2a" strokeWidth="2" />
+              <rect x="30" y="190" width="150" height="90" fill="#1f2c2a" />
+              <line x1="40" y1="200" x2="100" y2="200" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="40" y1="210" x2="140" y2="210" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="40" y1="220" x2="80" y2="220" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="50" y1="230" x2="120" y2="230" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="50" y1="240" x2="160" y2="240" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+            </g>
+ 
+            {/* Right Monitor (tilted) */}
+            <g transform="rotate(-4 295 235)">
+              <rect x="210" y="180" width="170" height="110" rx="4" fill="#2a3b38" stroke="#1f2c2a" strokeWidth="2" />
+              <rect x="220" y="190" width="150" height="90" fill="#1f2c2a" />
+              <line x1="230" y1="200" x2="300" y2="200" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="230" y1="210" x2="350" y2="210" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="230" y1="220" x2="280" y2="220" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+              <line x1="240" y1="230" x2="320" y2="230" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" opacity="0.7"/>
+            </g>
           </g>
 
           {/* Desk */}
           <rect x="0" y="320" width="400" height="80" fill="#d4a373" opacity="0.8" />
           <rect x="350" y="330" width="30" height="15" rx="7.5" fill="#2c2f33" /> {/* Mouse */}
+ 
+          {/* Desk Plants (Cacti matching original illustration) */}
+          {/* Left Plant */}
+          <g>
+            <path d="M 45 320 L 75 320 L 70 345 L 50 345 Z" fill="#b87355" opacity="0.9" />
+            <rect x="55" y="275" width="10" height="45" rx="5" fill="#4d7c5a" />
+            <path d="M 55 295 L 47 295 L 47 285" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+            <path d="M 65 290 L 73 290 L 73 280" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+          </g>
+          {/* Right Plant */}
+          <g>
+            <path d="M 325 320 L 355 320 L 350 345 L 330 345 Z" fill="#b87355" opacity="0.9" />
+            <rect x="335" y="275" width="10" height="45" rx="5" fill="#4d7c5a" />
+            <path d="M 335 290 L 327 290 L 327 280" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+            <path d="M 345 295 L 353 295 L 353 285" fill="none" stroke="#4d7c5a" strokeWidth="5" strokeLinecap="round" />
+          </g>
 
           {/* Body */}
           <g>
             {/* Shirt */}
-            <path d="M 130 400 L 130 300 C 160 330, 240 330, 270 300 L 270 400 Z" fill="#3b7b9b" />
+            <path d="M 130 400 L 130 300 C 160 330, 240 330, 270 300 L 270 400 Z" fill={clothing} />
+            
+            {/* CPU chip */}
+            <rect x="186" y="342" width="28" height="28" rx="4" fill={clothing} stroke={bg} strokeWidth="2" opacity="0.7" />
+            <rect x="192" y="348" width="16" height="16" rx="2" fill="none" stroke={bg} strokeWidth="1.5" opacity="0.7" />
+ 
             {/* Circuit pattern on shirt */}
-            <path d="M 150 400 L 150 360 L 160 350 M 180 400 L 180 370 L 170 360 M 220 400 L 220 350 L 230 340 M 250 400 L 250 370" fill="none" stroke="#88c0b7" strokeWidth="2" opacity="0.5" />
-            <circle cx="160" cy="350" r="3" fill="#88c0b7" opacity="0.5" />
-            <circle cx="170" cy="360" r="3" fill="#88c0b7" opacity="0.5" />
-            <circle cx="230" cy="340" r="3" fill="#88c0b7" opacity="0.5" />
-            <circle cx="250" cy="370" r="3" fill="#88c0b7" opacity="0.5" />
+            <g stroke={bg} strokeWidth="2" opacity="0.5" fill="none">
+              {/* CPU connection pins */}
+              <line x1="186" y1="356" x2="175" y2="356" />
+              <line x1="214" y1="356" x2="225" y2="356" />
+              
+              {/* Branching lines */}
+              <path d="M 175 356 L 155 356 L 145 365 L 145 400" />
+              <circle cx="155" cy="356" r="3.0" fill={bg} />
+              
+              <path d="M 175 356 L 165 365 L 165 400" />
+              <circle cx="165" cy="365" r="3.0" fill={bg} />
+              
+              <path d="M 186 350 L 175 339" />
+              <circle cx="175" cy="339" r="3.0" fill={bg} />
+              
+              <path d="M 214 350 L 225 339" />
+              <circle cx="225" cy="339" r="3.0" fill={bg} />
+              
+              <path d="M 225 356 L 235 365 L 235 400" />
+              <circle cx="235" cy="365" r="3.0" fill={bg} />
+              
+              <path d="M 225 356 L 245 356 L 255 365 L 255 400" />
+              <circle cx="245" cy="356" r="3.0" fill={bg} />
+            </g>
 
             {/* Hoodie */}
-            <path d="M 40 400 C 40 320, 90 270, 140 270 L 140 300 C 110 320, 90 350, 90 400 Z" fill="#3a3e45" />
-            <path d="M 360 400 C 360 320, 310 270, 260 270 L 260 300 C 290 320, 310 350, 310 400 Z" fill="#3a3e45" />
+            <path d="M 40 400 C 40 320, 90 270, 140 270 L 140 300 C 110 320, 90 350, 90 400 Z" fill={hoodie} />
+            <path d="M 360 400 C 360 320, 310 270, 260 270 L 260 300 C 290 320, 310 350, 310 400 Z" fill={hoodie} />
             {/* Hoodie strings */}
             <line x1="130" y1="310" x2="130" y2="380" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
             <line x1="270" y1="310" x2="270" y2="380" stroke="#ffffff" strokeWidth="4" strokeLinecap="round" />
 
-            {/* Headphones */}
-            <path d="M 110 320 C 110 370, 290 370, 290 320" fill="none" stroke="#1a1c1e" strokeWidth="16" strokeLinecap="round" />
-            <g transform="translate(110, 310) rotate(-15)">
-              <rect x="-15" y="-30" width="30" height="60" rx="15" fill="#2c2f33" />
-              <rect x="-5" y="-20" width="20" height="40" rx="10" fill="#1a1c1e" />
-            </g>
-            <g transform="translate(290, 310) rotate(15)">
-              <rect x="-15" y="-30" width="30" height="60" rx="15" fill="#2c2f33" />
-              <rect x="-15" y="-20" width="20" height="40" rx="10" fill="#1a1c1e" />
-            </g>
+            {/* Headphones (Refined elliptical cushions) */}
+            {showHeadphones && (
+              <>
+                <path d="M 110 285 C 110 335, 290 335, 290 285" fill="none" stroke="#1a1c1e" strokeWidth="16" strokeLinecap="round" />
+                <g transform="translate(110, 275) rotate(-15)">
+                  <ellipse cx="0" cy="0" rx="18" ry="28" fill={headphonesColor} />
+                  <ellipse cx="0" cy="0" rx="12" ry="20" fill="#1a1c1e" />
+                  <rect x="-4" y="-32" width="8" height="8" rx="2" fill="#1a1c1e" />
+                </g>
+                <g transform="translate(290, 275) rotate(15)">
+                  <ellipse cx="0" cy="0" rx="18" ry="28" fill={headphonesColor} />
+                  <ellipse cx="0" cy="0" rx="12" ry="20" fill="#1a1c1e" />
+                  <rect x="-4" y="-32" width="8" height="8" rx="2" fill="#1a1c1e" />
+                </g>
+              </>
+            )}
           </g>
 
           {/* Head */}
           <g>
             {/* Neck */}
-            <rect x="170" y="230" width="60" height="60" fill="#e0a88a" />
-            <path d="M 170 250 C 190 270, 210 270, 230 250 L 230 230 L 170 230 Z" fill="#c99073" />
+            <rect x="170" y="230" width="60" height="60" fill={skinShadow} />
+            <path d="M 170 250 C 190 270, 210 270, 230 250 L 230 230 L 170 230 Z" fill={skinShadowDarker} />
 
             {/* Ears */}
-            <path d="M 120 160 C 100 160, 100 200, 120 210 Z" fill="#f5c7a9" />
-            <path d="M 280 160 C 300 160, 300 200, 280 210 Z" fill="#f5c7a9" />
+            <path d="M 120 160 C 100 160, 100 200, 120 210 Z" fill={skinShadow} />
+            <path d="M 280 160 C 300 160, 300 200, 280 210 Z" fill={skinShadow} />
 
             {/* Face Base */}
-            <rect x="120" y="100" width="160" height="150" rx="60" fill="#f5c7a9" />
+            <rect x="120" y="100" width="160" height="150" rx="60" fill={skin} />
 
             {/* Hair Back/Sides */}
-            <path d="M 110 160 C 100 120, 110 80, 150 60 C 200 40, 250 40, 280 70 C 300 90, 300 130, 290 160 C 280 120, 260 90, 200 90 C 140 90, 120 120, 110 160 Z" fill="#2c2c2c" />
+            <path d="M 110 160 C 100 120, 110 80, 150 60 C 200 40, 250 40, 280 70 C 300 90, 300 130, 290 160 C 280 120, 260 90, 200 90 C 140 90, 120 120, 110 160 Z" fill={hair} />
             
             {/* Hair Top */}
-            <path d="M 120 100 C 110 60, 150 30, 200 30 C 250 30, 290 60, 280 100 C 290 70, 260 40, 200 40 C 140 40, 110 70, 120 100 Z" fill="#2c2c2c" />
-            <path d="M 140 60 C 160 20, 220 20, 250 50 C 230 30, 180 30, 140 60 Z" fill="#2c2c2c" />
-            <path d="M 170 40 C 190 10, 230 20, 240 40 C 220 20, 190 20, 170 40 Z" fill="#2c2c2c" />
-            <path d="M 120 100 C 140 80, 180 80, 200 110 C 180 90, 140 90, 120 100 Z" fill="#2c2c2c" />
-            <path d="M 200 110 C 220 80, 260 80, 280 100 C 260 90, 220 90, 200 110 Z" fill="#2c2c2c" />
+            <path d="M 120 100 C 110 60, 150 30, 200 30 C 250 30, 290 60, 280 100 C 290 70, 260 40, 200 40 C 140 40, 110 70, 120 100 Z" fill={hair} />
+            <path d="M 140 60 C 160 20, 220 20, 250 50 C 230 30, 180 30, 140 60 Z" fill={hair} />
+            <path d="M 170 40 C 190 10, 230 20, 240 40 C 220 20, 190 20, 170 40 Z" fill={hair} />
+            <path d="M 120 100 C 140 80, 180 80, 200 110 C 180 90, 140 90, 120 100 Z" fill={hair} />
+            <path d="M 200 110 C 220 80, 260 80, 280 100 C 260 90, 220 90, 200 110 Z" fill={hair} />
+ 
+            {/* Hair Highlights (translucent white overlays for volume) */}
+            <path d="M 140 70 C 160 50, 190 50, 210 65 Q 180 55, 140 70 Z" fill="#ffffff" opacity="0.08" />
+            <path d="M 170 45 C 190 30, 220 30, 235 45 Q 200 35, 170 45 Z" fill="#ffffff" opacity="0.08" />
+            <path d="M 210 80 Q 235 65 265 80 Q 240 70 210 80 Z" fill="#ffffff" opacity="0.08" />
 
             {/* Beard */}
-            <path d="M 118 170 C 110 220, 130 270, 200 270 C 270 270, 290 220, 282 170 C 270 200, 240 210, 200 210 C 160 210, 130 200, 118 170 Z" fill="#2c2c2c" />
+            <path d="M 118 170 C 110 220, 130 270, 200 270 C 270 270, 290 220, 282 170 C 270 200, 240 210, 200 210 C 160 210, 130 200, 118 170 Z" fill={hair} />
             
             {/* Mustache */}
-            <path d="M 145 215 C 170 200, 230 200, 255 215 C 230 225, 170 225, 145 215 Z" fill="#2c2c2c" />
+            <path d="M 145 215 C 170 200, 230 200, 255 215 C 230 225, 170 225, 145 215 Z" fill={hair} />
             
             {/* Nose */}
-            <path d="M 200 160 L 200 190 C 200 200, 185 200, 185 190" fill="none" stroke="#e0a88a" strokeWidth="5" strokeLinecap="round" />
+            <path d="M 200 160 L 200 190 C 200 200, 185 200, 185 190" fill="none" stroke={skinShadow} strokeWidth="5" strokeLinecap="round" />
 
             {/* Eyes */}
             <g transform="translate(155, 155)">
-              <circle cx="0" cy="0" r="7" fill="#2c2c2c" />
+              <circle cx="0" cy="0" r="7" fill={hair} />
               <circle cx="2" cy="-2" r="2" fill="#ffffff" />
-              <motion.rect x="-10" y="-10" width="20" height="20" fill="#f5c7a9" animate={leftEyelidControls} style={{ originY: 0 }} initial={{ scaleY: 0 }} />
+              <motion.rect x="-10" y="-10" width="20" height="20" fill={skin} animate={leftEyelidControls} style={{ originY: 0 }} initial={{ scaleY: 0 }} />
             </g>
             <g transform="translate(245, 155)">
-              <circle cx="0" cy="0" r="7" fill="#2c2c2c" />
+              <circle cx="0" cy="0" r="7" fill={hair} />
               <circle cx="2" cy="-2" r="2" fill="#ffffff" />
-              <motion.rect x="-10" y="-10" width="20" height="20" fill="#f5c7a9" animate={rightEyelidControls} style={{ originY: 0 }} initial={{ scaleY: 0 }} />
+              <motion.rect x="-10" y="-10" width="20" height="20" fill={skin} animate={rightEyelidControls} style={{ originY: 0 }} initial={{ scaleY: 0 }} />
             </g>
 
             {/* Eyebrows */}
-            <motion.path d="M 135 130 Q 155 120 175 130" fill="none" stroke="#2c2c2c" strokeWidth="8" strokeLinecap="round" animate={leftEyebrowControls} />
-            <motion.path d="M 225 130 Q 245 120 265 130" fill="none" stroke="#2c2c2c" strokeWidth="8" strokeLinecap="round" animate={rightEyebrowControls} />
+            <motion.path d="M 135 130 Q 155 120 175 130" fill="none" stroke={hair} strokeWidth="8" strokeLinecap="round" animate={leftEyebrowControls} />
+            <motion.path d="M 225 130 Q 245 120 265 130" fill="none" stroke={hair} strokeWidth="8" strokeLinecap="round" animate={rightEyebrowControls} />
 
-            {/* Glasses */}
-            <circle cx="155" cy="155" r="32" fill="none" stroke="#2c2c2c" strokeWidth="8" />
-            <circle cx="245" cy="155" r="32" fill="none" stroke="#2c2c2c" strokeWidth="8" />
-            <path d="M 187 145 Q 200 135 213 145" fill="none" stroke="#2c2c2c" strokeWidth="8" strokeLinecap="round" />
-            <line x1="123" y1="150" x2="110" y2="145" stroke="#2c2c2c" strokeWidth="8" strokeLinecap="round" />
-            <line x1="277" y1="150" x2="290" y2="145" stroke="#2c2c2c" strokeWidth="8" strokeLinecap="round" />
+            {/* Glasses (Thin round frames matching original PNG) */}
+            {showGlasses && (
+              <>
+                <circle cx="155" cy="155" r="32" fill="none" stroke={glassesColor} strokeWidth="3.5" />
+                <circle cx="245" cy="155" r="32" fill="none" stroke={glassesColor} strokeWidth="3.5" />
+                <path d="M 187 145 Q 200 135 213 145" fill="none" stroke={glassesColor} strokeWidth="3" strokeLinecap="round" />
+                <line x1="123" y1="150" x2="110" y2="145" stroke={glassesColor} strokeWidth="3" strokeLinecap="round" />
+                <line x1="277" y1="150" x2="290" y2="145" stroke={glassesColor} strokeWidth="3" strokeLinecap="round" />
+              </>
+            )}
 
             {/* Mouth (Animatable) */}
             <g clipPath="url(#mouthClip)">
