@@ -8,11 +8,7 @@ import http from "http";
 import { generateMockAudioChunk, getAudioEnergy } from "./src/lib/serverUtils";
 
 const MOCK_RESPONSES = [
-  "<thought>El usuario se ha conectado exitosamente al canal del avatar neuronal. Veo que el estado inicial de la conexión es estable. Mi instrucción del sistema me pide responder de forma amigable y conversacional, estructurando estrictamente mi salida entre las etiquetas de thought y speech. Además, el usuario me ha solicitado una historia de exactamente cinco líneas en español. " +
-  "Procederé de la siguiente manera: " +
-  "1. Formularé un saludo inicial cálido. " +
-  "2. Escribiré una historia corta de 5 líneas bien definidas que capte el interés. Elegiré la historia de un pequeño robot de silicio que sueña con mirar el universo. " +
-  "3. Aseguraré de que todo el pensamiento lógico quede encerrado en esta etiqueta de thought y la narración oral esté dentro de la etiqueta de speech para que el cliente la procese y reproduzca el audio de forma correcta.</thought>" +
+  "<thought>El usuario se ha conectado exitosamente. Generando un saludo y un cuento corto sobre un robot.</thought>" +
   "<speech>¡Hola! ¿Cómo estás? Te voy a contar una historia de cinco líneas. " +
   "Había una vez un pequeño robot de silicio. " +
   "Soñaba con ver las estrellas de cerca. " +
@@ -20,11 +16,7 @@ const MOCK_RESPONSES = [
   "Un día, una estrella fugaz le envió una señal. " +
   "Y en ese instante, supe que no estaba solo en el universo.</speech>",
 
-  "<thought>El usuario ha terminado de hablar y se ha detectado el fin de su intervención por la ausencia de señal de audio. Voy a analizar el contexto. Sigue interesado en escuchar relatos interactivos. Para mantener su atención, voy a optar por una historia fantástica sobre la naturaleza y la creatividad. " +
-  "Plan de acción: " +
-  "- Mantener el tono positivo y cercano del asistente. " +
-  "- Redactar un relato de 5 líneas sobre una pequeña nube de algodón que busca colores en el arcoíris. " +
-  "- Revisar que la división de etiquetas esté perfectamente delimitada para evitar que el motor de síntesis de voz en el frontend intente leer en voz alta esta sección de razonamiento interno.</thought>" +
+  "<thought>El usuario ha terminado de hablar. Generando una historia sobre una pequeña nube.</thought>" +
   "<speech>¡Qué interesante! Aquí tienes otra historia corta de cinco líneas. " +
   "Una pequeña nube de algodón flotaba muy alto en el cielo. " +
   "Estaba cansada de ser blanca y decidió buscar colores. " +
@@ -32,11 +24,7 @@ const MOCK_RESPONSES = [
   "Al atardecer, llovió confeti de colores sobre el valle. " +
   "Y desde ese día, todos los campos florecen con alegría.</speech>",
 
-  "<thought>El usuario continúa enganchado en la conversación. Su insistencia demuestra que la simulación de visemas y el streaming de audio base64 están funcionando correctamente y con baja latencia en su navegador. Para esta tercera interacción, quiero ofrecer una historia con un matiz un poco más poético e inspirador. " +
-  "Plan del relato: " +
-  "- Tema: Un faro solitario en un acantilado que encuentra compañía en una pequeña estrella fugaz. " +
-  "- Estructura: Introducción del faro, el conflicto de la soledad, el encuentro mágico con la estrella, la resolución de su guía y el desenlace poético. Exactamente 5 líneas de narración oral. " +
-  "- Formato: Todo el razonamiento técnico queda registrado aquí.</thought>" +
+  "<thought>El usuario continúa conversando. Generando una historia poética sobre un faro.</thought>" +
   "<speech>¡Me encanta seguir charlando contigo! Aquí va tu historia. " +
   "En un acantilado remoto, un viejo faro guiaba a los barcos. " +
   "Cada noche brillaba con fuerza, sintiéndose solo en el mar. " +
@@ -44,11 +32,7 @@ const MOCK_RESPONSES = [
   "Juntos iluminaron el océano entero con destellos plateados. " +
   "Y desde entonces, ningún marinero volvió a perderse.</speech>",
 
-  "<thought>El usuario sigue interactuando de manera activa a través del WebSocket. Esto me permite probar el comportamiento dinámico del Voice Activity Detection (VAD) y la capacidad de interrupción. Para esta respuesta, diseñaré una historia reflexiva sobre el tiempo y las emociones. " +
-  "Planificación: " +
-  "- Redactar una historia sobre un viejo relojero que construye un reloj capaz de medir momentos felices en lugar de segundos o minutos. " +
-  "- Asegurar que la moraleja sea reconfortante: la felicidad hace que el tiempo sea infinito. " +
-  "- Formatear la salida asegurando que el cierre de la etiqueta thought y la apertura de speech ocurran sin problemas para que el parser del cliente no experimente lagunas de subtítulos.</thought>" +
+  "<thought>El usuario sigue interactuando de manera activa. Generando una historia reflexiva sobre el tiempo.</thought>" +
   "<speech>¡Es genial hablar con alguien tan curioso! Escucha esto. " +
   "Un viejo relojero fabricó un reloj de bolsillo sin manecillas. " +
   "El reloj solo medía los instantes felices de su dueño. " +
@@ -263,7 +247,7 @@ async function startServer() {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
           },
-          systemInstruction: "You are a friendly, concise, and helpful AI assistant. Keep your answers brief and conversational. For every response you generate, you MUST strictly structure your text output in the following format: State your reasoning/internal thoughts inside `<thought>...</thought>` tags. State your exact spoken response inside `<speech>...</speech>` tags. Do not output anything outside these tags, as the user UI parses them in real time. CRITICAL: Do NOT voice or speak any of the `<thought>` tags or the text within them. Only speak aloud the text content that is inside the `<speech>` tags.",
+          systemInstruction: "You are a friendly, concise, and helpful AI assistant. Keep your answers brief and conversational. For every response you generate, you MUST strictly structure your text output in the following format: State your reasoning/internal thoughts inside `<thought>...</thought>` tags. Keep the reasoning inside `<thought>` extremely short, exactly one concise sentence. State your exact spoken response inside `<speech>...</speech>` tags. Do not output anything outside these tags, as the user UI parses them in real time. CRITICAL: Do NOT voice or speak any of the `<thought>` tags or the text within them. Only speak aloud the text content that is inside the `<speech>` tags.",
           outputAudioTranscription: {},
         },
       });

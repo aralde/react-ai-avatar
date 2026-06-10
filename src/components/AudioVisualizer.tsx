@@ -85,6 +85,22 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         ctx.shadowBlur = 0;
 
       } else if (state === 'listening') {
+        // Calculate dynamic microphone volume (peak deviation)
+        let micVolume = 0;
+        if (analyser && dataArray.length > 0) {
+          analyser.getByteTimeDomainData(dataArray);
+          let maxVal = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            const dev = Math.abs(dataArray[i] - 128);
+            if (dev > maxVal) maxVal = dev;
+          }
+          micVolume = Math.min(1.0, maxVal / 128);
+        }
+
+        // Base wave height plus dynamic scaling based on mic volume
+        const waveBase1 = 4 + micVolume * 36; // scales between 4px and 40px
+        const waveBase2 = 3 + micVolume * 27; // scales between 3px and 30px
+
         // Listening state: Render a dynamic Siri-like pulsing wave
         ctx.shadowBlur = 12;
         ctx.lineWidth = 2.5;
@@ -94,7 +110,7 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         ctx.shadowColor = 'rgba(59, 130, 246, 0.4)';
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
-          const y = h / 2 + Math.sin(x * 0.02 + phase * 1.5) * Math.sin(x * 0.005) * 15;
+          const y = h / 2 + Math.sin(x * 0.02 + phase * 1.5) * Math.sin(x * 0.005) * waveBase1;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
@@ -105,7 +121,7 @@ export function AudioVisualizer({ analyser, state, height = 80 }: AudioVisualize
         ctx.shadowColor = 'rgba(6, 182, 212, 0.3)';
         ctx.beginPath();
         for (let x = 0; x < w; x++) {
-          const y = h / 2 + Math.sin(x * 0.015 - phase * 1.2 + Math.PI) * Math.sin(x * 0.005) * 12;
+          const y = h / 2 + Math.sin(x * 0.015 - phase * 1.2 + Math.PI) * Math.sin(x * 0.005) * waveBase2;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }

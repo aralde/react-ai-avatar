@@ -2,6 +2,7 @@ export class AudioStreamer {
   public audioContext: AudioContext;
   private nextStartTime: number = 0;
   public analyser: AnalyserNode;
+  private scheduledSources: AudioBufferSourceNode[] = [];
 
   constructor() {
     this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -33,6 +34,11 @@ export class AudioStreamer {
     const source = this.audioContext.createBufferSource();
     source.buffer = audioBuffer;
     source.connect(this.analyser);
+    
+    this.scheduledSources.push(source);
+    source.onended = () => {
+      this.scheduledSources = this.scheduledSources.filter(s => s !== source);
+    };
 
     const currentTime = this.audioContext.currentTime;
     if (this.nextStartTime < currentTime) {
@@ -43,12 +49,26 @@ export class AudioStreamer {
   }
 
   stop() {
-    this.audioContext.close();
-    this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-    this.analyser = this.audioContext.createAnalyser();
-    this.analyser.fftSize = 256;
-    this.analyser.connect(this.audioContext.destination);
+    this.scheduledSources.forEach(source => {
+      try {
+        source.stop();
+      } catch (e) {
+        // Already stopped or not started
+      }
+    });
+    this.scheduledSources = [];
     this.nextStartTime = 0;
+  }
+
+  isPlaying() {
+    return this.audioContext && this.audioContext.currentTime < this.nextStartTime;
+  }
+
+  close() {
+    this.stop();
+    if (this.audioContext && this.audioContext.state !== 'closed') {
+      this.audioContext.close().catch(() => {});
+    }
   }
 }
 
@@ -57,6 +77,7 @@ export class MicRecorder {
   private audioContext: AudioContext | null = null;
   private processor: ScriptProcessorNode | null = null;
   private source: MediaStreamAudioSourceNode | null = null;
+  public analyser: AnalyserNode | null = null;
 
   constructor() {
     try {
@@ -79,9 +100,13 @@ export class MicRecorder {
     
     console.log("MicRecorder: AudioContext resumed and running. State:", this.audioContext.state);
 
+    this.analyser = this.audioContext.createAnalyser();
+    this.analyser.fftSize = 256;
+
     this.source = this.audioContext.createMediaStreamSource(this.stream);
     this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
 
+    this.source.connect(this.analyser);
     this.source.connect(this.processor);
     this.processor.connect(this.audioContext.destination);
 
@@ -114,6 +139,7 @@ export class MicRecorder {
       this.source.disconnect();
       this.source = null;
     }
+    this.analyser = null;
     if (this.audioContext) {
       this.audioContext.close();
       this.audioContext = null;

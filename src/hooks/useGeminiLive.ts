@@ -128,7 +128,7 @@ export function useGeminiLive() {
 
   const disconnect = useCallback(() => {
     micRecorderRef.current?.stop();
-    audioStreamerRef.current?.stop();
+    audioStreamerRef.current?.close();
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -137,6 +137,7 @@ export function useGeminiLive() {
     setState('idle');
     setSubtitle('');
     setThought('');
+    setAnalyser(null);
     isSpeakingRef.current = false;
     isTurnInitializedRef.current = false;
     rawTextRef.current = '';
@@ -153,7 +154,7 @@ export function useGeminiLive() {
       
       const streamer = new AudioStreamer();
       audioStreamerRef.current = streamer;
-      setAnalyser(streamer.analyser);
+      setAnalyser(null); // start as null since we are thinking/connecting
       
       micRecorderRef.current = new MicRecorder();
 
@@ -184,6 +185,8 @@ export function useGeminiLive() {
             if (wsRef.current?.readyState === WebSocket.OPEN) {
               wsRef.current.send(JSON.stringify({ audio: base64 }));
             }
+          }).then(() => {
+            setAnalyser(micRecorderRef.current?.analyser || null);
           }).catch(err => {
             console.error("Mic error:", err);
             setError(err.message || 'Microphone access denied');
@@ -195,16 +198,19 @@ export function useGeminiLive() {
         const startNewTurn = () => {
           isTurnInitializedRef.current = true;
           isSpeakingRef.current = true;
-          setState('speaking');
+          setState('thinking');
           setSubtitle('');
           setThought('');
           rawTextRef.current = '';
+          setAnalyser(null);
         };
 
         if (msg.audio) {
           if (!isTurnInitializedRef.current) {
             startNewTurn();
           }
+          setState('speaking');
+          setAnalyser(audioStreamerRef.current?.analyser || null);
           audioStreamerRef.current?.playBase64Audio(msg.audio);
         }
 
@@ -217,6 +223,11 @@ export function useGeminiLive() {
           const parsed = parseModelText(rawTextRef.current);
           setThought(parsed.thought);
           setSubtitle(parsed.speech);
+
+          if (parsed.speech) {
+            setState('speaking');
+            setAnalyser(audioStreamerRef.current?.analyser || null);
+          }
         }
 
         if (msg.transcription) {
@@ -232,8 +243,12 @@ export function useGeminiLive() {
           }
           if (parsed.speech) {
             setSubtitle(parsed.speech);
+            setState('speaking');
+            setAnalyser(audioStreamerRef.current?.analyser || null);
           } else {
             setSubtitle(rawTextRef.current);
+            setState('speaking');
+            setAnalyser(audioStreamerRef.current?.analyser || null);
           }
         }
         
@@ -244,12 +259,28 @@ export function useGeminiLive() {
           isSpeakingRef.current = false;
           isTurnInitializedRef.current = false;
           rawTextRef.current = '';
+          setState('listening');
+          setAnalyser(micRecorderRef.current?.analyser || null);
         }
         
         if (msg.turnComplete) {
-          setState('listening');
-          isSpeakingRef.current = false;
-          isTurnInitializedRef.current = false;
+          const streamer = audioStreamerRef.current;
+          if (streamer && streamer.isPlaying()) {
+            const delayMs = (streamer.nextStartTime - streamer.audioContext.currentTime) * 1000;
+            setTimeout(() => {
+              if (isSpeakingRef.current && isTurnInitializedRef.current) {
+                setState('listening');
+                isSpeakingRef.current = false;
+                isTurnInitializedRef.current = false;
+                setAnalyser(micRecorderRef.current?.analyser || null);
+              }
+            }, delayMs + 100);
+          } else {
+            setState('listening');
+            isSpeakingRef.current = false;
+            isTurnInitializedRef.current = false;
+            setAnalyser(micRecorderRef.current?.analyser || null);
+          }
         }
       };
 

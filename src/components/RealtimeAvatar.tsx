@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { DefaultAvatar } from './DefaultAvatar';
 import { DeveloperAvatar } from './DeveloperAvatar';
 import { DeveloperAvatar2 } from './DeveloperAvatar2';
 import { CustomAvatar } from './CustomAvatar';
 import { AvatarState } from '../hooks/useGeminiLive';
-import { motion } from 'motion/react';
+import { motion, useMotionValue } from 'motion/react';
 
 export interface RealtimeAvatarProps {
   state: AvatarState;
@@ -38,6 +38,12 @@ export function RealtimeAvatar({
     AvatarComponent = <DefaultAvatar {...avatarProps} />;
   }
 
+  // Motion values for volume-reactive pulsing
+  const scaleValue = useMotionValue(1);
+  const glowScaleValue = useMotionValue(1);
+  const glowOpacityValue = useMotionValue(0.15);
+  const requestRef = useRef<number | null>(null);
+
   // State colors for unified indicator & glow
   const stateColors = {
     idle: '#4b5563', // gray-600
@@ -45,6 +51,39 @@ export function RealtimeAvatar({
     thinking: '#8b5cf6', // purple-500
     speaking: '#10b981' // emerald-500
   };
+
+  useEffect(() => {
+    if (!analyser || (state !== 'speaking' && state !== 'listening')) {
+      scaleValue.set(1);
+      glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
+      glowOpacityValue.set(state === 'thinking' ? 0.35 : 0.15);
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      return;
+    }
+
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    
+    const updateGlow = () => {
+      analyser.getByteTimeDomainData(dataArray);
+      let maxVal = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const dev = Math.abs(dataArray[i] - 128);
+        if (dev > maxVal) maxVal = dev;
+      }
+      const vol = Math.min(1.0, maxVal / 128);
+      
+      scaleValue.set(1 + vol * 0.08);
+      glowScaleValue.set(1 + vol * 0.35);
+      glowOpacityValue.set(0.15 + vol * 0.35);
+      
+      requestRef.current = requestAnimationFrame(updateGlow);
+    };
+
+    requestRef.current = requestAnimationFrame(updateGlow);
+    return () => {
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+    };
+  }, [analyser, state, scaleValue, glowScaleValue, glowOpacityValue]);
 
   const stateLabels = {
     idle: 'Idle',
@@ -71,31 +110,24 @@ export function RealtimeAvatar({
           width: size * 1.05,
           height: size * 1.05,
           borderColor: stateColors[state] + '40',
+          scale: scaleValue,
         }}
         animate={{
           rotate: state === 'thinking' ? 360 : 0,
-          scale: state === 'speaking' ? [1, 1.03, 1] : 1,
         }}
         transition={{
           rotate: state === 'thinking' ? { repeat: Infinity, duration: 10, ease: "linear" } : { duration: 0.5 },
-          scale: state === 'speaking' ? { repeat: Infinity, duration: 1.5, ease: "easeInOut" } : { duration: 0.5 }
         }}
       />
 
       <motion.div
-        className="absolute rounded-full pointer-events-none filter blur-2xl opacity-25"
+        className="absolute rounded-full pointer-events-none filter blur-2xl"
         style={{
           width: size * 0.9,
           height: size * 0.9,
           backgroundColor: stateColors[state],
-        }}
-        animate={{
-          scale: state === 'speaking' || state === 'thinking' ? [1, 1.2, 1] : 1,
-        }}
-        transition={{
-          repeat: state === 'speaking' || state === 'thinking' ? Infinity : 0,
-          duration: 2,
-          ease: "easeInOut"
+          scale: glowScaleValue,
+          opacity: glowOpacityValue,
         }}
       />
       

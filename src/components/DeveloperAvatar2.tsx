@@ -86,21 +86,20 @@ export function DeveloperAvatar2({ state, analyser, size = 200 }: AvatarProps) {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const updateMouth = () => {
-      analyser.getByteFrequencyData(dataArray);
+      analyser.getByteTimeDomainData(dataArray);
       
-      let sum = 0;
+      // Calculate peak deviation from 128 (normalized volume between 0 and 1)
+      let maxVal = 0;
       for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
+        const dev = Math.abs(dataArray[i] - 128);
+        if (dev > maxVal) {
+          maxVal = dev;
+        }
       }
-      const average = sum / dataArray.length;
-      const opening = Math.min(35, Math.max(0, (average / 255) * 60));
       
-      let highSum = 0;
-      for (let i = Math.floor(dataArray.length / 2); i < dataArray.length; i++) {
-        highSum += dataArray[i];
-      }
-      const highAverage = highSum / (dataArray.length / 2);
-      const widthOffset = Math.min(12, (highAverage / 255) * 24);
+      const normalizedVolume = Math.min(1.0, maxVal / 128);
+      const opening = normalizedVolume * 35;
+      const widthOffset = normalizedVolume * 12;
 
       const topY = 215 - opening * 0.15;
       const bottomY = 215 + opening;

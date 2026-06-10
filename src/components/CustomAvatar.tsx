@@ -18,6 +18,10 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number | null>(null);
 
+  const svgHtml = React.useMemo(() => {
+    return { __html: avatarSvgRaw };
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current) return;
     
@@ -113,16 +117,20 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
 
     // Helper to apply SVG transform mathematically
     const applyTransform = (item: PathItem, scaleY: number, originY: 'center' | 'top' | 'bottom' = 'center', translateY: number = 0) => {
-      const cx = item.bbox.x + item.bbox.width / 2;
-      let cy = item.bbox.y + item.bbox.height / 2;
-      if (originY === 'top') cy = item.bbox.y;
-      if (originY === 'bottom') cy = item.bbox.y + item.bbox.height;
-      
-      // We append the scale and translate transformation to the original transform
-      item.element.setAttribute(
-        'transform', 
-        `${item.originalTransform} translate(${cx}, ${cy + translateY}) scale(1, ${scaleY}) translate(${-cx}, ${-cy})`
-      );
+      const match = item.originalTransform.match(/translate\(([^,]+),\s*([0-9.]+)\)/);
+      if (match) {
+        const tx = parseFloat(match[1]);
+        const ty = parseFloat(match[2]);
+        item.element.setAttribute(
+          'transform', 
+          `translate(${tx}, ${ty + translateY}) scale(1, ${scaleY})`
+        );
+      } else {
+        item.element.setAttribute(
+          'transform', 
+          `${item.originalTransform} scale(1, ${scaleY}) translate(0, ${translateY})`
+        );
+      }
     };
 
     // Blinking logic
@@ -175,13 +183,18 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     
     const updateMouth = () => {
-      analyser.getByteFrequencyData(dataArray);
-      let sum = 0;
-      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-      const average = sum / dataArray.length;
+      analyser.getByteTimeDomainData(dataArray);
       
-      // Calculate mouth opening based on volume
-      const volume = average / 255;
+      // Calculate peak deviation from 128 (normalized volume between 0 and 1)
+      let maxVal = 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        const dev = Math.abs(dataArray[i] - 128);
+        if (dev > maxVal) {
+          maxVal = dev;
+        }
+      }
+      
+      const volume = Math.min(1.0, maxVal / 128);
       
       // Move lower lip down instead of just scaling
       const dropDownAmount = volume * 15; // Max drop 15px
@@ -220,7 +233,7 @@ export function CustomAvatar({ state, analyser, size = 200 }: CustomAvatarProps)
     >
       <div 
         ref={containerRef}
-        dangerouslySetInnerHTML={{ __html: avatarSvgRaw }}
+        dangerouslySetInnerHTML={svgHtml}
         className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
       />
     </div>

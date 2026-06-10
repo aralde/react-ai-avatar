@@ -23,25 +23,22 @@ export function DefaultAvatar({ state, analyser, size = 200 }: AvatarProps) {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
     const updateMouth = () => {
-      analyser.getByteFrequencyData(dataArray);
+      analyser.getByteTimeDomainData(dataArray);
       
-      // Calculate average volume
-      let sum = 0;
+      // Calculate peak deviation from 128 (normalized volume between 0 and 1)
+      let maxVal = 0;
       for (let i = 0; i < dataArray.length; i++) {
-        sum += dataArray[i];
+        const dev = Math.abs(dataArray[i] - 128);
+        if (dev > maxVal) {
+          maxVal = dev;
+        }
       }
-      const average = sum / dataArray.length;
       
-      // Map volume to mouth opening (0 to 30)
-      const opening = Math.min(30, Math.max(0, (average / 255) * 60));
+      const normalizedVolume = Math.min(1.0, maxVal / 128);
       
-      // Map high frequencies to mouth width
-      let highSum = 0;
-      for (let i = Math.floor(dataArray.length / 2); i < dataArray.length; i++) {
-        highSum += dataArray[i];
-      }
-      const highAverage = highSum / (dataArray.length / 2);
-      const widthOffset = Math.min(10, (highAverage / 255) * 20);
+      // Map volume to mouth opening (0 to 30) and width (0 to 10)
+      const opening = normalizedVolume * 30;
+      const widthOffset = normalizedVolume * 10;
 
       const d = `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70`;
       
