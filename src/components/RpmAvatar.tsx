@@ -351,7 +351,7 @@ function RpmModel({
     }
   });
 
-  return <primitive object={scene} position={[0, -1.0, 0]} />;
+  return <primitive object={scene} position={[0, -1.32, 0]} />;
 }
 
 // Pre-preload animations for smooth transitions
@@ -407,7 +407,7 @@ export function RpmAvatar({
     >
       {/* 3D R3F Canvas */}
       <Canvas
-        camera={{ position: [0, 0.45, 0.75], fov: 36 }}
+        camera={{ position: [0, 0.3, 1.05], fov: 38 }}
         shadows
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
         style={{ width: '100%', height: '100%', background: 'transparent' }}
@@ -455,7 +455,7 @@ export function RpmAvatar({
           maxPolarAngle={Math.PI / 1.7}
           minAzimuthAngle={-Math.PI / 4}
           maxAzimuthAngle={Math.PI / 4}
-          target={[0, 0.38, 0]}
+          target={[0, 0.28, 0]}
         />
       </Canvas>
 
