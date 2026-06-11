@@ -46,12 +46,12 @@ export default function App() {
 
   // Ready Player Me state
   const [rpmModelSource, setRpmModelSource] = useState<'default' | 'url' | 'file'>('default');
-  const [rpmUrl, setRpmUrl] = useState<string>('https://models.readyplayer.me/63a9ab390c111d89f95c1fa9.glb');
+  const [rpmUrl, setRpmUrl] = useState<string>('https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb');
   const [rpmFileUrl, setRpmFileUrl] = useState<string | null>(null);
   const [rpmCatalogSelection, setRpmCatalogSelection] = useState<'mannequin' | 'masculine' | 'feminine'>('mannequin');
   const rpmCatalogUrls = {
     mannequin: '/models/rpm-mannequin.glb',
-    masculine: 'https://models.readyplayer.me/63a9ab390c111d89f95c1fa9.glb',
+    masculine: 'https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb',
     feminine: 'https://models.readyplayer.me/6583f740b2efcc69d71c4c37.glb'
   };
 
@@ -627,7 +627,7 @@ function MyAvatarComponent() {
                               {(Object.keys(rpmCatalogUrls) as Array<keyof typeof rpmCatalogUrls>).map((key) => {
                                 const names = {
                                   mannequin: 'Local RPM Mannequin (Offline Friendly)',
-                                  masculine: 'Masculine Avatar (Hex ID: 63a9...)',
+                                  masculine: 'Masculine Avatar (Hex ID: 63e5...)',
                                   feminine: 'Feminine Avatar (Hex ID: 6583...)'
                                 };
                                 const descs = {
