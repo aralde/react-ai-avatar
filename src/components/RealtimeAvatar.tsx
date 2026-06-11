@@ -4,6 +4,7 @@ import { DeveloperAvatar } from './DeveloperAvatar';
 import { DeveloperAvatar2 } from './DeveloperAvatar2';
 import { CustomAvatar } from './CustomAvatar';
 import { VrmAvatar } from './VrmAvatar';
+import { RpmAvatar } from './RpmAvatar';
 import { AvatarState } from '../hooks/useGeminiLive';
 import { motion, useMotionValue } from 'motion/react';
 
@@ -11,8 +12,9 @@ export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'default' | 'developer' | 'developer2' | 'custom' | 'vrm';
+  variant?: 'default' | 'developer' | 'developer2' | 'custom' | 'vrm' | 'rpm';
   vrmUrl?: string;
+  rpmUrl?: string;
   subtitle?: string;
   thought?: string;
   showSubtitle?: boolean;
@@ -64,6 +66,7 @@ export function RealtimeAvatar({
   size = 280, 
   variant = 'default', 
   vrmUrl,
+  rpmUrl,
   subtitle, 
   thought, 
   showSubtitle = true,
@@ -89,11 +92,14 @@ export function RealtimeAvatar({
     mouseTrackingIntensity,
     stateColors,
     customization,
-    vrmUrl
+    vrmUrl,
+    rpmUrl
   };
 
   let AvatarComponent;
-  if (variant === 'vrm') {
+  if (variant === 'rpm') {
+    AvatarComponent = <RpmAvatar {...avatarProps} />;
+  } else if (variant === 'vrm') {
     AvatarComponent = <VrmAvatar {...avatarProps} />;
   } else if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
