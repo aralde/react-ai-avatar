@@ -1,6 +1,6 @@
 export class AudioStreamer {
   public audioContext: AudioContext;
-  private nextStartTime: number = 0;
+  public nextStartTime: number = 0;
   public analyser: AnalyserNode;
   private scheduledSources: AudioBufferSourceNode[] = [];
 

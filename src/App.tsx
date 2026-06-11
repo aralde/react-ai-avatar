@@ -26,7 +26,24 @@ import { AvatarCustomization } from './components/DefaultAvatar';
 
 export default function App() {
   const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
-  const [variant, setVariant] = useState<'default' | 'developer' | 'developer2' | 'custom'>('custom');
+  const [variant, setVariant] = useState<'default' | 'developer' | 'developer2' | 'custom' | 'vrm'>('custom');
+  const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
+  const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
+  const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
+  const [catalogSelection, setCatalogSelection] = useState<'alicia' | 'cyberpunk' | 'orion' | 'voxels'>('alicia');
+  const catalogUrls = {
+    alicia: '/models/default-avatar.vrm',
+    cyberpunk: '/models/avatar-b.vrm',
+    orion: '/models/mannequin.vrm',
+    voxels: '/models/voxels.vrm'
+  };
+
+  const activeVrmUrl = vrmModelSource === 'file' 
+    ? (vrmFileUrl || '') 
+    : (vrmModelSource === 'url' 
+      ? vrmUrl 
+      : catalogUrls[catalogSelection]);
+
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
   const [duration, setDuration] = useState<number>(0);
 
@@ -73,6 +90,47 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'code' | 'instructions'>('code');
 
   const generateJSXCode = () => {
+    if (variant === 'vrm') {
+      const displayUrl = vrmModelSource === 'url' ? vrmUrl : (vrmModelSource === 'file' ? '/* ObjectURL from local file */' : catalogUrls[catalogSelection]);
+      return `import { RealtimeAvatar } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css';
+
+// Note: 3D VRM rendering requires installing Three.js, React Three Fiber & Pixiv VRM:
+// npm install three @react-three/fiber @react-three/drei @pixiv/three-vrm
+
+function MyAvatarComponent() {
+  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
+  // and a valid WebRTC AnalyserNode for interactive lipsync
+  
+  return (
+    <RealtimeAvatar 
+      state="idle"
+      analyser={null}
+      size={300}
+      variant="vrm"
+      vrmUrl="${displayUrl}"
+      maxMouthOpening={${maxMouthOpening}}
+      mouseTrackingIntensity={${mouseTrackingIntensity}}
+      blinkIntervalMin={${blinkIntervalMin}}
+      blinkIntervalMax={${blinkIntervalMax}}
+      blinkDuration={${blinkDuration}}
+      stateColors={{
+        idle: '${stateColors.idle}',
+        listening: '${stateColors.listening}',
+        thinking: '${stateColors.thinking}',
+        speaking: '${stateColors.speaking}'
+      }}
+      stateLabels={{
+        idle: '${stateLabels.idle}',
+        listening: '${stateLabels.listening}',
+        thinking: '${stateLabels.thinking}',
+        speaking: '${stateLabels.speaking}'
+      }}
+    />
+  );
+}`;
+    }
+
     return `import { RealtimeAvatar } from 'react-realtime-avatar';
 import 'react-realtime-avatar/style.css';
 
@@ -120,7 +178,11 @@ function MyAvatarComponent() {
   };
 
   const copyToClipboard = () => {
-    const text = activeTab === 'code' ? generateJSXCode() : `npm install react-realtime-avatar motion lucide-react`;
+    const text = activeTab === 'code' 
+      ? generateJSXCode() 
+      : (variant === 'vrm' 
+          ? `npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei @pixiv/three-vrm` 
+          : `npm install react-realtime-avatar motion lucide-react`);
     navigator.clipboard.writeText(text).then(() => {
       setCopiedText(true);
       setTimeout(() => setCopiedText(false), 2000);
@@ -187,7 +249,7 @@ function MyAvatarComponent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 lg:overflow-hidden min-h-0 pb-2">
           
           {/* LEFT COLUMN: Controls & Settings (lg:col-span-5) */}
-          <div className="lg:col-span-5 flex flex-col gap-4 lg:h-full lg:overflow-y-auto pr-1">
+          <div className="lg:col-span-5 flex flex-col gap-4 lg:h-full lg:overflow-y-hidden pr-1">
             
             {/* Real-time Telemetry Visualizer */}
             <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-4 backdrop-blur-md shrink-0">
@@ -219,7 +281,7 @@ function MyAvatarComponent() {
             </div>
 
             {/* Config & Control Center (Tabbed) */}
-            <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl backdrop-blur-md flex flex-col overflow-hidden flex-1 min-h-[300px]">
+            <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl backdrop-blur-md flex flex-col overflow-hidden flex-1 min-h-[200px]">
               {/* Tab Switcher */}
               <div className="flex border-b border-zinc-800/40 bg-zinc-950/20 shrink-0">
                 <button 
@@ -259,70 +321,197 @@ function MyAvatarComponent() {
               {/* Tab Content Body */}
               <div className="p-4 flex-1 overflow-y-auto min-h-0 scrollbar-thin">
                 {controlTab === 'variant' && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setVariant('default')}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                        variant === 'default'
-                          ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                          : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Smile className={`w-4.5 h-4.5 ${variant === 'default' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                        {variant === 'default' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                      </div>
-                      <span className="text-xs font-bold text-white mb-0.5">Default Smiley</span>
-                      <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Basic animated vector shape.</span>
-                    </button>
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setVariant('default')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'default'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Smile className={`w-4.5 h-4.5 ${variant === 'default' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'default' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Default Smiley</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Basic animated vector shape.</span>
+                      </button>
 
-                    <button
-                      onClick={() => setVariant('developer')}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                        variant === 'developer'
-                          ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                          : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <User className={`w-4.5 h-4.5 ${variant === 'developer' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                        {variant === 'developer' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                      </div>
-                      <span className="text-xs font-bold text-white mb-0.5">Developer 1</span>
-                      <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Casual style with interactive eye tracking.</span>
-                    </button>
+                      <button
+                        onClick={() => setVariant('developer')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'developer'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <User className={`w-4.5 h-4.5 ${variant === 'developer' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'developer' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Developer 1</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Casual style with interactive eye tracking.</span>
+                      </button>
 
-                    <button
-                      onClick={() => setVariant('developer2')}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                        variant === 'developer2'
-                          ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                          : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Cpu className={`w-4.5 h-4.5 ${variant === 'developer2' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                        {variant === 'developer2' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                      </div>
-                      <span className="text-xs font-bold text-white mb-0.5">Developer 2</span>
-                      <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">High-fidelity SVG coder with detailed layout.</span>
-                    </button>
+                      <button
+                        onClick={() => setVariant('developer2')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'developer2'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Cpu className={`w-4.5 h-4.5 ${variant === 'developer2' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'developer2' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Developer 2</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">High-fidelity SVG coder with detailed layout.</span>
+                      </button>
 
-                    <button
-                      onClick={() => setVariant('custom')}
-                      className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                        variant === 'custom'
-                          ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                          : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <Terminal className={`w-4.5 h-4.5 ${variant === 'custom' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                        {variant === 'custom' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                      <button
+                        onClick={() => setVariant('custom')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'custom'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Terminal className={`w-4.5 h-4.5 ${variant === 'custom' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'custom' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Custom (CLI)</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Your custom SVG, compiled via our AI Agent builder.</span>
+                      </button>
+
+                      {/* 3D VRM Avatar Button */}
+                      <button
+                        onClick={() => setVariant('vrm')}
+                        className={`col-span-2 flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'vrm'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">🗿</span>
+                            <span className="text-xs font-bold text-white">3D VRM Avatar</span>
+                          </div>
+                          {variant === 'vrm' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">
+                          Real-time 3D model with full visemes, skeletal physics, and look-at tracking.
+                        </span>
+                      </button>
+                    </div>
+
+                    {/* VRM Configuration Sub-Panel */}
+                    {variant === 'vrm' && (
+                      <div className="bg-zinc-950/45 border border-zinc-800/60 rounded-xl p-3 flex flex-col gap-3">
+                        <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                          VRM Model Configuration
+                        </span>
+                        
+                        {/* Selector Segmented Control */}
+                        <div className="grid grid-cols-3 gap-1 bg-zinc-900/50 p-0.5 rounded-lg border border-zinc-850">
+                          {(['default', 'url', 'file'] as const).map((src) => (
+                            <button
+                              key={src}
+                              type="button"
+                              onClick={() => setVrmModelSource(src)}
+                              className={`py-1 text-[9px] font-mono font-bold rounded-md uppercase transition-all cursor-pointer ${
+                                vrmModelSource === src
+                                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
+                                  : 'text-zinc-400 hover:text-zinc-200'
+                              }`}
+                            >
+                              {src}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Source Configuration Input Field */}
+                        {vrmModelSource === 'default' && (
+                          <div className="flex flex-col gap-1.5 mt-1">
+                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Select Pre-loaded Model</span>
+                            <div className="flex flex-col gap-1">
+                              {(Object.keys(catalogUrls) as Array<keyof typeof catalogUrls>).map((key) => {
+                                const names = {
+                                  alicia: 'Alicia Solid (Fully Featured)',
+                                  cyberpunk: 'Cyberpunk Girl (ChatVRM Default)',
+                                  orion: 'Mannequin Orion (Wireframe Test)',
+                                  voxels: 'Voxels Character (Retro/Lightweight)'
+                                };
+                                const descs = {
+                                  alicia: 'Mascot with full expressions, blinking, textures',
+                                  cyberpunk: 'Highly optimized for conversation, expressions, lipsync',
+                                  orion: 'Skeleton rig, head tracking, no facial expressions',
+                                  voxels: 'Blocky voxel model, custom retro aesthetics'
+                                };
+                                return (
+                                  <button
+                                    key={key}
+                                    onClick={() => setCatalogSelection(key)}
+                                    className={`flex flex-col items-start text-left px-2.5 py-1.5 rounded-lg border transition-all ${
+                                      catalogSelection === key
+                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                        : 'bg-zinc-950/40 border-zinc-800/40 text-zinc-400 hover:border-zinc-700/60 hover:text-zinc-300'
+                                    }`}
+                                  >
+                                    <span className="text-[10px] font-bold tracking-wide">{names[key]}</span>
+                                    <span className="text-[9px] opacity-75 font-sans leading-normal mt-0.5">{descs[key]}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {vrmModelSource === 'url' && (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">CORS-Enabled .vrm URL</label>
+                            <input
+                              type="text"
+                              value={vrmUrl}
+                              onChange={(e) => setVrmUrl(e.target.value)}
+                              placeholder="https://example.com/avatar.vrm"
+                              className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-2 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50"
+                            />
+                          </div>
+                        )}
+
+                        {vrmModelSource === 'file' && (
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Upload Custom .vrm File</label>
+                            <div className="relative border border-dashed border-zinc-800 hover:border-emerald-500/35 transition-colors rounded-lg p-3 flex flex-col items-center justify-center bg-zinc-950/30 cursor-pointer group">
+                              <input
+                                type="file"
+                                accept=".vrm"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    if (vrmFileUrl) URL.revokeObjectURL(vrmFileUrl);
+                                    const url = URL.createObjectURL(file);
+                                    setVrmFileUrl(url);
+                                  }
+                                }}
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                              />
+                              <span className="text-[10px] text-zinc-400 group-hover:text-zinc-200 font-bold mb-0.5">
+                                {vrmFileUrl ? 'Change Loaded VRM' : 'Select VRM Model File'}
+                              </span>
+                              <span className="text-[9px] text-zinc-650 group-hover:text-zinc-550">
+                                {vrmFileUrl ? 'Custom model ready client-side' : 'Supports Vroid standard exports'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs font-bold text-white mb-0.5">Custom (CLI)</span>
-                      <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Your custom SVG, compiled via our AI Agent builder.</span>
-                    </button>
+                    )}
                   </div>
                 )}
 
@@ -738,6 +927,7 @@ function MyAvatarComponent() {
                 analyser={analyser} 
                 size={300} 
                 variant={variant} 
+                vrmUrl={activeVrmUrl}
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
@@ -846,14 +1036,21 @@ function MyAvatarComponent() {
                     )}
                   </button>
                   <pre className="whitespace-pre overflow-x-auto select-text pr-16 max-h-[40vh] scrollbar-thin">
-                    {activeTab === 'code' ? generateJSXCode() : `# 1. Install react-realtime-avatar and dependencies
+                    {activeTab === 'code' ? generateJSXCode() : (variant === 'vrm' ? `# 1. Install react-realtime-avatar and 3D dependencies
+npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei @pixiv/three-vrm
+
+# 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
+import 'react-realtime-avatar/style.css';
+
+# 3. Mount the <RealtimeAvatar /> component inside your application
+# (See the "JSX Usage" tab for your customized code snippet)` : `# 1. Install react-realtime-avatar and dependencies
 npm install react-realtime-avatar motion lucide-react
 
 # 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
 import 'react-realtime-avatar/style.css';
 
 # 3. Mount the <RealtimeAvatar /> component inside your application
-# (See the "JSX Usage" tab for your customized code snippet)`}
+# (See the "JSX Usage" tab for your customized code snippet)`)}
                   </pre>
                 </div>
 

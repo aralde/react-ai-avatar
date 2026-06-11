@@ -3,6 +3,7 @@ import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
 import { DeveloperAvatar } from './DeveloperAvatar';
 import { DeveloperAvatar2 } from './DeveloperAvatar2';
 import { CustomAvatar } from './CustomAvatar';
+import { VrmAvatar } from './VrmAvatar';
 import { AvatarState } from '../hooks/useGeminiLive';
 import { motion, useMotionValue } from 'motion/react';
 
@@ -10,7 +11,8 @@ export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'default' | 'developer' | 'developer2' | 'custom';
+  variant?: 'default' | 'developer' | 'developer2' | 'custom' | 'vrm';
+  vrmUrl?: string;
   subtitle?: string;
   thought?: string;
   showSubtitle?: boolean;
@@ -61,6 +63,7 @@ export function RealtimeAvatar({
   analyser, 
   size = 280, 
   variant = 'default', 
+  vrmUrl,
   subtitle, 
   thought, 
   showSubtitle = true,
@@ -85,11 +88,14 @@ export function RealtimeAvatar({
     blinkDuration,
     mouseTrackingIntensity,
     stateColors,
-    customization
+    customization,
+    vrmUrl
   };
 
   let AvatarComponent;
-  if (variant === 'custom') {
+  if (variant === 'vrm') {
+    AvatarComponent = <VrmAvatar {...avatarProps} />;
+  } else if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
   } else if (variant === 'developer2') {
     AvatarComponent = <DeveloperAvatar2 {...avatarProps} />;
