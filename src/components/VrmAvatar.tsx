@@ -342,8 +342,8 @@ export function VrmAvatar({
   blinkDuration,
   mouseTrackingIntensity,
   stateColors,
-  vrmUrl = '/models/default-avatar.vrm',
-}: VrmAvatarProps & { vrmUrl?: string }) {
+  vrmUrl,
+}: VrmAvatarProps) {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -390,19 +390,21 @@ export function VrmAvatar({
         <directionalLight position={[2, 2, 2]} intensity={2.2} color="#ffffff" />
 
         <VrmErrorBoundary onError={(err) => setLoadError(err)}>
-          <Suspense fallback={null}>
-            <VrmModel
-              url={vrmUrl}
-              state={state}
-              analyser={analyser}
-              maxMouthOpening={maxMouthOpening}
-              mouseTrackingIntensity={mouseTrackingIntensity}
-              blinkIntervalMin={blinkIntervalMin}
-              blinkIntervalMax={blinkIntervalMax}
-              blinkDuration={blinkDuration}
-              onLoaded={(status) => setLoaded(status)}
-            />
-          </Suspense>
+          {vrmUrl && (
+            <Suspense fallback={null}>
+              <VrmModel
+                url={vrmUrl}
+                state={state}
+                analyser={analyser}
+                maxMouthOpening={maxMouthOpening}
+                mouseTrackingIntensity={mouseTrackingIntensity}
+                blinkIntervalMin={blinkIntervalMin}
+                blinkIntervalMax={blinkIntervalMax}
+                blinkDuration={blinkDuration}
+                onLoaded={(status) => setLoaded(status)}
+              />
+            </Suspense>
+          )}
         </VrmErrorBoundary>
 
         {/* Natural locked camera orbit bounds */}
@@ -417,8 +419,20 @@ export function VrmAvatar({
         />
       </Canvas>
 
+      {/* Missing URL overlay */}
+      {!vrmUrl && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md z-20 p-4 text-center">
+          <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider mb-2">
+            Missing vrmUrl
+          </span>
+          <p className="text-[10px] text-zinc-500 max-w-[200px] leading-relaxed">
+            Pass a CORS-enabled .vrm URL via the vrmUrl prop.
+          </p>
+        </div>
+      )}
+
       {/* Loading indicator overlay */}
-      {!loaded && !loadError && (
+      {vrmUrl && !loaded && !loadError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 backdrop-blur-md z-20">
           <div className="w-10 h-10 border-4 border-t-emerald-500 border-emerald-500/20 rounded-full animate-spin mb-3"></div>
           <span className="text-[10px] font-mono font-bold tracking-widest text-zinc-400 animate-pulse">

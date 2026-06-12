@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'motion/react';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 
 export interface AvatarCustomization {
   skinColor: string;

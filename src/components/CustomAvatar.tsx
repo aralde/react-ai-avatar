@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 import { AvatarCustomization, darkenColor } from './DefaultAvatar';
 import avatarSvgRaw from '../../mi-av-5.svg?raw';
 

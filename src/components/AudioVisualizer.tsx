@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 
 export interface AudioVisualizerProps {
   analyser: AnalyserNode | null;

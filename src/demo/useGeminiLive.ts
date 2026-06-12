@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { AudioStreamer, MicRecorder } from '../lib/audio';
+import { AudioStreamer, MicRecorder } from './audio';
+import type { AvatarState } from '../lib/types';
 
-export type AvatarState = 'idle' | 'listening' | 'thinking' | 'speaking';
+export type { AvatarState };
 
 export function parseModelText(raw: string): { thought: string; speech: string } {
   let thought = '';

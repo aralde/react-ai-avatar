@@ -1,18 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Mic, 
-  MicOff, 
-  AlertCircle, 
-  Sparkles, 
-  Smile, 
-  Captions, 
-  CaptionsOff, 
-  Cpu, 
-  Terminal, 
-  User, 
-  Activity,
+  Mic,
+  MicOff,
+  AlertCircle,
+  Smile,
+  Captions,
+  CaptionsOff,
+  Cpu,
+  Terminal,
   Clock,
-  Settings,
   Code,
   Copy,
   Check,
@@ -20,7 +16,7 @@ import {
   Maximize
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useGeminiLive } from './hooks/useGeminiLive';
+import { useGeminiLive } from './demo/useGeminiLive';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
@@ -44,7 +40,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'default' | 'developer' | 'developer2' | 'custom' | 'vrm' | 'rpm'>('custom');
+  const [variant, setVariant] = useState<'default' | 'custom' | 'vrm'>('custom');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
@@ -61,24 +57,6 @@ export default function App() {
     : (vrmModelSource === 'url' 
       ? vrmUrl 
       : catalogUrls[catalogSelection]);
-
-  // Ready Player Me state
-  const [rpmModelSource, setRpmModelSource] = useState<'default' | 'url' | 'file'>('default');
-  const [rpmUrl, setRpmUrl] = useState<string>('https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb');
-  const [rpmFileUrl, setRpmFileUrl] = useState<string | null>(null);
-  const [rpmCatalogSelection, setRpmCatalogSelection] = useState<'mannequin' | 'masculine' | 'feminine' | 'caricature'>('mannequin');
-  const rpmCatalogUrls = {
-    mannequin: '/models/rpm-mannequin.glb',
-    masculine: 'https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb',
-    feminine: 'https://models.readyplayer.me/6583f740b2efcc69d71c4c37.glb',
-    caricature: '/sketchfab/old_face_-_caricature.glb'
-  };
-
-  const activeRpmUrl = rpmModelSource === 'file'
-    ? (rpmFileUrl || '')
-    : (rpmModelSource === 'url'
-      ? rpmUrl
-      : rpmCatalogUrls[rpmCatalogSelection]);
 
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
   const [duration, setDuration] = useState<number>(0);
@@ -127,7 +105,6 @@ export default function App() {
 
   // Fullscreen avatar state
   const [isFullscreenOpen, setIsFullscreenOpen] = useState<boolean>(false);
-  const [debugText, setDebugText] = useState<string>('');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -140,47 +117,6 @@ export default function App() {
   }, []);
 
   const generateJSXCode = () => {
-    if (variant === 'rpm') {
-      const displayUrl = rpmModelSource === 'url' ? rpmUrl : (rpmModelSource === 'file' ? '/* ObjectURL from local file */' : rpmCatalogUrls[rpmCatalogSelection]);
-      return `import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
-
-// Note: 3D Ready Player Me rendering requires installing Three.js, React Three Fiber & Drei:
-// npm install three @react-three/fiber @react-three/drei
-
-function MyAvatarComponent() {
-  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
-  // and a valid WebRTC AnalyserNode for interactive lipsync
-  
-  return (
-    <RealtimeAvatar 
-      state="idle"
-      analyser={null}
-      size={300}
-      variant="rpm"
-      rpmUrl="${displayUrl}"
-      maxMouthOpening={${maxMouthOpening}}
-      mouseTrackingIntensity={${mouseTrackingIntensity}}
-      blinkIntervalMin={${blinkIntervalMin}}
-      blinkIntervalMax={${blinkIntervalMax}}
-      blinkDuration={${blinkDuration}}
-      stateColors={{
-        idle: '${stateColors.idle}',
-        listening: '${stateColors.listening}',
-        thinking: '${stateColors.thinking}',
-        speaking: '${stateColors.speaking}'
-      }}
-      stateLabels={{
-        idle: '${stateLabels.idle}',
-        listening: '${stateLabels.listening}',
-        thinking: '${stateLabels.thinking}',
-        speaking: '${stateLabels.speaking}'
-      }}
-    />
-  );
-}`;
-    }
-
     if (variant === 'vrm') {
       const displayUrl = vrmModelSource === 'url' ? vrmUrl : (vrmModelSource === 'file' ? '/* ObjectURL from local file */' : catalogUrls[catalogSelection]);
       return `import { RealtimeAvatar } from 'react-realtime-avatar';
@@ -271,11 +207,9 @@ function MyAvatarComponent() {
   const copyToClipboard = () => {
     const text = activeTab === 'code' 
       ? generateJSXCode() 
-      : (variant === 'vrm' 
-          ? `npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei @pixiv/three-vrm` 
-          : (variant === 'rpm'
-              ? `npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei`
-              : `npm install react-realtime-avatar motion lucide-react`));
+      : (variant === 'vrm'
+          ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm`
+          : `npm install react-realtime-avatar motion`);
     navigator.clipboard.writeText(text).then(() => {
       setCopiedText(true);
       setTimeout(() => setCopiedText(false), 2000);
@@ -404,38 +338,6 @@ function MyAvatarComponent() {
                       </button>
 
                       <button
-                        onClick={() => setVariant('developer')}
-                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                          variant === 'developer'
-                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <User className={`w-4.5 h-4.5 ${variant === 'developer' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                          {variant === 'developer' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                        </div>
-                        <span className="text-xs font-bold text-white mb-0.5">Developer 1</span>
-                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Casual style with interactive eye tracking.</span>
-                      </button>
-
-                      <button
-                        onClick={() => setVariant('developer2')}
-                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                          variant === 'developer2'
-                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <Cpu className={`w-4.5 h-4.5 ${variant === 'developer2' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                          {variant === 'developer2' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                        </div>
-                        <span className="text-xs font-bold text-white mb-0.5">Developer 2</span>
-                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">High-fidelity SVG coder with detailed layout.</span>
-                      </button>
-
-                      <button
                         onClick={() => setVariant('custom')}
                         className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
                           variant === 'custom'
@@ -472,26 +374,6 @@ function MyAvatarComponent() {
                         </span>
                       </button>
 
-                      {/* 3D Ready Player Me Avatar Button */}
-                      <button
-                        onClick={() => setVariant('rpm')}
-                        className={`col-span-2 flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                          variant === 'rpm'
-                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">🤖</span>
-                            <span className="text-xs font-bold text-white">3D Ready Player Me</span>
-                          </div>
-                          {variant === 'rpm' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                        </div>
-                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">
-                          Standard Ready Player Me avatar with ARKit expression blendshapes, lip-syncing and local GLB body animations.
-                        </span>
-                      </button>
                     </div>
 
                     {/* VRM Configuration Sub-Panel */}
@@ -591,110 +473,6 @@ function MyAvatarComponent() {
                               </span>
                               <span className="text-[9px] text-zinc-650 group-hover:text-zinc-550">
                                 {vrmFileUrl ? 'Custom model ready client-side' : 'Supports Vroid standard exports'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Ready Player Me Configuration Sub-Panel */}
-                    {variant === 'rpm' && (
-                      <div className="bg-zinc-950/45 border border-zinc-800/60 rounded-xl p-3 flex flex-col gap-3">
-                        <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
-                          Ready Player Me Configuration
-                        </span>
-                        
-                        {/* Selector Segmented Control */}
-                        <div className="grid grid-cols-3 gap-1 bg-zinc-900/50 p-0.5 rounded-lg border border-zinc-850">
-                          {(['default', 'url', 'file'] as const).map((src) => (
-                            <button
-                              key={src}
-                              type="button"
-                              onClick={() => setRpmModelSource(src)}
-                              className={`py-1 text-[9px] font-mono font-bold rounded-md uppercase transition-all cursor-pointer ${
-                                rpmModelSource === src
-                                  ? 'bg-emerald-500 text-zinc-950 shadow-sm'
-                                  : 'text-zinc-400 hover:text-zinc-200'
-                              }`}
-                            >
-                              {src}
-                            </button>
-                          ))}
-                        </div>
-
-                        {/* Source Configuration Input Field */}
-                        {rpmModelSource === 'default' && (
-                          <div className="flex flex-col gap-1.5 mt-1">
-                            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Select Pre-loaded Model</span>
-                            <div className="flex flex-col gap-1">
-                              {(Object.keys(rpmCatalogUrls) as Array<keyof typeof rpmCatalogUrls>).map((key) => {
-                                const names = {
-                                  mannequin: 'Local RPM Mannequin (Offline Friendly)',
-                                  masculine: 'Masculine Avatar (Hex ID: 63e5...)',
-                                  feminine: 'Feminine Avatar (Hex ID: 6583...)',
-                                  caricature: 'Sketchfab Caricature'
-                                };
-                                const descs = {
-                                  mannequin: 'Optimized local T-pose reference model, loads instantly offline',
-                                  masculine: 'Fully-featured remote masculine archetype with standard textures',
-                                  feminine: 'Highly detailed remote feminine avatar with ARKit expressions',
-                                  caricature: 'Stylized 3D caricature with physical bone-driven expression and speech'
-                                };
-                                return (
-                                  <button
-                                    key={key}
-                                    onClick={() => setRpmCatalogSelection(key)}
-                                    className={`flex flex-col items-start text-left px-2.5 py-1.5 rounded-lg border transition-all ${
-                                      rpmCatalogSelection === key
-                                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                                        : 'bg-zinc-950/40 border-zinc-800/40 text-zinc-400 hover:border-zinc-700/60 hover:text-zinc-300'
-                                    }`}
-                                  >
-                                    <span className="text-[10px] font-bold tracking-wide">{names[key]}</span>
-                                    <span className="text-[9px] opacity-75 font-sans leading-normal mt-0.5">{descs[key]}</span>
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {rpmModelSource === 'url' && (
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">CORS-Enabled RPM GLB URL</label>
-                            <input
-                              type="text"
-                              value={rpmUrl}
-                              onChange={(e) => setRpmUrl(e.target.value)}
-                              placeholder="https://models.readyplayer.me/your-id.glb"
-                              className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-2 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50"
-                            />
-                          </div>
-                        )}
-
-                        {rpmModelSource === 'file' && (
-                          <div className="flex flex-col gap-1">
-                            <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Upload Custom GLB File</label>
-                            <div className="relative border border-dashed border-zinc-800 hover:border-emerald-500/35 transition-colors rounded-lg p-3 flex flex-col items-center justify-center bg-zinc-950/30 cursor-pointer group">
-                              <input
-                                type="file"
-                                accept=".glb"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    if (rpmFileUrl) URL.revokeObjectURL(rpmFileUrl);
-                                    const url = URL.createObjectURL(file);
-                                    setRpmFileUrl(url);
-                                  }
-                                }}
-                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                              />
-                              <span className="text-[10px] text-zinc-400 group-hover:text-zinc-200 font-bold mb-0.5">
-                                {rpmFileUrl ? 'Change Loaded GLB' : 'Select GLB Model File'}
-                              </span>
-                              <span className="text-[9px] text-zinc-650 group-hover:text-zinc-550">
-                                {rpmFileUrl ? 'Custom model ready client-side' : 'Supports RPM standard exports'}
                               </span>
                             </div>
                           </div>
@@ -1126,7 +904,6 @@ function MyAvatarComponent() {
                 size={avatarSize} 
                 variant={variant} 
                 vrmUrl={activeVrmUrl}
-                rpmUrl={activeRpmUrl}
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
@@ -1138,7 +915,6 @@ function MyAvatarComponent() {
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-                onDebugInfo={setDebugText}
               />
             </div>
 
@@ -1170,19 +946,6 @@ function MyAvatarComponent() {
           </div>
 
         </div>
-
-      {/* Visual Debug Panel */}
-      {debugText && (
-        <div className="fixed bottom-4 left-4 z-[90] max-w-sm bg-zinc-950/95 border border-zinc-850 rounded-xl p-3 shadow-2xl font-mono text-[9px] text-zinc-400 select-text leading-normal">
-          <div className="flex justify-between items-center border-b border-zinc-850 pb-1.5 mb-1.5 gap-4">
-            <span className="text-emerald-400 font-bold uppercase tracking-wider">3D AVATAR TELEMETRY</span>
-            <button onClick={() => setDebugText('')} className="text-zinc-600 hover:text-zinc-400 cursor-pointer">CLEAR</button>
-          </div>
-          <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed select-text scrollbar-thin">
-            {debugText}
-          </pre>
-        </div>
-      )}
 
       </div>
 
@@ -1269,27 +1032,20 @@ function MyAvatarComponent() {
                   </button>
                   <pre className="whitespace-pre overflow-x-auto select-text pr-16 max-h-[40vh] scrollbar-thin">
                     {activeTab === 'code' ? generateJSXCode() : (variant === 'vrm' ? `# 1. Install react-realtime-avatar and 3D VRM dependencies
-npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei @pixiv/three-vrm
-
-# 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
-import 'react-realtime-avatar/style.css';
-
-# 3. Mount the <RealtimeAvatar /> component inside your application
-# (See the "JSX Usage" tab for your customized code snippet)` : (variant === 'rpm' ? `# 1. Install react-realtime-avatar and 3D RPM dependencies
-npm install react-realtime-avatar motion lucide-react three @react-three/fiber @react-three/drei
+npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm
 
 # 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
 import 'react-realtime-avatar/style.css';
 
 # 3. Mount the <RealtimeAvatar /> component inside your application
 # (See the "JSX Usage" tab for your customized code snippet)` : `# 1. Install react-realtime-avatar and dependencies
-npm install react-realtime-avatar motion lucide-react
+npm install react-realtime-avatar motion
 
 # 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
 import 'react-realtime-avatar/style.css';
 
 # 3. Mount the <RealtimeAvatar /> component inside your application
-# (See the "JSX Usage" tab for your customized code snippet)`))}
+# (See the "JSX Usage" tab for your customized code snippet)`)}
                   </pre>
                 </div>
 
@@ -1345,7 +1101,6 @@ import 'react-realtime-avatar/style.css';
                 size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)} 
                 variant={variant} 
                 vrmUrl={activeVrmUrl}
-                rpmUrl={activeRpmUrl}
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
@@ -1357,7 +1112,6 @@ import 'react-realtime-avatar/style.css';
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-                onDebugInfo={setDebugText}
               />
             </motion.div>
           </div>

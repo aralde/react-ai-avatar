@@ -5,7 +5,7 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
 import { WebSocketServer } from "ws";
 import http from "http";
-import { generateMockAudioChunk, getAudioEnergy } from "./src/lib/serverUtils";
+import { generateMockAudioChunk, getAudioEnergy } from "./src/demo/serverUtils";
 
 const MOCK_RESPONSES = [
   "<thought>El usuario se ha conectado exitosamente. Generando un saludo y un cuento corto sobre un robot.</thought>" +
@@ -167,7 +167,8 @@ function setupMockSession(clientWs: any) {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  // Cloud Run (and most PaaS) inject the port to listen on via $PORT
+  const PORT = Number(process.env.PORT) || 3000;
 
   const httpServer = http.createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/live' });

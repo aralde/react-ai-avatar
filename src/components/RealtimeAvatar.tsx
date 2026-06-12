@@ -1,20 +1,21 @@
-import React, { useEffect, useRef } from 'react';
+import React, { Suspense, useEffect, useRef } from 'react';
 import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
-import { DeveloperAvatar } from './DeveloperAvatar';
-import { DeveloperAvatar2 } from './DeveloperAvatar2';
 import { CustomAvatar } from './CustomAvatar';
-import { VrmAvatar } from './VrmAvatar';
-import { RpmAvatar } from './RpmAvatar';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 import { motion, useMotionValue } from 'motion/react';
+
+// Lazy-loaded so the three.js stack (optional peer deps) is only fetched
+// when variant="vrm" is actually rendered.
+const VrmAvatarLazy = React.lazy(() =>
+  import('./VrmAvatar').then((m) => ({ default: m.VrmAvatar }))
+);
 
 export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'default' | 'developer' | 'developer2' | 'custom' | 'vrm' | 'rpm';
+  variant?: 'default' | 'custom' | 'vrm';
   vrmUrl?: string;
-  rpmUrl?: string;
   subtitle?: string;
   thought?: string;
   showSubtitle?: boolean;
@@ -42,7 +43,6 @@ export interface RealtimeAvatarProps {
     speaking?: string;
   };
   customization?: AvatarCustomization;
-  onDebugInfo?: (info: string) => void;
 }
 
 function hexToRgba(color: string, opacity: number): string {
@@ -61,15 +61,14 @@ function hexToRgba(color: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
-export function RealtimeAvatar({ 
-  state, 
-  analyser, 
-  size = 280, 
-  variant = 'default', 
+export function RealtimeAvatar({
+  state,
+  analyser,
+  size = 280,
+  variant = 'default',
   vrmUrl,
-  rpmUrl,
-  subtitle, 
-  thought, 
+  subtitle,
+  thought,
   showSubtitle = true,
   className = '',
   style,
@@ -80,12 +79,11 @@ export function RealtimeAvatar({
   mouseTrackingIntensity,
   stateColors,
   stateLabels,
-  customization,
-  onDebugInfo
+  customization
 }: RealtimeAvatarProps) {
-  const avatarProps = { 
-    state, 
-    analyser, 
+  const avatarProps = {
+    state,
+    analyser,
     size,
     maxMouthOpening,
     blinkIntervalMin,
@@ -93,23 +91,18 @@ export function RealtimeAvatar({
     blinkDuration,
     mouseTrackingIntensity,
     stateColors,
-    customization,
-    vrmUrl,
-    rpmUrl,
-    onDebugInfo
+    customization
   };
 
   let AvatarComponent;
-  if (variant === 'rpm') {
-    AvatarComponent = <RpmAvatar {...avatarProps} />;
-  } else if (variant === 'vrm') {
-    AvatarComponent = <VrmAvatar {...avatarProps} />;
+  if (variant === 'vrm') {
+    AvatarComponent = (
+      <Suspense fallback={null}>
+        <VrmAvatarLazy {...avatarProps} vrmUrl={vrmUrl} />
+      </Suspense>
+    );
   } else if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
-  } else if (variant === 'developer2') {
-    AvatarComponent = <DeveloperAvatar2 {...avatarProps} />;
-  } else if (variant === 'developer') {
-    AvatarComponent = <DeveloperAvatar {...avatarProps} />;
   } else {
     AvatarComponent = <DefaultAvatar {...avatarProps} />;
   }

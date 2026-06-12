@@ -23,15 +23,12 @@
   },
   "include": [
     "src/vite-env.d.ts",
-    "src/lib/index.ts",
-    "src/components/**/*",
-    "src/hooks/**/*",
-    "src/lib/**/*"
+    "src/lib/**/*",
+    "src/components/**/*"
   ],
   "exclude": [
+    "src/demo/**/*",
     "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/hooks/**/*.test.ts",
-    "src/lib/**/*.test.ts"
+    "src/**/*.test.tsx"
   ]
 }

@@ -10,29 +10,31 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  // Never copy the demo's public/ assets (third-party VRM models) into the package
+  publicDir: false,
   build: {
     outDir: 'dist/lib',
     lib: {
-      entry: path.resolve(__dirname, 'src/lib/index.ts'),
+      entry: {
+        index: path.resolve(__dirname, 'src/lib/index.ts'),
+        vrm: path.resolve(__dirname, 'src/lib/vrm.ts'),
+      },
       name: 'ReactRealtimeAvatar',
-      fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`,
+      fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
+      cssFileName: 'react-realtime-avatar',
       formats: ['es', 'cjs'],
     },
     rollupOptions: {
+      // Everything heavy stays out of the bundle: required peers (react, motion)
+      // and optional peers (the three.js stack, only needed for variant="vrm").
       external: [
-        'react',
-        'react-dom',
-        'motion',
-        'motion/react'
+        /^react($|\/)/,
+        /^react-dom($|\/)/,
+        /^motion($|\/)/,
+        /^three($|\/)/,
+        /^@react-three\//,
+        /^@pixiv\/three-vrm($|\/)/,
       ],
-      output: {
-        globals: {
-          react: 'React',
-          'react-dom': 'ReactDOM',
-          motion: 'Motion',
-          'motion/react': 'MotionReact'
-        }
-      }
-    }
-  }
+    },
+  },
 });
