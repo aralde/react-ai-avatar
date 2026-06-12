@@ -1,19 +1,21 @@
-# Walkthrough: Avatar Code Exporter
+# Walkthrough: Dashboard Layout Sizing and Surface Optimization
 
-We have added a code export functionality to the Realtime Avatar builder/web page. This allows users to copy the exact configuration code for their customized avatar to implement it on other websites.
+We have resolved the layout squishing issue by moving visual elements to better utilize the page's surface area. Specifically, the audio visualizer and session telemetry data have been relocated to the right column Stage area, allowing the left column Config panel to expand to its full height.
 
 ## Changes Made
 
-### 1. [App.tsx](file:///t:/Dev/personal/_myProductionGithub/0.Portfolio/realtime-avatar-demo/src/App.tsx)
-- **Imports**: Added `motion` and `AnimatePresence` from `motion/react` for smooth transitions. Imported `Code`, `Copy`, `Check`, and `X` from `lucide-react` for rich visual elements.
-- **State Hooks**: Added `isCodeModalOpen`, `copiedText`, and `activeTab` states.
-- **Code Generator Utility**: Implemented `generateJSXCode()` to output a beautifully indented React code snippet with the exact custom options selected by the user (variant, mouth size, gaze intensity, blink speed/duration, and customizable theme palette/labels).
-- **Stage controls**: Wrapped the Stage Header controls and added a **"CODE"** button right next to the subtitle captions button.
-- **Glassmorphic Modal Dialog**: Created a responsive dialog overlay featuring:
-  - Backdrop blur click-out support.
-  - Tab selectors to toggle between **JSX Usage** and the **Setup Guide**.
-  - A copy button that updates to a green checkmark saying "COPIED!" for 2 seconds after a successful copy.
-  - Detailed integration guidelines outlining requirements (sizes, states, and audio analyser nodes).
+### 1. Left Column Optimization
+- **App.tsx**: Removed the `Real-time Telemetry Visualizer` box from the left column.
+- **App.tsx**: Removed the restrictive `min-h-[200px]` constraint from the `Config & Control Center` container, replacing it with `min-h-[350px] lg:min-h-0`.
+- **Outcome**: The Config panel now expands to fill the entire vertical height of the left column. Options (like Variant grid, calibration sliders, and cosmetic color pickers) now fit perfectly without severe squishing.
+
+### 2. Right Column (Stage) Sizing & Waveform Relocation
+- **App.tsx**: Rendered the `<AudioVisualizer>` and telemetry status descriptions at the bottom of the right column Stage, just above the telemetry stamp.
+- **Outcome**: 
+  - The waveform visualizer now spans the full width of the Stage, providing a much wider, more detailed and premium visual wave display.
+  - The status description text (e.g. "Console Standby. Ready to initiate neural link.") is cleanly centered below the visualizer, serving as an output status terminal line.
+- **App.tsx**: Integrated the session state and latency link info directly into the Footer Telemetry Stamp:
+  `CORE NODE: GEMINI-3.1-FLASH-LIVE | LINK: ACTIVE | STATE: LISTENING`
 
 ---
 
@@ -30,12 +32,3 @@ We have added a code export functionality to the Realtime Avatar builder/web pag
   npm run build
   ```
   *Status: Passed (0 errors)*
-
-### Manual Test Steps (for User Verification)
-1. Run the local dev server using `npm run dev`.
-2. Open the page and modify customization sliders (e.g. increase Mouth Opening Limit or change the Listening State Color).
-3. Click the **"CODE"** button at the top-right of the avatar box.
-4. Verify the modal pops up smoothly and displays your modified values in the JSX code block.
-5. Click the **"COPY CODE"** button and confirm it shows "COPIED!".
-6. Paste the code into your IDE to verify the clipboard contents.
-7. Switch to the **"SETUP GUIDE"** tab to check the command line setup instructions.

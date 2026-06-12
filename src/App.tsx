@@ -16,7 +16,8 @@ import {
   Code,
   Copy,
   Check,
-  X
+  X,
+  Maximize
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGeminiLive } from './hooks/useGeminiLive';
@@ -26,6 +27,23 @@ import { AvatarCustomization } from './components/DefaultAvatar';
 
 export default function App() {
   const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
+  const [avatarSize, setAvatarSize] = useState<number>(300);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setAvatarSize(420); // larger size on desktop
+      } else if (window.innerWidth >= 768) {
+        setAvatarSize(360); // medium size on tablet
+      } else {
+        setAvatarSize(300); // smaller size on mobile to prevent overflow
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const [variant, setVariant] = useState<'default' | 'developer' | 'developer2' | 'custom' | 'vrm' | 'rpm'>('custom');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
@@ -48,11 +66,12 @@ export default function App() {
   const [rpmModelSource, setRpmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [rpmUrl, setRpmUrl] = useState<string>('https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb');
   const [rpmFileUrl, setRpmFileUrl] = useState<string | null>(null);
-  const [rpmCatalogSelection, setRpmCatalogSelection] = useState<'mannequin' | 'masculine' | 'feminine'>('mannequin');
+  const [rpmCatalogSelection, setRpmCatalogSelection] = useState<'mannequin' | 'masculine' | 'feminine' | 'caricature'>('mannequin');
   const rpmCatalogUrls = {
     mannequin: '/models/rpm-mannequin.glb',
     masculine: 'https://models.readyplayer.me/63e569fb6f759e4d1df880a2.glb',
-    feminine: 'https://models.readyplayer.me/6583f740b2efcc69d71c4c37.glb'
+    feminine: 'https://models.readyplayer.me/6583f740b2efcc69d71c4c37.glb',
+    caricature: '/sketchfab/old_face_-_caricature.glb'
   };
 
   const activeRpmUrl = rpmModelSource === 'file'
@@ -105,6 +124,20 @@ export default function App() {
   const [isCodeModalOpen, setIsCodeModalOpen] = useState<boolean>(false);
   const [copiedText, setCopiedText] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<'code' | 'instructions'>('code');
+
+  // Fullscreen avatar state
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState<boolean>(false);
+  const [debugText, setDebugText] = useState<string>('');
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsFullscreenOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const generateJSXCode = () => {
     if (variant === 'rpm') {
@@ -311,37 +344,8 @@ function MyAvatarComponent() {
           {/* LEFT COLUMN: Controls & Settings (lg:col-span-5) */}
           <div className="lg:col-span-5 flex flex-col gap-4 lg:h-full lg:overflow-y-hidden pr-1">
             
-            {/* Real-time Telemetry Visualizer */}
-            <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-4 backdrop-blur-md shrink-0">
-              <h2 className="text-[10px] font-bold font-mono uppercase text-zinc-400 tracking-wider mb-2 flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                Live Telemetry & Signals
-              </h2>
-              <div className="mb-2">
-                <AudioVisualizer analyser={analyser} state={state} height={70} stateColors={stateColors} />
-              </div>
-              <div className="bg-zinc-950/80 border border-zinc-800/50 rounded-xl p-2.5 flex flex-col gap-1 font-mono text-[11px]">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">SESSION STATE:</span>
-                  <span 
-                    className="font-bold uppercase"
-                    style={{ color: stateColors[state as keyof typeof stateColors] }}
-                  >
-                    {stateLabels[state as keyof typeof stateLabels] || state}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">LATENCY LINK:</span>
-                  <span className="text-zinc-300 font-bold">{isConnected ? 'Active (WebSocket)' : 'Offline'}</span>
-                </div>
-                <div className="text-zinc-400 border-t border-zinc-800/80 mt-1.5 pt-1.5 leading-normal text-[10px]">
-                  {telemetryStates[state]}
-                </div>
-              </div>
-            </div>
-
             {/* Config & Control Center (Tabbed) */}
-            <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl backdrop-blur-md flex flex-col overflow-hidden flex-1 min-h-[200px]">
+            <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl backdrop-blur-md flex flex-col overflow-hidden flex-1 min-h-[350px] lg:min-h-0">
               {/* Tab Switcher */}
               <div className="flex border-b border-zinc-800/40 bg-zinc-950/20 shrink-0">
                 <button 
@@ -628,12 +632,14 @@ function MyAvatarComponent() {
                                 const names = {
                                   mannequin: 'Local RPM Mannequin (Offline Friendly)',
                                   masculine: 'Masculine Avatar (Hex ID: 63e5...)',
-                                  feminine: 'Feminine Avatar (Hex ID: 6583...)'
+                                  feminine: 'Feminine Avatar (Hex ID: 6583...)',
+                                  caricature: 'Sketchfab Caricature'
                                 };
                                 const descs = {
                                   mannequin: 'Optimized local T-pose reference model, loads instantly offline',
                                   masculine: 'Fully-featured remote masculine archetype with standard textures',
-                                  feminine: 'Highly detailed remote feminine avatar with ARKit expressions'
+                                  feminine: 'Highly detailed remote feminine avatar with ARKit expressions',
+                                  caricature: 'Stylized 3D caricature with physical bone-driven expression and speech'
                                 };
                                 return (
                                   <button
@@ -1100,15 +1106,24 @@ function MyAvatarComponent() {
                   <Code className="w-3.5 h-3.5 text-emerald-400" />
                   <span>CODE</span>
                 </button>
+
+                <button
+                  onClick={() => setIsFullscreenOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 cursor-pointer"
+                  title="View Avatar Fullscreen"
+                >
+                  <Maximize className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>FULLSCREEN</span>
+                </button>
               </div>
             </div>
 
             {/* Center Avatar Core Stage */}
-            <div className="flex-1 flex items-center justify-center w-full my-4 min-h-[280px]">
+            <div className="flex-1 flex items-center justify-center w-full my-4 min-h-[300px] lg:min-h-[420px]">
               <RealtimeAvatar 
                 state={state} 
                 analyser={analyser} 
-                size={300} 
+                size={avatarSize} 
                 variant={variant} 
                 vrmUrl={activeVrmUrl}
                 rpmUrl={activeRpmUrl}
@@ -1123,18 +1138,51 @@ function MyAvatarComponent() {
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
+                onDebugInfo={setDebugText}
               />
+            </div>
+
+            {/* Audio Waveform Telemetry Overlay */}
+            <div className="z-10 w-full mb-3 shrink-0 flex flex-col gap-2">
+              <AudioVisualizer analyser={analyser} state={state} height={70} stateColors={stateColors} />
+              <div className="text-[10px] font-mono text-zinc-400 text-center uppercase tracking-widest leading-normal">
+                {telemetryStates[state]}
+              </div>
             </div>
 
             {/* Footer Telemetry Stamp */}
             <div className="flex justify-between items-center text-[10px] font-mono text-zinc-500 border-t border-zinc-800/40 pt-4 z-10">
-              <span>CORE NODE: GEMINI-3.1-FLASH-LIVE</span>
-              <span className="animate-pulse">SYSTEM ONLINE</span>
+              <div className="flex flex-wrap gap-x-4 gap-y-1">
+                <span>CORE NODE: GEMINI-3.1-FLASH-LIVE</span>
+                <span className="hidden sm:inline text-zinc-800">|</span>
+                <span>LINK: {isConnected ? 'ACTIVE' : 'STANDBY'}</span>
+                <span className="hidden sm:inline text-zinc-800">|</span>
+                <span className="uppercase" style={{ color: stateColors[state as keyof typeof stateColors] }}>
+                  STATE: {stateLabels[state as keyof typeof stateLabels] || state}
+                </span>
+              </div>
+              <span className="animate-pulse flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                SYSTEM ONLINE
+              </span>
             </div>
 
           </div>
 
         </div>
+
+      {/* Visual Debug Panel */}
+      {debugText && (
+        <div className="fixed bottom-4 left-4 z-[90] max-w-sm bg-zinc-950/95 border border-zinc-850 rounded-xl p-3 shadow-2xl font-mono text-[9px] text-zinc-400 select-text leading-normal">
+          <div className="flex justify-between items-center border-b border-zinc-850 pb-1.5 mb-1.5 gap-4">
+            <span className="text-emerald-400 font-bold uppercase tracking-wider">3D AVATAR TELEMETRY</span>
+            <button onClick={() => setDebugText('')} className="text-zinc-600 hover:text-zinc-400 cursor-pointer">CLEAR</button>
+          </div>
+          <pre className="whitespace-pre-wrap max-h-40 overflow-y-auto leading-relaxed select-text scrollbar-thin">
+            {debugText}
+          </pre>
+        </div>
+      )}
 
       </div>
 
@@ -1255,6 +1303,62 @@ import 'react-realtime-avatar/style.css';
                   </p>
                 </div>
               </div>
+            </motion.div>
+          </div>
+        )}
+        {isFullscreenOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/95 backdrop-blur-2xl p-6">
+            {/* Close handler backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsFullscreenOpen(false)}
+              className="absolute inset-0 cursor-zoom-out"
+            />
+
+            {/* Floating Close Button */}
+            <button
+              onClick={() => setIsFullscreenOpen(false)}
+              className="absolute top-6 right-6 z-50 p-3 rounded-full border border-zinc-800 bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700 hover:rotate-90 transition-all duration-300 cursor-pointer"
+              title="Close Fullscreen (Esc)"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {/* ESC Guide Tag */}
+            <div className="absolute top-6 left-6 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-800 bg-zinc-900/60 text-zinc-500 text-[10px] font-mono font-bold tracking-widest uppercase">
+              <span>Esc to exit</span>
+            </div>
+
+            {/* Massive Avatar Component */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 10 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 150 }}
+              className="relative z-10 w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center"
+            >
+              <RealtimeAvatar 
+                state={state} 
+                analyser={analyser} 
+                size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)} 
+                variant={variant} 
+                vrmUrl={activeVrmUrl}
+                rpmUrl={activeRpmUrl}
+                subtitle={subtitle}
+                thought={thought}
+                showSubtitle={showSubtitle}
+                maxMouthOpening={maxMouthOpening}
+                mouseTrackingIntensity={mouseTrackingIntensity}
+                blinkIntervalMin={blinkIntervalMin}
+                blinkIntervalMax={blinkIntervalMax}
+                blinkDuration={blinkDuration}
+                stateColors={stateColors}
+                stateLabels={stateLabels}
+                customization={customization}
+                onDebugInfo={setDebugText}
+              />
             </motion.div>
           </div>
         )}

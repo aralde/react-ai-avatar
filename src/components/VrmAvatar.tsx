@@ -362,12 +362,12 @@ export function VrmAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-full overflow-hidden border border-zinc-800/40 bg-zinc-950/40 ${className}`}
+      className={`relative flex items-center justify-center rounded-3xl overflow-hidden border border-zinc-800/40 bg-zinc-950/40 ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {/* 3D R3F Canvas */}
       <Canvas
-        camera={{ position: [0, 1.43, 0.8], fov: 42 }}
+        camera={{ position: [0, 1.43, 0.88], fov: 44 }}
         shadows
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
         style={{ width: '100%', height: '100%', background: 'transparent' }}

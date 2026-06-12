@@ -42,6 +42,7 @@ export interface RealtimeAvatarProps {
     speaking?: string;
   };
   customization?: AvatarCustomization;
+  onDebugInfo?: (info: string) => void;
 }
 
 function hexToRgba(color: string, opacity: number): string {
@@ -79,7 +80,8 @@ export function RealtimeAvatar({
   mouseTrackingIntensity,
   stateColors,
   stateLabels,
-  customization
+  customization,
+  onDebugInfo
 }: RealtimeAvatarProps) {
   const avatarProps = { 
     state, 
@@ -93,7 +95,8 @@ export function RealtimeAvatar({
     stateColors,
     customization,
     vrmUrl,
-    rpmUrl
+    rpmUrl,
+    onDebugInfo
   };
 
   let AvatarComponent;
@@ -177,7 +180,7 @@ export function RealtimeAvatar({
       
       {/* Futuristic Holographic Projection Ring / Aura Behind Avatar */}
       <motion.div
-        className="absolute rounded-full border-2 border-dashed pointer-events-none"
+        className="absolute rounded-[2rem] border-2 border-dashed pointer-events-none"
         style={{
           width: size * 1.05,
           height: size * 1.05,
@@ -193,7 +196,7 @@ export function RealtimeAvatar({
       />
 
       <motion.div
-        className="absolute rounded-full pointer-events-none filter blur-2xl"
+        className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
         style={{
           width: size * 0.9,
           height: size * 0.9,

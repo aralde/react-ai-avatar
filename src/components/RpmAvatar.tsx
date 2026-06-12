@@ -1,16 +1,18 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { useGLTF, useAnimations, OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { AvatarProps } from './DefaultAvatar';
 
 export interface RpmAvatarProps extends AvatarProps {
   rpmUrl?: string;
+  onDebugInfo?: (info: string) => void;
 }
 
 // Error Boundary to gracefully catch loader issues
 class RpmErrorBoundary extends React.Component<
-  { children: React.ReactNode; onError: (err: string) => void },
+  { children: React.ReactNode; onError: (err: string) => void; onDebugInfo?: (info: string) => void },
   { hasError: boolean }
 > {
   constructor(props: any) {
@@ -23,7 +25,11 @@ class RpmErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: any) {
-    this.props.onError(error?.message || String(error));
+    const errMsg = error?.message || String(error);
+    this.props.onError(errMsg);
+    if (this.props.onDebugInfo) {
+      this.props.onDebugInfo(`Load Error: ${errMsg}`);
+    }
   }
 
   render() {
@@ -76,6 +82,7 @@ function RpmModel({
   blinkIntervalMax = 6000,
   blinkDuration = 100,
   onLoaded,
+  onDebugInfo,
 }: {
   url: string;
   state: string;
@@ -86,9 +93,27 @@ function RpmModel({
   blinkIntervalMax?: number;
   blinkDuration?: number;
   onLoaded: (loaded: boolean) => void;
+  onDebugInfo?: (info: string) => void;
 }) {
-  // Load the Ready Player Me GLB avatar model
-  const { scene } = useGLTF(url);
+  // Load the Ready Player Me GLB avatar model (destructuring scene and animations)
+  const { scene, animations: modelAnimations } = useGLTF(url);
+  const isCaricature = url.includes('old_face_-_caricature.glb');
+
+  // Clone the scene for this instance to prevent multiple-rendering conflicts
+  const clonedScene = useMemo(() => {
+    return SkeletonUtils.clone(scene);
+  }, [scene]);
+
+  // Dynamic state for model position and scale
+  const [modelPos, setModelPos] = useState<[number, number, number]>(isCaricature ? [0, 17.3, -4.2] : [0, -1.32, 0]);
+  const [modelScale, setModelScale] = useState<number>(isCaricature ? 4 : 1);
+
+  // Prevent dynamic scaling infinite loop
+  const hasCalculated = useRef(false);
+
+  useEffect(() => {
+    hasCalculated.current = false;
+  }, [url]);
 
   // Load state body animations (GLB formats from FilamentGames RPM animation-library)
   const idleGltf = useGLTF('/animations/rpm/idle.glb');
@@ -106,44 +131,163 @@ function RpmModel({
     if (idleClip) clips.push(cleanAnimationClip(idleClip, 'idle'));
     if (talkingClip) clips.push(cleanAnimationClip(talkingClip, 'talking'));
     if (thinkingClip) clips.push(cleanAnimationClip(thinkingClip, 'thinking'));
+    
+    // Add caricature model's native animations if present
+    if (modelAnimations && modelAnimations.length > 0) {
+      modelAnimations.forEach((clip) => {
+        clips.push(clip);
+      });
+    }
     return clips;
-  }, [idleClip, talkingClip, thinkingClip]);
+  }, [idleClip, talkingClip, thinkingClip, modelAnimations]);
 
-  // Hook up useAnimations mixer
-  const { actions, mixer } = useAnimations(cleanedClips, scene);
+  // Hook up useAnimations mixer to cloned scene
+  const { actions, mixer } = useAnimations(cleanedClips, clonedScene);
 
-  // Active bone references for gaze tracking
+  // Active bone references
   const neckRef = useRef<THREE.Object3D | null>(null);
   const headRef = useRef<THREE.Object3D | null>(null);
+  const jawRef = useRef<THREE.Object3D | null>(null);
+  const paupGRef = useRef<THREE.Object3D | null>(null);
+  const paupDRef = useRef<THREE.Object3D | null>(null);
+  const eyeDRef = useRef<THREE.Object3D | null>(null);
+  const eyeGRef = useRef<THREE.Object3D | null>(null);
+
+  // Default rotation storage to apply relative procedural motions
+  const defaultNeckRotation = useRef<THREE.Euler | null>(null);
+  const defaultHeadRotation = useRef<THREE.Euler | null>(null);
+  const defaultJawRotation = useRef<THREE.Euler | null>(null);
+  const defaultPaupGRotation = useRef<THREE.Euler | null>(null);
+  const defaultPaupDRotation = useRef<THREE.Euler | null>(null);
+  const defaultEyeDRotation = useRef<THREE.Euler | null>(null);
+  const defaultEyeGRotation = useRef<THREE.Euler | null>(null);
 
   useEffect(() => {
-    if (scene) {
+    if (clonedScene) {
       onLoaded(true);
 
       // Disable frustum culling to prevent avatar flickering when camera angles get close
-      scene.traverse((obj) => {
+      clonedScene.traverse((obj) => {
         obj.frustumCulled = false;
         if ((obj as any).isMesh) {
           obj.castShadow = true;
           obj.receiveShadow = true;
+
+          const mesh = obj as THREE.Mesh;
+          // Rebuild material for caricature to standard PBR to prevent black rendering
+          if (isCaricature && mesh.material) {
+            const mat = mesh.material as any;
+            const standardMat = new THREE.MeshStandardMaterial({
+              color: mat.color || new THREE.Color('#ffffff'),
+              map: mat.map || mat.diffuseMap || null,
+              normalMap: mat.normalMap || null,
+              normalScale: mat.normalScale || new THREE.Vector2(1, 1),
+              roughness: 0.55,
+              metalness: 0.1,
+              emissive: mat.emissive || new THREE.Color('#000000'),
+              emissiveMap: mat.emissiveMap || null,
+              aoMap: mat.aoMap || null,
+              transparent: mat.transparent || false,
+              opacity: mat.opacity !== undefined ? mat.opacity : 1.0,
+              side: THREE.DoubleSide
+            });
+            mesh.material = standardMat;
+          }
         }
       });
 
       // Find tracking bones
-      neckRef.current = scene.getObjectByName('Neck') || scene.getObjectByName('mixamorigNeck') || null;
-      headRef.current = scene.getObjectByName('Head') || scene.getObjectByName('mixamorigHead') || null;
+      neckRef.current = clonedScene.getObjectByName('Neck') || clonedScene.getObjectByName('mixamorigNeck') || clonedScene.getObjectByName('Neck_00') || null;
+      headRef.current = clonedScene.getObjectByName('Head') || clonedScene.getObjectByName('mixamorigHead') || clonedScene.getObjectByName('Head_01') || null;
+      jawRef.current = clonedScene.getObjectByName('Jaw1_02') || null;
+      paupGRef.current = clonedScene.getObjectByName('PaupG_06') || null;
+      paupDRef.current = clonedScene.getObjectByName('PaupD_07') || null;
+      eyeDRef.current = clonedScene.getObjectByName('EyeD_04') || null;
+      eyeGRef.current = clonedScene.getObjectByName('EyeG_05') || null;
 
-      console.log(
-        "[RPM] Model loaded successfully. Found Neck bone:", 
-        !!neckRef.current, 
-        "Head bone:", 
-        !!headRef.current
-      );
+      // Capture default rotations
+      if (neckRef.current) defaultNeckRotation.current = neckRef.current.rotation.clone();
+      if (headRef.current) defaultHeadRotation.current = headRef.current.rotation.clone();
+      if (jawRef.current) defaultJawRotation.current = jawRef.current.rotation.clone();
+      if (paupGRef.current) defaultPaupGRotation.current = paupGRef.current.rotation.clone();
+      if (paupDRef.current) defaultPaupDRotation.current = paupDRef.current.rotation.clone();
+      if (eyeDRef.current) defaultEyeDRotation.current = eyeDRef.current.rotation.clone();
+      if (eyeGRef.current) defaultEyeGRotation.current = eyeGRef.current.rotation.clone();
+
+      // Diagnostics & Dynamic Scaling/Positioning
+      if (!hasCalculated.current) {
+        hasCalculated.current = true;
+
+        const box = new THREE.Box3().setFromObject(clonedScene);
+        const sizeVec = new THREE.Vector3();
+        const centerVec = new THREE.Vector3();
+        box.getSize(sizeVec);
+        box.getCenter(centerVec);
+
+        // Perform auto-scaling math
+        if (isCaricature) {
+          // Read current scale factor (usually initialized to 4)
+          const currentScale = clonedScene.scale.y || 4;
+          const rawHeight = sizeVec.y / currentScale;
+          const rawCenterY = centerVec.y / currentScale;
+          const rawCenterZ = centerVec.z / currentScale;
+
+          // Target height of ~0.65 units so the head takes up a good portion of viewport
+          const targetHeight = 0.65;
+          const finalScale = targetHeight / rawHeight;
+
+          // Target world position of head center should be [0, 0.28, 0]
+          const targetCenterY = 0.28;
+          const targetCenterZ = 0;
+
+          const finalPosY = targetCenterY - (rawCenterY * finalScale);
+          const finalPosZ = targetCenterZ - (rawCenterZ * finalScale);
+
+          console.log(`[RPM Caricature Bounding Box] rawHeight=${rawHeight.toFixed(6)}, rawCenter=[0, ${rawCenterY.toFixed(6)}, ${rawCenterZ.toFixed(6)}]`);
+          console.log(`[RPM Caricature Scaling] Setting scale to ${finalScale.toFixed(4)}, position to [0, ${finalPosY.toFixed(4)}, ${finalPosZ.toFixed(4)}]`);
+
+          setModelScale(finalScale);
+          setModelPos([0, finalPosY, finalPosZ]);
+        } else {
+          setModelScale(1);
+          setModelPos([0, -1.32, 0]);
+        }
+
+        let meshDetails = '';
+        clonedScene.traverse((obj) => {
+          if ((obj as any).isMesh) {
+            const mesh = obj as THREE.Mesh;
+            const matType = mesh.material ? (Array.isArray(mesh.material) ? mesh.material.map(m => m.type).join(',') : mesh.material.type) : 'none';
+            meshDetails += `\n- Mesh "${mesh.name}": visible=${mesh.visible}, mat=${matType}`;
+          }
+        });
+
+        const debugMsg = `URL: ${url}
+Size: [${sizeVec.x.toFixed(4)}, ${sizeVec.y.toFixed(4)}, ${sizeVec.z.toFixed(4)}]
+Center: [${centerVec.x.toFixed(4)}, ${centerVec.y.toFixed(4)}, ${centerVec.z.toFixed(4)}]
+Meshes: ${meshDetails}
+Bones: Neck=${!!neckRef.current}, Head=${!!headRef.current}, Jaw=${!!jawRef.current}, Eyelids=[${!!paupGRef.current}, ${!!paupDRef.current}]`;
+
+        console.log("[RPM] Bounding Box Details:", debugMsg);
+        if (onDebugInfo) {
+          onDebugInfo(debugMsg);
+        }
+      }
     }
-  }, [scene, onLoaded]);
+  }, [clonedScene, onLoaded, isCaricature, url, onDebugInfo]);
 
   // Handle animation crossfades based on state
   useEffect(() => {
+    if (isCaricature) {
+      const action = actions['Take 001'];
+      if (action) {
+        action.reset().fadeIn(0.25).play();
+      }
+      return () => {
+        if (action) action.fadeOut(0.25);
+      };
+    }
+
     let activeActionName = 'idle';
     if (state === 'speaking') {
       activeActionName = 'talking';
@@ -162,7 +306,7 @@ function RpmModel({
         action.fadeOut(0.25);
       }
     };
-  }, [state, actions]);
+  }, [state, actions, isCaricature]);
 
   // Smoothed mouth shape tracking refs
   const currentAa = useRef(0);
@@ -183,7 +327,7 @@ function RpmModel({
   const frequencyData = useRef<Uint8Array | null>(null);
 
   useFrame((threeState, delta) => {
-    if (!scene) return;
+    if (!clonedScene) return;
 
     const neck = neckRef.current;
     const head = headRef.current;
@@ -195,25 +339,53 @@ function RpmModel({
     const targetRotY = mouseX * 0.30 * mouseTrackingIntensity;
     const targetRotX = -mouseY * 0.18 * mouseTrackingIntensity;
 
-    if (state === 'thinking') {
-      // Make model look slightly up-left while thinking
-      if (neck) {
-        neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, -0.18, 0.05);
-        neck.rotation.x = THREE.MathUtils.lerp(neck.rotation.x, 0.12, 0.05);
+    if (isCaricature) {
+      const targetNeckY = state === 'thinking' ? -0.18 : targetRotY;
+      const targetNeckX = state === 'thinking' ? 0.12 : targetRotX;
+      const targetHeadY = state === 'thinking' ? -0.05 : targetRotY * 0.2;
+      const targetHeadX = state === 'thinking' ? 0.05 : targetRotX * 0.2;
+
+      if (neck && defaultNeckRotation.current) {
+        neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, defaultNeckRotation.current.y + targetNeckY, 0.1);
+        neck.rotation.x = THREE.MathUtils.lerp(neck.rotation.x, defaultNeckRotation.current.x + targetNeckX, 0.1);
       }
-      if (head) {
-        head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, -0.05, 0.05);
-        head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, 0.05, 0.05);
+      if (head && defaultHeadRotation.current) {
+        head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, defaultHeadRotation.current.y + targetHeadY, 0.1);
+        head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, defaultHeadRotation.current.x + targetHeadX, 0.1);
+      }
+      
+      // Eye Gaze Tracking
+      const eyeD = eyeDRef.current;
+      const eyeG = eyeGRef.current;
+      if (eyeD && defaultEyeDRotation.current) {
+        eyeD.rotation.y = THREE.MathUtils.lerp(eyeD.rotation.y, defaultEyeDRotation.current.y + targetRotY * 0.4, 0.1);
+        eyeD.rotation.x = THREE.MathUtils.lerp(eyeD.rotation.x, defaultEyeDRotation.current.x + targetRotX * 0.4, 0.1);
+      }
+      if (eyeG && defaultEyeGRotation.current) {
+        eyeG.rotation.y = THREE.MathUtils.lerp(eyeG.rotation.y, defaultEyeGRotation.current.y + targetRotY * 0.4, 0.1);
+        eyeG.rotation.x = THREE.MathUtils.lerp(eyeG.rotation.x, defaultEyeGRotation.current.x + targetRotX * 0.4, 0.1);
       }
     } else {
-      // Turn neck/head to look at cursor
-      if (neck) {
-        neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, targetRotY, 0.1);
-        neck.rotation.x = THREE.MathUtils.lerp(neck.rotation.x, targetRotX, 0.1);
-      }
-      if (head) {
-        head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, targetRotY * 0.2, 0.1);
-        head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, targetRotX * 0.2, 0.1);
+      if (state === 'thinking') {
+        // Make model look slightly up-left while thinking
+        if (neck) {
+          neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, -0.18, 0.05);
+          neck.rotation.x = THREE.MathUtils.lerp(neck.rotation.x, 0.12, 0.05);
+        }
+        if (head) {
+          head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, -0.05, 0.05);
+          head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, 0.05, 0.05);
+        }
+      } else {
+        // Turn neck/head to look at cursor
+        if (neck) {
+          neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, targetRotY, 0.1);
+          neck.rotation.x = THREE.MathUtils.lerp(neck.rotation.x, targetRotX, 0.1);
+        }
+        if (head) {
+          head.rotation.y = THREE.MathUtils.lerp(head.rotation.y, targetRotY * 0.2, 0.1);
+          head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, targetRotX * 0.2, 0.1);
+        }
       }
     }
 
@@ -239,9 +411,20 @@ function RpmModel({
       if (blinkVal.current < 0) blinkVal.current = 0;
     }
 
-    // Apply blink blendshapes
-    setMorphTarget(scene, 'eyeBlinkLeft', blinkVal.current);
-    setMorphTarget(scene, 'eyeBlinkRight', blinkVal.current);
+    // Apply blink animation
+    if (isCaricature) {
+      const paupG = paupGRef.current;
+      const paupD = paupDRef.current;
+      if (paupG && defaultPaupGRotation.current) {
+        paupG.rotation.z = defaultPaupGRotation.current.z + blinkVal.current * 0.22;
+      }
+      if (paupD && defaultPaupDRotation.current) {
+        paupD.rotation.z = defaultPaupDRotation.current.z - blinkVal.current * 0.22;
+      }
+    } else {
+      setMorphTarget(clonedScene, 'eyeBlinkLeft', blinkVal.current);
+      setMorphTarget(clonedScene, 'eyeBlinkRight', blinkVal.current);
+    }
 
     // 3. Emotional Expression Mapping based on State (ARKit Blendshapes)
     let targetSmile = 0;
@@ -262,10 +445,12 @@ function RpmModel({
     currentFrown.current = THREE.MathUtils.lerp(currentFrown.current, targetFrown, 0.1);
 
     // Set standard base emotions
-    setMorphTarget(scene, 'mouthSmileLeft', currentSmile.current);
-    setMorphTarget(scene, 'mouthSmileRight', currentSmile.current);
-    setMorphTarget(scene, 'mouthFrownLeft', currentFrown.current);
-    setMorphTarget(scene, 'mouthFrownRight', currentFrown.current);
+    if (!isCaricature) {
+      setMorphTarget(clonedScene, 'mouthSmileLeft', currentSmile.current);
+      setMorphTarget(clonedScene, 'mouthSmileRight', currentSmile.current);
+      setMorphTarget(clonedScene, 'mouthFrownLeft', currentFrown.current);
+      setMorphTarget(clonedScene, 'mouthFrownRight', currentFrown.current);
+    }
 
     // 4. Viseme-based Lip-Syncing
     if (analyser && state === 'speaking') {
@@ -332,26 +517,34 @@ function RpmModel({
       currentAa.current = THREE.MathUtils.lerp(currentAa.current, targetAa, 0.25);
       currentEe.current = THREE.MathUtils.lerp(currentEe.current, targetEe, 0.25);
       currentOo.current = THREE.MathUtils.lerp(currentOo.current, targetOo, 0.25);
-
-      setMorphTarget(scene, 'jawOpen', currentAa.current);
-      setMorphTarget(scene, 'mouthSmileLeft', Math.max(currentSmile.current, currentEe.current));
-      setMorphTarget(scene, 'mouthSmileRight', Math.max(currentSmile.current, currentEe.current));
-      setMorphTarget(scene, 'mouthPucker', currentOo.current);
-      setMorphTarget(scene, 'mouthFunnel', currentOo.current);
     } else {
       currentAa.current = THREE.MathUtils.lerp(currentAa.current, 0, 0.2);
       currentEe.current = THREE.MathUtils.lerp(currentEe.current, 0, 0.2);
       currentOo.current = THREE.MathUtils.lerp(currentOo.current, 0, 0.2);
+    }
 
-      setMorphTarget(scene, 'jawOpen', currentAa.current);
-      setMorphTarget(scene, 'mouthSmileLeft', currentSmile.current);
-      setMorphTarget(scene, 'mouthSmileRight', currentSmile.current);
-      setMorphTarget(scene, 'mouthPucker', currentOo.current);
-      setMorphTarget(scene, 'mouthFunnel', currentOo.current);
+    if (isCaricature) {
+      const jaw = jawRef.current;
+      if (jaw && defaultJawRotation.current) {
+        const mouthOpenVal = currentAa.current * 1.0 + currentOo.current * 0.7;
+        jaw.rotation.z = defaultJawRotation.current.z + mouthOpenVal * 0.22;
+      }
+    } else {
+      setMorphTarget(clonedScene, 'jawOpen', currentAa.current);
+      setMorphTarget(clonedScene, 'mouthSmileLeft', state === 'speaking' ? Math.max(currentSmile.current, currentEe.current) : currentSmile.current);
+      setMorphTarget(clonedScene, 'mouthSmileRight', state === 'speaking' ? Math.max(currentSmile.current, currentEe.current) : currentSmile.current);
+      setMorphTarget(clonedScene, 'mouthPucker', currentOo.current);
+      setMorphTarget(clonedScene, 'mouthFunnel', currentOo.current);
     }
   });
 
-  return <primitive object={scene} position={[0, -1.32, 0]} />;
+  return (
+    <primitive 
+      object={clonedScene} 
+      position={modelPos} 
+      scale={modelScale}
+    />
+  );
 }
 
 // Pre-preload animations for smooth transitions
@@ -372,6 +565,7 @@ export function RpmAvatar({
   mouseTrackingIntensity,
   stateColors,
   rpmUrl = 'https://models.readyplayer.me/63a9ab390c111d89f95c1fa9.glb',
+  onDebugInfo,
 }: RpmAvatarProps) {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -402,12 +596,12 @@ export function RpmAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-full overflow-hidden border border-zinc-800/40 bg-zinc-950/40 ${className}`}
+      className={`relative flex items-center justify-center rounded-3xl overflow-hidden border border-zinc-800/40 bg-zinc-950/40 ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {/* 3D R3F Canvas */}
       <Canvas
-        camera={{ position: [0, 0.3, 1.05], fov: 38 }}
+        camera={{ position: [0, 0.3, 1.14], fov: 41 }}
         shadows
         gl={{ antialias: true, alpha: true, preserveDrawingBuffer: true }}
         style={{ width: '100%', height: '100%', background: 'transparent' }}
@@ -429,7 +623,7 @@ export function RpmAvatar({
         <directionalLight position={[-2, 1.5, -2]} intensity={1.8} color="#ffffff" />
         <directionalLight position={[2, 1.5, 2]} intensity={2.2} color="#ffffff" />
 
-        <RpmErrorBoundary onError={(err) => setLoadError(err)}>
+        <RpmErrorBoundary onError={(err) => setLoadError(err)} onDebugInfo={onDebugInfo}>
           {resolvedRpmUrl && (
             <Suspense fallback={null}>
               <RpmModel
@@ -441,7 +635,8 @@ export function RpmAvatar({
                 blinkIntervalMin={blinkIntervalMin}
                 blinkIntervalMax={blinkIntervalMax}
                 blinkDuration={blinkDuration}
-                onLoaded={(status) => setLoaded(status)}
+                onLoaded={setLoaded}
+                onDebugInfo={onDebugInfo}
               />
             </Suspense>
           )}

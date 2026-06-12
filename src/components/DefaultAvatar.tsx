@@ -180,7 +180,7 @@ export function DefaultAvatar({
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
       {/* Glow Effect */}
       <motion.div
-        className="absolute inset-0 rounded-full blur-2xl opacity-50"
+        className="absolute inset-0 rounded-3xl blur-2xl opacity-50"
         animate={{
           backgroundColor: resolvedStateColors[state],
           scale: state === 'speaking' || state === 'thinking' ? [1, 1.1, 1] : 1

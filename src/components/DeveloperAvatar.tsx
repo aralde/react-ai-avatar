@@ -253,7 +253,7 @@ export function DeveloperAvatar({
 
   return (
     <motion.div 
-      className={`relative flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-2xl ${className}`} 
+      className={`relative flex flex-col items-center justify-center cursor-pointer overflow-hidden rounded-3xl ${className}`} 
       style={{ width: size, height: size, perspective: 1000, ...style }}
       whileHover={{ scale: 1.02 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
