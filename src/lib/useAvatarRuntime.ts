@@ -8,17 +8,19 @@ import { useReducedMotion } from './useReducedMotion';
  * animated by this runtime — both the built-in presets and byos
  * (bring-your-own-SVG) avatars.
  *
- * | hook              | part            | the runtime drives                  |
- * |-------------------|-----------------|-------------------------------------|
- * | `#rra-ring`       | state ring      | `stroke` = stateColors[state]       |
- * | `#rra-mouth`      | mouth (ellipse) | `ry`/`rx` = f(audio amplitude)      |
- * | `.rra-pupil` (x2) | pupils          | `cx`/`cy` = mouse tracking / gaze   |
- * | `.rra-lid` (x2)   | eyelids         | `height` = blink (0 = open)         |
- * | `#rra-think`      | thought bubble  | `opacity` + pulsing dots (thinking) |
+ * | hook              | part            | the runtime drives                       |
+ * |-------------------|-----------------|------------------------------------------|
+ * | `#rra-ring`       | state ring      | `stroke` = stateColors[state]            |
+ * | `#rra-mouth`      | mouth           | ellipse: `ry`/`rx`; rect: `height`       |
+ * | `.rra-pupil` (x2) | pupils          | circle: `cx`/`cy`; rect: `x`/`y`         |
+ * | `.rra-lid` (x2)   | eyelids         | `height` = blink (0 = open)              |
+ * | `#rra-think`      | thought bubble  | `opacity` + pulsing dots (thinking)      |
  *
  * Optional data attributes on the SVG refine behavior:
  * - `data-base-x` / `data-base-y` on `.rra-pupil`: rest position.
  * - `data-max-height` on `.rra-lid`: fully-closed lid height (default 16).
+ * - `data-quantize` on `#rra-mouth` / `.rra-pupil`: snap movement to a grid
+ *   (e.g. `1` for pixel-art presets so motion happens in whole pixels).
  *
  * Honors `prefers-reduced-motion`: blink, gaze tracking and bubble pulsing
  * are disabled; the informative audio-reactive mouth stays on.
@@ -73,19 +75,30 @@ export function useAvatarRuntime(
 
     // --- Collect contract elements and their rest values -----------------
     const ring = el.querySelector('#rra-ring');
-    const mouth = el.querySelector('#rra-mouth') as SVGEllipseElement | null;
+    const mouth = el.querySelector('#rra-mouth') as SVGGraphicsElement | null;
     const think = el.querySelector('#rra-think') as SVGGElement | null;
-    const thinkDots = think ? (Array.from(think.querySelectorAll('circle')) as SVGCircleElement[]) : [];
-    const pupils = Array.from(el.querySelectorAll('.rra-pupil')) as SVGCircleElement[];
+    const thinkDots = think ? (Array.from(think.querySelectorAll('circle, rect')) as SVGGraphicsElement[]) : [];
+    const pupils = Array.from(el.querySelectorAll('.rra-pupil')) as SVGGraphicsElement[];
     const lids = Array.from(el.querySelectorAll('.rra-lid')) as SVGRectElement[];
 
-    const baseRy = mouth ? parseFloat(mouth.getAttribute('ry') ?? '3') : 3;
-    const baseRx = mouth ? parseFloat(mouth.getAttribute('rx') ?? '9') : 9;
-    const pupilBases = pupils.map((p) => ({
-      x: parseFloat(p.getAttribute('data-base-x') ?? p.getAttribute('cx') ?? '0'),
-      y: parseFloat(p.getAttribute('data-base-y') ?? p.getAttribute('cy') ?? '0'),
-    }));
+    // Mouth: an ellipse opens via ry/rx; a rect (pixel-art) grows in height.
+    const mouthIsRect = mouth?.tagName.toLowerCase() === 'rect';
+    const baseRy = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'height' : 'ry') ?? '3') : 3;
+    const baseRx = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'width' : 'rx') ?? '9') : 9;
+    const mouthQuantize = mouth ? parseFloat(mouth.getAttribute('data-quantize') ?? '0') : 0;
+
+    const pupilBases = pupils.map((p) => {
+      const isRect = p.tagName.toLowerCase() === 'rect';
+      return {
+        isRect,
+        x: parseFloat(p.getAttribute('data-base-x') ?? p.getAttribute(isRect ? 'x' : 'cx') ?? '0'),
+        y: parseFloat(p.getAttribute('data-base-y') ?? p.getAttribute(isRect ? 'y' : 'cy') ?? '0'),
+        quantize: parseFloat(p.getAttribute('data-quantize') ?? '0'),
+      };
+    });
     const lidMaxes = lids.map((l) => parseFloat(l.getAttribute('data-max-height') ?? '16'));
+
+    const snap = (value: number, q: number) => (q > 0 ? Math.round(value / q) * q : value);
 
     // --- Loop state -------------------------------------------------------
     let engine: MouthEngine | null = null;
@@ -151,8 +164,15 @@ export function useAvatarRuntime(
         widthMult += (targetW - widthMult) * 0.25;
         heightMult += (targetH - heightMult) * 0.25;
 
-        mouth.setAttribute('ry', String(baseRy + mouthLevel * heightMult * maxMouthOpening * 0.4));
-        mouth.setAttribute('rx', String(baseRx * (1 + (widthMult - 1) * Math.min(1, mouthLevel * 2))));
+        if (mouthIsRect) {
+          // Pixel-style mouth: top lip stays put, height grows downward,
+          // snapped to the grid so motion happens in whole pixels.
+          const h = snap(baseRy + mouthLevel * heightMult * maxMouthOpening * 0.4, mouthQuantize);
+          mouth.setAttribute('height', String(Math.max(baseRy, h)));
+        } else {
+          mouth.setAttribute('ry', String(baseRy + mouthLevel * heightMult * maxMouthOpening * 0.4));
+          mouth.setAttribute('rx', String(baseRx * (1 + (widthMult - 1) * Math.min(1, mouthLevel * 2))));
+        }
       }
 
       // 3. Blink
@@ -188,10 +208,18 @@ export function useAvatarRuntime(
           targetY += Math.cos(now * 0.0017) * 0.4;
         }
         pupils.forEach((p, i) => {
+          const base = pupilBases[i];
           pupilCur[i].x += (targetX - pupilCur[i].x) * 0.12;
           pupilCur[i].y += (targetY - pupilCur[i].y) * 0.12;
-          p.setAttribute('cx', String(pupilBases[i].x + pupilCur[i].x));
-          p.setAttribute('cy', String(pupilBases[i].y + pupilCur[i].y));
+          const px = base.x + snap(pupilCur[i].x, base.quantize);
+          const py = base.y + snap(pupilCur[i].y, base.quantize);
+          if (base.isRect) {
+            p.setAttribute('x', String(px));
+            p.setAttribute('y', String(py));
+          } else {
+            p.setAttribute('cx', String(px));
+            p.setAttribute('cy', String(py));
+          }
         });
       }
 

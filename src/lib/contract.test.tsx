@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { GeometricAvatar } from '../components/GeometricAvatar';
+import { MemojiAvatar } from '../components/MemojiAvatar';
+import { PixelArtAvatar } from '../components/PixelArtAvatar';
+import { DoodleAvatar } from '../components/DoodleAvatar';
 import { ContractAvatar } from '../components/ContractAvatar';
 
 /**
@@ -17,6 +20,9 @@ const REQUIRED_CLASSES: Array<[string, number]> = [
 
 const PRESETS: Array<[string, ReactElement]> = [
   ['geometric', <GeometricAvatar key="g" />],
+  ['memoji', <MemojiAvatar key="m" />],
+  ['pixelart', <PixelArtAvatar key="p" />],
+  ['doodle', <DoodleAvatar key="d" />],
 ];
 
 describe('layer contract', () => {

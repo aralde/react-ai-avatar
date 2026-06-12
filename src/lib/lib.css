@@ -1,0 +1,12 @@
+/*
+ * Library stylesheet (published as react-realtime-avatar/style.css).
+ *
+ * Deliberately NOT the demo's stylesheet:
+ * - no preflight (we must not reset the consumer's app styles)
+ * - utilities are generated only from the library's components
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none);
+
+@source "../components";

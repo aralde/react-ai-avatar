@@ -4,6 +4,9 @@ import {
   MicOff,
   AlertCircle,
   Shapes,
+  Sparkles,
+  Grid3x3,
+  Brush,
   Smile,
   Captions,
   CaptionsOff,
@@ -41,7 +44,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'geometric' | 'default' | 'custom' | 'vrm'>('geometric');
+  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm'>('geometric');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
@@ -53,11 +56,18 @@ export default function App() {
     voxels: '/models/voxels.vrm'
   };
 
-  const activeVrmUrl = vrmModelSource === 'file' 
-    ? (vrmFileUrl || '') 
-    : (vrmModelSource === 'url' 
-      ? vrmUrl 
+  const activeVrmUrl = vrmModelSource === 'file'
+    ? (vrmFileUrl || '')
+    : (vrmModelSource === 'url'
+      ? vrmUrl
       : catalogUrls[catalogSelection]);
+
+  // Release the uploaded model's blob URL when it changes or on unmount
+  useEffect(() => {
+    return () => {
+      if (vrmFileUrl) URL.revokeObjectURL(vrmFileUrl);
+    };
+  }, [vrmFileUrl]);
 
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
   const [duration, setDuration] = useState<number>(0);
@@ -128,7 +138,8 @@ import 'react-realtime-avatar/style.css';
 
 function MyAvatarComponent() {
   // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
-  // and a valid WebRTC AnalyserNode for interactive lipsync
+  // and a WebAudio AnalyserNode for the audio-reactive mouth (optional:
+  // without it, "speaking" falls back to a synthetic mouth pattern)
   
   return (
     <RealtimeAvatar 
@@ -164,7 +175,8 @@ import 'react-realtime-avatar/style.css';
 
 function MyAvatarComponent() {
   // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
-  // and a valid WebRTC AnalyserNode for interactive lipsync
+  // and a WebAudio AnalyserNode for the audio-reactive mouth (optional:
+  // without it, "speaking" falls back to a synthetic mouth pattern)
   
   return (
     <RealtimeAvatar 
@@ -242,7 +254,7 @@ function MyAvatarComponent() {
     idle: 'Console Standby. Ready to initiate neural link.',
     listening: 'Neural connection open. Listening to audio input...',
     thinking: 'Synthesizing response. Analyzing neural vectors...',
-    speaking: 'Broadcasting voice output. Rendering real-time visemes.'
+    speaking: 'Broadcasting voice output. Driving the audio-reactive mouth.'
   };
 
   return (
@@ -263,13 +275,13 @@ function MyAvatarComponent() {
             </div>
             <div>
               <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                NEURAL AVATAR <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-emerald-500/20">v1.1</span>
+                NEURAL AVATAR <span className="text-[10px] bg-emerald-500/15 text-emerald-400 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider border border-emerald-500/20">v1.2</span>
               </h1>
               <p className="text-[10px] text-zinc-400 font-medium font-mono uppercase tracking-wider">Gemini Live Control Panel</p>
             </div>
           </div>
           <p className="hidden md:block text-xs text-zinc-400 max-w-md text-right leading-normal font-sans">
-            Experience zero-dependency real-time lip-syncing. This dashboard parses raw WebRTC/API audio frequencies on the fly into responsive vector visemes.
+            Audio-reactive avatars for realtime LLM voice UIs. The runtime turns raw audio amplitude and state changes into a face that listens, thinks and speaks.
           </p>
         </header>
 
@@ -336,6 +348,54 @@ function MyAvatarComponent() {
                         </div>
                         <span className="text-xs font-bold text-white mb-0.5">Geometric</span>
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Default preset. Layer-contract SVG driven by the runtime.</span>
+                      </button>
+
+                      <button
+                        onClick={() => setVariant('memoji')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'memoji'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Sparkles className={`w-4.5 h-4.5 ${variant === 'memoji' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'memoji' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Memoji</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Soft volumetric head with glossy eyes and blush.</span>
+                      </button>
+
+                      <button
+                        onClick={() => setVariant('pixelart')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'pixelart'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Grid3x3 className={`w-4.5 h-4.5 ${variant === 'pixelart' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'pixelart' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Pixel Art</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Retro 32x32 grid. Mouth and pupils move in whole pixels.</span>
+                      </button>
+
+                      <button
+                        onClick={() => setVariant('doodle')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'doodle'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Brush className={`w-4.5 h-4.5 ${variant === 'doodle' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'doodle' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Doodle</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Hand-drawn ink sketch with wobbly strokes.</span>
                       </button>
 
                       <button
@@ -478,9 +538,8 @@ function MyAvatarComponent() {
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
-                                    if (vrmFileUrl) URL.revokeObjectURL(vrmFileUrl);
-                                    const url = URL.createObjectURL(file);
-                                    setVrmFileUrl(url);
+                                    // Previous blob URL is revoked by the effect watching vrmFileUrl
+                                    setVrmFileUrl(URL.createObjectURL(file));
                                   }
                                 }}
                                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -1072,7 +1131,7 @@ import 'react-realtime-avatar/style.css';
                     Ensure your parent container has relative styling and fits the dimension specified in <code className="text-zinc-300 bg-zinc-950 px-1 py-0.5 rounded border border-zinc-800/40 font-semibold">size</code> (defaults to 280px).
                   </p>
                   <p>
-                    Make sure to pass the active <code className="text-zinc-300 bg-zinc-950 px-1 py-0.5 rounded border border-zinc-800/40 font-semibold">state</code> ('idle' | 'listening' | 'thinking' | 'speaking') and a valid WebRTC <code className="text-zinc-300 bg-zinc-950 px-1 py-0.5 rounded border border-zinc-800/40 font-semibold">analyser</code> node for real-time lip syncing.
+                    Make sure to pass the active <code className="text-zinc-300 bg-zinc-950 px-1 py-0.5 rounded border border-zinc-800/40 font-semibold">state</code> ('idle' | 'listening' | 'thinking' | 'speaking') and a WebAudio <code className="text-zinc-300 bg-zinc-950 px-1 py-0.5 rounded border border-zinc-800/40 font-semibold">analyser</code> node for the audio-reactive mouth. Without an analyser, speaking falls back to a synthetic mouth pattern.
                   </p>
                 </div>
               </div>

@@ -40,16 +40,16 @@
 - [x] Remove module-level `useGLTF.preload` and hardcoded asset URLs (no more 404s in consumer apps).
 - [x] `sideEffects` field for tree-shaking; fix `types` path.
 - [x] Server reads `process.env.PORT` (Cloud Run requirement).
-- [ ] **Pending**: stop shipping the demo's Tailwind CSS as the lib stylesheet — presets should style themselves (inline/scoped). Tracked for Phase 3/4 while components are rewritten anyway.
+- [x] Lib ships its own stylesheet (`src/lib/lib.css`): utilities generated only from library components, **no preflight** (no resetting the consumer's app). 41.8 kB → 17 kB.
 
 ## Phase 3 — Animation runtime (the heart)
 
-- [x] `createMouthEngine` + `useAudioMouth`: single shared engine for amplitude + A/E/O band analysis, with the procedural fallback built in. `DefaultAvatar`, `VrmAvatar` and the contract runtime all consume it. Pending: migrate `CustomAvatar` (or replace it in Phase 4).
+- [x] `createMouthEngine` + `useAudioMouth`: single shared engine for amplitude + A/E/O band analysis, with the procedural fallback built in. `DefaultAvatar`, `VrmAvatar`, `CustomAvatar` and the contract runtime all consume it.
 - [x] **Procedural mouth fallback**: `state="speaking"` + `analyser=null` animates the mouth with a synthetic speech-like pattern — now in every engine consumer, including VRM.
 - [x] **`thinking` is behavior, not a color**: runtime fades in `#rra-think` and pulses its dots out of phase; pupils drift up-left. (Done for contract presets; `DefaultAvatar` smiley has no think bubble by design.)
 - [x] **Layer contract**: `useAvatarRuntime(containerRef, opts)` drives `#rra-ring`/`#rra-mouth`/`.rra-pupil`/`.rra-lid`/`#rra-think` found inside the container. `variant="byos"` ships: `<RealtimeAvatar variant="byos">{yourSvg}</RealtimeAvatar>`. Conformance test in `src/lib/contract.test.tsx`.
-- [x] Production quality: `useReducedMotion` gates blink/gaze/pulse in the runtime, `DefaultAvatar` and `RealtimeAvatar`; state pill is an `aria-live` status region; SSR render covered by test. Pending: `CustomAvatar`/`VrmAvatar` mouse-tracking gating.
-- [x] Fix known leaks: blink loop surviving unmount (timer now cleared). Pending: re-entrant `disconnect`, un-revoked Object URLs (demo-side).
+- [x] Production quality: `useReducedMotion` gates blink/gaze/pulse everywhere (runtime, `DefaultAvatar`, `RealtimeAvatar`, `CustomAvatar`, `VrmAvatar`); state pill is an `aria-live` status region; SSR render covered by test.
+- [x] Fix known leaks: blink loop surviving unmount, re-entrant `disconnect` (handlers detached before close), Object URLs revoked via effect cleanup.
 
 ## Phase 4 — The avatar catalog (the "wow")
 
@@ -59,20 +59,25 @@ All own design, MIT, head/bust only, all implementing the same layer contract
 | Preset | Style | Quality keys |
 |---|---|---|
 | `geometric` ✅ | GeometricAvatar (HANDOFF base) | Default preset + canonical byos example — shipped, default variant |
-| `memoji` | Soft 3D-ish SVG, radial gradients | Volume shading, eye highlights, expressive brows per state |
-| `pixelart` | Logical 16×16/32×32 | `shape-rendering: crispEdges`, quantized pixel-row mouth, 2-frame blink |
-| `doodle` | Hand-drawn ink | Irregular strokes, subtle idle wobble, redrawn-stroke mouth |
+| `memoji` ✅ | Soft 3D-ish SVG, radial gradients | Volume shading, glossy eyes with highlights, blush, brows — shipped |
+| `pixelart` ✅ | Logical 32×32 grid | `crispEdges`, mouth/pupils snapped to whole pixels via `data-quantize` — shipped |
+| `doodle` ✅ | Hand-drawn ink | Wobbly outlines, scribble hair, dashed sketch ring — shipped |
 
-Cross-cutting: brows + pupils posed per state (not just the mouth), idle breathing micro-motion,
-coherent customization props per preset.
+Decision: `custom` (the CLI-compiled personal avatar) stays as a demo showcase variant; it now
+consumes the shared mouth engine (procedural fallback included) and honors reduced-motion.
 
-## Phase 5 — Demo/builder aligned
+Backlog (post-v1.2 polish): brow poses per state, idle breathing micro-motion.
 
-- [ ] Builder shows the new catalog; exported code matches the real package (peers, imports).
-- [ ] Honest copy ("audio-reactive"), Gemini model name via env var, basic rate limit on `/live`.
+## Phase 5 — Demo/builder aligned  ✅
 
-## Phase 6 — Quality close-out
+- [x] Builder shows the full catalog (geometric/memoji/pixelart/doodle/default/custom/VRM); exported code matches the real package (peers, no lucide-react, fallback documented).
+- [x] Honest copy ("audio-reactive mouth", no lip-sync claims for SVG), `GEMINI_LIVE_MODEL` env var, per-IP concurrent-session cap on `/live` (`MAX_SESSIONS_PER_IP`, default 3).
 
-- [ ] Tests: SSR `renderToString`, procedural fallback, layer-contract conformance per preset, reduced-motion.
-- [ ] New README: tagline, catalog GIF, comparison vs TalkingHead, license section.
-- [ ] `npm pack --dry-run` audit of published contents.
+## Phase 6 — Quality close-out  ✅
+
+- [x] Tests (28): SSR render, procedural fallback motion, A/E/O band mapping with a mocked analyser, layer-contract conformance for all 4 presets.
+- [x] New README: tagline, catalog table, byos contract table, comparison vs TalkingHead, license section, honest "audio-reactive" wording.
+- [x] `npm pack --dry-run` audit: 79.6 kB package / 234 kB unpacked / 28 files — no demo assets, no third-party models.
+
+Backlog: catalog GIF for the README, brow poses per state, idle breathing micro-motion,
+AudioWorklet migration for the demo's MicRecorder (ScriptProcessorNode is deprecated).

@@ -1,6 +1,6 @@
 {
   "name": "react-realtime-avatar",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A presentational React avatar for realtime LLM voice UIs — you bring the connection, it brings the face.",
   "license": "MIT",
   "type": "module",

@@ -1,4 +1,4 @@
-import '../index.css';
+import './lib.css';
 
 export { RealtimeAvatar } from '../components/RealtimeAvatar';
 export type { RealtimeAvatarProps } from '../components/RealtimeAvatar';
@@ -8,6 +8,15 @@ export type { ContractAvatarProps } from '../components/ContractAvatar';
 
 export { GeometricAvatar } from '../components/GeometricAvatar';
 export type { GeometricAvatarProps } from '../components/GeometricAvatar';
+
+export { MemojiAvatar } from '../components/MemojiAvatar';
+export type { MemojiAvatarProps } from '../components/MemojiAvatar';
+
+export { PixelArtAvatar } from '../components/PixelArtAvatar';
+export type { PixelArtAvatarProps } from '../components/PixelArtAvatar';
+
+export { DoodleAvatar } from '../components/DoodleAvatar';
+export type { DoodleAvatarProps } from '../components/DoodleAvatar';
 
 export { AudioVisualizer } from '../components/AudioVisualizer';
 export type { AudioVisualizerProps } from '../components/AudioVisualizer';

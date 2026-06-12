@@ -6,6 +6,7 @@ import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AvatarProps } from './DefaultAvatar';
 import { createMouthEngine, MouthEngine } from '../lib/mouthEngine';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
 export interface VrmAvatarProps extends AvatarProps {
   vrmUrl?: string;
@@ -93,6 +94,7 @@ function VrmModel({
   blinkIntervalMin = 2000,
   blinkIntervalMax = 6000,
   blinkDuration = 100,
+  reducedMotion = false,
   onLoaded,
 }: {
   url: string;
@@ -103,6 +105,7 @@ function VrmModel({
   blinkIntervalMin?: number;
   blinkIntervalMax?: number;
   blinkDuration?: number;
+  reducedMotion?: boolean;
   onLoaded: (loaded: boolean) => void;
 }) {
   const gltf = useLoader(GLTFLoader, url, (loader) => {
@@ -177,8 +180,9 @@ function VrmModel({
     const mouseX = threeState.pointer?.x ?? threeState.mouse?.x ?? 0;
     const mouseY = threeState.pointer?.y ?? threeState.mouse?.y ?? 0;
 
-    const targetRotY = mouseX * 0.35 * mouseTrackingIntensity;
-    const targetRotX = -mouseY * 0.20 * mouseTrackingIntensity;
+    const gazeIntensity = reducedMotion ? 0 : mouseTrackingIntensity;
+    const targetRotY = mouseX * 0.35 * gazeIntensity;
+    const targetRotX = -mouseY * 0.20 * gazeIntensity;
 
     if (neck) {
       neck.rotation.y = THREE.MathUtils.lerp(neck.rotation.y, targetRotY, 0.1);
@@ -189,19 +193,21 @@ function VrmModel({
       head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, targetRotX * 0.2, 0.1);
     }
 
-    // 3. Automated Eye Blinking
-    if (!isBlinking.current) {
-      blinkTimer.current -= delta;
-      if (blinkTimer.current <= 0) {
-        isBlinking.current = true;
-      }
-    } else {
-      const speed = 1000 / (blinkDuration || 100);
-      blinkVal.current += delta * speed * 2;
-      if (blinkVal.current >= 1) {
-        blinkVal.current = 1;
-        isBlinking.current = false;
-        blinkTimer.current = Math.random() * ((blinkIntervalMax - blinkIntervalMin) / 1000) + (blinkIntervalMin / 1000);
+    // 3. Automated Eye Blinking (disabled under prefers-reduced-motion)
+    if (!reducedMotion) {
+      if (!isBlinking.current) {
+        blinkTimer.current -= delta;
+        if (blinkTimer.current <= 0) {
+          isBlinking.current = true;
+        }
+      } else {
+        const speed = 1000 / (blinkDuration || 100);
+        blinkVal.current += delta * speed * 2;
+        if (blinkVal.current >= 1) {
+          blinkVal.current = 1;
+          isBlinking.current = false;
+          blinkTimer.current = Math.random() * ((blinkIntervalMax - blinkIntervalMin) / 1000) + (blinkIntervalMin / 1000);
+        }
       }
     }
 
@@ -307,6 +313,7 @@ export function VrmAvatar({
 }: VrmAvatarProps) {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion();
 
   // Reset loaded/error flags when URL changes
   useEffect(() => {
@@ -362,6 +369,7 @@ export function VrmAvatar({
                 blinkIntervalMin={blinkIntervalMin}
                 blinkIntervalMax={blinkIntervalMax}
                 blinkDuration={blinkDuration}
+                reducedMotion={reducedMotion}
                 onLoaded={(status) => setLoaded(status)}
               />
             </Suspense>

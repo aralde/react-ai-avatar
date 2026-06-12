@@ -131,6 +131,11 @@ export function useGeminiLive() {
     micRecorderRef.current?.stop();
     audioStreamerRef.current?.close();
     if (wsRef.current) {
+      // Detach handlers first: closing fires onclose, which would otherwise
+      // re-enter disconnect().
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onmessage = null;
       wsRef.current.close();
       wsRef.current = null;
     }

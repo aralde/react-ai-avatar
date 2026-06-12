@@ -3,6 +3,9 @@ import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
 import { CustomAvatar } from './CustomAvatar';
 import { ContractAvatar } from './ContractAvatar';
 import { GeometricAvatar } from './GeometricAvatar';
+import { MemojiAvatar } from './MemojiAvatar';
+import { PixelArtAvatar } from './PixelArtAvatar';
+import { DoodleAvatar } from './DoodleAvatar';
 import { AvatarState } from '../lib/types';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
@@ -17,7 +20,7 @@ export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'geometric' | 'default' | 'custom' | 'vrm' | 'byos';
+  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
   children?: React.ReactNode;
   vrmUrl?: string;
@@ -114,9 +117,16 @@ export function RealtimeAvatar({
   } else if (variant === 'default') {
     AvatarComponent = <DefaultAvatar {...avatarProps} />;
   } else {
+    const presets = {
+      geometric: GeometricAvatar,
+      memoji: MemojiAvatar,
+      pixelart: PixelArtAvatar,
+      doodle: DoodleAvatar,
+    } as const;
+    const Preset = presets[variant] ?? GeometricAvatar;
     AvatarComponent = (
       <ContractAvatar {...avatarProps}>
-        <GeometricAvatar size={size} customization={customization} />
+        <Preset size={size} customization={customization} />
       </ContractAvatar>
     );
   }

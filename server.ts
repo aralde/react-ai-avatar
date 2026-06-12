@@ -173,9 +173,31 @@ async function startServer() {
   const httpServer = http.createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/live' });
 
-  wss.on("connection", async (clientWs) => {
+  // Basic abuse protection: cap concurrent sessions per client IP so a
+  // single visitor can't drain the Gemini quota.
+  const MAX_SESSIONS_PER_IP = Number(process.env.MAX_SESSIONS_PER_IP) || 3;
+  const sessionsPerIp = new Map<string, number>();
+
+  wss.on("connection", async (clientWs, req) => {
+    const clientIp = (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim()
+      || req.socket.remoteAddress
+      || "unknown";
+    const activeSessions = sessionsPerIp.get(clientIp) ?? 0;
+    if (activeSessions >= MAX_SESSIONS_PER_IP) {
+      console.warn(`[WS] Rejected connection from ${clientIp}: session limit reached`);
+      clientWs.send(JSON.stringify({ error: "Too many concurrent sessions. Close another tab and retry." }));
+      clientWs.close();
+      return;
+    }
+    sessionsPerIp.set(clientIp, activeSessions + 1);
+    clientWs.on("close", () => {
+      const count = (sessionsPerIp.get(clientIp) ?? 1) - 1;
+      if (count <= 0) sessionsPerIp.delete(clientIp);
+      else sessionsPerIp.set(clientIp, count);
+    });
+
     let session: any;
-    
+
     try {
       const apiKey = process.env.GEMINI_API_KEY;
       const useMock = process.env.MOCK_REALTIME === "true" || !apiKey || apiKey === "mock" || apiKey.includes("placeholder") || apiKey.includes("MY_GEMINI_API_KEY");
@@ -199,7 +221,8 @@ async function startServer() {
       });
 
       session = await ai.live.connect({
-        model: "gemini-3.1-flash-live-preview",
+        // Live API preview models rotate; override without a deploy
+        model: process.env.GEMINI_LIVE_MODEL || "gemini-3.1-flash-live-preview",
         callbacks: {
           onmessage: (message: LiveServerMessage) => {
             const parts = message.serverContent?.modelTurn?.parts;

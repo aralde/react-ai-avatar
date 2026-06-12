@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { AvatarState } from '../lib/types';
+import { createMouthEngine } from '../lib/mouthEngine';
+import { useReducedMotion } from '../lib/useReducedMotion';
 import { AvatarCustomization, darkenColor } from './DefaultAvatar';
 import avatarSvgRaw from '../../mi-av-5.svg?raw';
 
@@ -42,6 +44,7 @@ export function CustomAvatar({
 }: CustomAvatarProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<number | null>(null);
+  const reducedMotion = useReducedMotion();
 
   const svgHtml = React.useMemo(() => {
     return { __html: avatarSvgRaw };
@@ -182,7 +185,8 @@ export function CustomAvatar({
 
     let targetEyeScaleY = 1.0;
 
-    // Blinking logic
+    // Blinking logic (skipped under prefers-reduced-motion; the flag also
+    // doubles as the "loops active" guard for hair animation)
     let isBlinking = true;
     const blink = async () => {
       while (isBlinking) {
@@ -199,7 +203,7 @@ export function CustomAvatar({
         eyePaths.forEach(item => applyTransform(item, targetEyeScaleY, 'center'));
       }
     };
-    blink();
+    if (!reducedMotion) blink();
 
     // Idle Hair Animation
     let hairTime = 0;
@@ -219,11 +223,11 @@ export function CustomAvatar({
         requestAnimationFrame(animateHair);
       }
     };
-    animateHair();
+    if (!reducedMotion) animateHair();
 
     // Emotion interval timer (Option A: randomized eye micro-expressions)
     let emotionInterval: NodeJS.Timeout | null = null;
-    if (analyser && state === 'speaking') {
+    if (state === 'speaking' && !reducedMotion) {
       emotionInterval = setInterval(() => {
         const r = Math.random();
         if (r < 0.55) {
@@ -240,79 +244,42 @@ export function CustomAvatar({
       }, 3500);
     }
 
-    // Audio to Mouth Scale
-    if (!analyser || state !== 'speaking') {
+    // Audio-reactive mouth (procedural fallback when analyser is null)
+    if (state !== 'speaking') {
       mouthPaths.forEach(item => applyTransform(item, 1, 'center'));
       if (mouthBg) mouthBg.setAttribute('transform', mouthPaths[0]?.originalTransform || '');
       eyePaths.forEach(item => applyTransform(item, 1, 'center')); // Reset eye scale
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      return () => { 
-        isBlinking = false; 
+      return () => {
+        isBlinking = false;
         if (emotionInterval) clearInterval(emotionInterval);
       };
     }
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
-
-    const sampleRate = analyser.context.sampleRate || 24000;
-    const Nyquist = sampleRate / 2;
-    const binWidth = Nyquist / analyser.frequencyBinCount;
-
-    const lowStart = Math.round(200 / binWidth);
-    const lowEnd = Math.round(800 / binWidth);
-    const midStart = Math.round(800 / binWidth);
-    const midEnd = Math.round(1800 / binWidth);
-    const highStart = Math.round(1800 / binWidth);
-    const highEnd = Math.round(3200 / binWidth);
+    const engine = createMouthEngine(analyser);
 
     let currentWidthMult = 1.0;
     let currentHeightMult = 1.0;
-    
+
     const updateMouth = () => {
-      analyser.getByteTimeDomainData(dataArray);
-      analyser.getByteFrequencyData(frequencyData);
-      
-      // Calculate peak deviation from 128 (normalized volume between 0 and 1)
-      let maxVal = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const dev = Math.abs(dataArray[i] - 128);
-        if (dev > maxVal) {
-          maxVal = dev;
-        }
-      }
-      
-      const volume = Math.min(1.0, maxVal / 128);
+      const frame = engine.read();
+      const volume = frame.level;
 
       let targetWidthMult = 1.0;
       let targetHeightMult = 1.0;
-
-      if (volume > 0.05) {
-        let energyLow = 0;
-        for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData[i];
-        let energyMid = 0;
-        for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData[i];
-        let energyHigh = 0;
-        for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData[i];
-
-        const totalEnergy = energyLow + energyMid + energyHigh + 0.001;
-        const ratioHigh = energyHigh / totalEnergy;
-        const ratioMid = energyMid / totalEnergy;
-
-        if (ratioHigh > 0.35) {
-          // "E" viseme (Smile / Stretch)
-          targetWidthMult = 1.35;
-          targetHeightMult = 0.6;
-        } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
-          // "O" viseme (Round / Narrow)
-          targetWidthMult = 0.7;
-          targetHeightMult = 1.3;
-        }
+      if (frame.shape === 'e') {
+        // "E" viseme (Smile / Stretch)
+        targetWidthMult = 1.35;
+        targetHeightMult = 0.6;
+      } else if (frame.shape === 'o') {
+        // "O" viseme (Round / Narrow)
+        targetWidthMult = 0.7;
+        targetHeightMult = 1.3;
       }
 
       currentWidthMult += (targetWidthMult - currentWidthMult) * 0.25;
       currentHeightMult += (targetHeightMult - currentHeightMult) * 0.25;
-      
+
       // Move lower lip down instead of just scaling, and scale width by currentWidthMult
       const dropDownAmount = volume * maxMouthOpening * currentHeightMult;
       
@@ -342,7 +309,7 @@ export function CustomAvatar({
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       if (emotionInterval) clearInterval(emotionInterval);
     };
-  }, [analyser, state, maxMouthOpening, blinkIntervalMin, blinkIntervalMax, blinkDuration]);
+  }, [analyser, state, maxMouthOpening, blinkIntervalMin, blinkIntervalMax, blinkDuration, reducedMotion]);
 
   return (
     <div 

@@ -1,24 +1,31 @@
-# React Realtime Avatar 🗣️✨
+# react-realtime-avatar
 
-A lightweight, ultra-configurable React library for building real-time conversational avatars. 
-
-**It is completely LLM-agnostic.** It doesn't care if you use Gemini Live, OpenAI Realtime, 11labs, or a standard WebRTC stream. You just pass it an `AnalyserNode` and a `state`, and it handles the real-time lip-syncing (visemes) and UI animations out of the box.
+> A presentational React avatar for realtime LLM voice UIs — **you bring the connection, it brings the face.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Why this approach? (Zero AI Dependencies)
+A lightweight, MIT-licensed React library that renders an animated avatar reacting to your AI's conversation state and audio. It is **completely LLM-agnostic**: it doesn't know about Gemini, OpenAI or ElevenLabs. You pass two live things — a `state` and (optionally) a WebAudio `AnalyserNode` — and it does the rest.
 
-By decoupling the avatar from the AI provider (Steps 1, 2, and 3), this library avoids forcing unnecessary dependencies (like `@google/genai` or `openai`) into your bundle. 
+```tsx
+import { RealtimeAvatar } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css';
 
-Your host app handles the microphone and WebSocket connection. This library **only handles Step 4**: turning audio data into beautiful, real-time visemes and state animations.
+<RealtimeAvatar state="speaking" analyser={myAnalyser} size={300} variant="geometric" />
+```
+
+## Philosophy
+
+One thing, done well, embeddable in a few lines, no backend, MIT. The library handles exactly one step of your voice pipeline: turning audio amplitude + state changes into a face that visibly **listens, thinks and speaks**. Your host app keeps the microphone, the WebSocket and the AI provider — none of those dependencies enter your bundle.
 
 ## Features
 
-- 👄 **Real-time Lip-sync:** Analyzes audio frequencies on the fly to generate visemes (mouth movements) without heavy external ML libraries.
-- 🎨 **Multiple Built-in Avatars:** Comes with several animated SVG avatars out of the box (`default`, `developer`, `developer2`), powered by `motion/react`.
-- 🤖 **AI-Powered CLI (Avatar Builder):** Convert any static SVG into an animated, lip-syncing React component automatically using LLMs.
-- 🧠 **State Management:** Reacts to clear states (`idle`, `listening`, `thinking`, `speaking`) to easily sync with your AI's logic.
-- 🔌 **Provider Agnostic:** Works with Gemini Live, OpenAI Realtime API, WebRTC, or any standard HTML5 `<audio>` element.
+- 👄 **Audio-reactive mouth** — analyzes amplitude and frequency bands in real time. This is deliberately *not* phoneme-perfect "lip-sync": an `AnalyserNode` gives energy, not phonemes, and for flat avatars amplitude is what looks right.
+- 🦺 **Graceful degradation** — `analyser={null}` while `state="speaking"`? The mouth animates with a synthetic speech-like pattern instead of freezing. Perfect for demos and non-WebRTC apps.
+- 🧠 **A visible `thinking` state** — pulsing thought bubble + upward gaze. Your users *see* the LLM thinking, not just a color change.
+- 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
+- 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
+- ♿ **Production quality** — SSR-safe (Next.js friendly), honors `prefers-reduced-motion`, announces state changes via `aria-live`.
+- 🧊 **Optional 3D (VRM)** — `variant="vrm"` renders VRoid/VRM models with visemes and gaze tracking. The three.js stack is an *optional* peer dependency, lazy-loaded only if you use it.
 
 ## Installation
 
@@ -26,158 +33,140 @@ Your host app handles the microphone and WebSocket connection. This library **on
 npm install react-realtime-avatar motion
 ```
 
-*(Note: `motion` is the only peer dependency required for the SVG animations).*
+`react`, `react-dom` and `motion` are peer dependencies. For the optional VRM variant, also install:
 
-## Quick Start
+```bash
+npm install three @react-three/fiber @react-three/drei @pixiv/three-vrm
+```
 
-Here is how you use the component. You just need to provide the current `state` of your AI, and the Web Audio API `AnalyserNode` that is playing the AI's voice. Remember to import the library's CSS for styles and animations.
+## Quick start
 
 ```tsx
 import React from 'react';
 import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css'; // Essential for styles & animations!
+import 'react-realtime-avatar/style.css';
 
 export default function App() {
-  // 1. Manage these in your app (via Gemini, OpenAI, etc.)
+  // You resolve these in your app (Gemini, OpenAI Realtime, WebRTC, anything)
   const aiState = 'speaking'; // 'idle' | 'listening' | 'thinking' | 'speaking'
-  const audioAnalyser = myCustomAudioSetup(); // Returns an AnalyserNode
+  const analyser = myAudioSetup(); // AnalyserNode | null
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-      <RealtimeAvatar 
-        state={aiState} 
-        analyser={audioAnalyser} 
-        size={250} 
-        variant="developer2" // Choose: 'default' | 'developer' | 'developer2' | 'custom'
-      />
-    </div>
+    <RealtimeAvatar
+      state={aiState}
+      analyser={analyser}
+      size={300}
+      variant="geometric" // 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'byos'
+      customization={{ skinColor: '#f5c7a9', hairColor: '#2c2c2c', glasses: true, headphones: true }}
+      stateColors={{ idle: '#4b5563', listening: '#3b82f6', thinking: '#8b5cf6', speaking: '#10b981' }}
+    />
   );
 }
 ```
 
-## Public API & Exports
+## The avatar catalog
 
-The library exposes the following building blocks:
+| variant | style | notes |
+|---|---|---|
+| `geometric` | minimal flat geometry | the default; canonical layer-contract example |
+| `memoji` | soft volumetric head | radial gradients, glossy eyes, blush |
+| `pixelart` | retro 32×32 grid | mouth and pupils move in whole pixels |
+| `doodle` | hand-drawn ink sketch | wobbly strokes, sketched thought bubble |
+| `vrm` | 3D VRoid/VRM model | optional, lazy-loaded; pass `vrmUrl` |
+| `byos` | **your** SVG | pass it as children; see the layer contract |
 
-- **`<RealtimeAvatar />`**: The primary talking avatar component.
-- **`<AudioVisualizer />`**: A stunning, real-time Siri-style audio waveform telemetry visualizer.
-- **`useGeminiLive()`**: A React hook that abstracts WebSockets, microphone streaming, and audio playback for Gemini Live API.
-- **`AudioStreamer`**: Helper class to handle real-time PCM audio playback buffer via Web Audio API.
-- **`MicRecorder`**: Helper class to record user microphone at $16\text{ kHz}$ sample rate.
+All built-in presets are original designs licensed MIT — nothing inside this package requires attribution.
 
-### Using the Audio Visualizer
+## Bring your own SVG (`byos`)
+
+Any SVG exposing these stable hooks is animated by the runtime — same blink, gaze, mouth and thinking behavior as the built-in presets:
+
+| hook | part | the runtime drives |
+|---|---|---|
+| `#rra-ring` | state ring | `stroke` = `stateColors[state]` |
+| `#rra-mouth` | mouth | ellipse: `ry`/`rx` · rect: `height` |
+| `.rra-pupil` (×2) | pupils | circle: `cx`/`cy` · rect: `x`/`y` (mouse tracking, thinking gaze) |
+| `.rra-lid` (×2) | eyelids | `height` (blink; 0 = open) |
+| `#rra-think` | thought bubble | `opacity` + dots pulsing while `thinking` |
+
+Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `data-max-height` (closed lid height), `data-quantize` (snap motion to a grid — that's how the pixel-art preset stays chunky).
 
 ```tsx
-import { AudioVisualizer } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
-
-// Render a live visualizer synced to the state
-<AudioVisualizer analyser={audioAnalyser} state={aiState} height={80} />
+<RealtimeAvatar state={aiState} analyser={analyser} variant="byos">
+  <MyOwnSvgAvatar /> {/* exposes the #rra-* hooks; its license is your business */}
+</RealtimeAvatar>
 ```
 
-## API Reference
+## API reference
 
 ### `<RealtimeAvatar />`
 
-A ready-to-use SVG avatar that reacts to the audio stream and conversation state.
+- `state` (`'idle' | 'listening' | 'thinking' | 'speaking'`) — required. You resolve it; it is never inferred.
+- `analyser` (`AnalyserNode | null`) — required. Drives the mouth. With `null`, speaking falls back to the synthetic pattern.
+- `size` (`number`) — px, default `280`.
+- `variant` — see catalog above. Default `'geometric'`.
+- `children` — your SVG, for `variant="byos"`.
+- `vrmUrl` (`string`) — CORS-enabled `.vrm` URL, for `variant="vrm"`.
+- `subtitle` / `thought` (`string`) — optional movie-style captions and a thought bubble.
+- `showSubtitle` (`boolean`) — default `true`.
+- `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
+- `stateColors`, `stateLabels` — theming; labels are announced via `aria-live`.
+- `customization` — preset colors and accessories (skin, hair, clothing, glasses, headphones…).
 
-**Props:**
-- `state` (`'idle' | 'listening' | 'thinking' | 'speaking'`): Required. Controls the aura color, idle animations, and whether the mouth should be reading the analyser.
-- `analyser` (`AnalyserNode | null`): Required. The Web Audio API node used to calculate mouth opening and width in real-time. If `null`, the avatar stays in its idle mouth pose.
-- `size` (`number`): Optional. The width and height of the avatar in pixels. Default is `280`.
-- `variant` (`'default' | 'developer' | 'developer2' | 'custom'`): Optional. Selects the avatar style. Default is `'default'`.
-- `subtitle` (`string`): Optional. Text subtitles to display below the avatar.
-- `thought` (`string`): Optional. Thinking processes/internal thoughts to display in a floating bubble above the avatar.
-- `showSubtitle` (`boolean`): Optional. Whether to render subtitles and thoughts. Default is `true`.
+### Building blocks
 
-## 🪄 The Avatar Builder CLI (AI-Powered & Agentic)
+Everything the runtime uses is exported, so you can compose your own:
 
-Don't want to use the built-in avatars? You can turn **any static SVG** into a fully animated, lip-syncing React component automatically.
+- `ContractAvatar` — wraps any contract-compliant SVG with the runtime.
+- `useAvatarRuntime(containerRef, options)` — the animation runtime itself.
+- `createMouthEngine(analyser)` / `useAudioMouth(...)` — the audio→mouth analysis (amplitude + A/E/O shapes), procedural fallback included.
+- `useReducedMotion()` — SSR-safe `prefers-reduced-motion` hook.
+- `GeometricAvatar`, `MemojiAvatar`, `PixelArtAvatar`, `DoodleAvatar` — the raw presets.
+- `AudioVisualizer` — Siri-style waveform telemetry strip.
 
-Our new **Agentic Build Process** solves common issues with LLM code generation (like truncated SVGs) by using a hybrid approach:
+## Getting an `AnalyserNode`
 
-1. **Zero Truncation Guarantee:** Instead of asking the LLM to rewrite your entire SVG (which often exceeds token limits and causes broken/truncated files), the builder imports your SVG dynamically using Vite's `?raw` import. The original file remains untouched and perfectly intact.
-2. **Automatic Layer Identification:** You don't need designers to manually name layers (`id="mouth"`, `id="eye"`). The agent analyzes the SVG structure, colors, and positions to automatically identify facial features (eyes, mouth, head) using smart heuristics and LLM reasoning.
-3. **Quality Assurance:** The build process acts as an agent, verifying that the generated component correctly targets the identified layers before finalizing the build.
-
-### How to use it:
-
-1. Export a static SVG from Figma or Illustrator (e.g., `mi-av-5.svg`).
-2. Run the builder script:
-
-```bash
-# Requires GEMINI_API_KEY in your environment
-npx tsx scripts/build-avatar.ts mi-av-5.svg
-```
-
-3. The CLI will generate a `CustomAvatar.tsx` file in your components folder that dynamically loads your SVG.
-4. Import and use it! The generated component will automatically handle blinking and real-time lip-syncing driven by the `analyser`, targeting the correct paths automatically.
-
-## Example: Connecting to Gemini Live or OpenAI
-
-While the library doesn't include the connection logic to keep the bundle small, here is the standard recipe to get an `AnalyserNode` from an incoming base64 audio stream (which is what Gemini and OpenAI return):
+The standard recipe for base64 PCM streams (what Gemini Live / OpenAI Realtime return):
 
 ```ts
-// 1. Create an AudioContext
 const audioCtx = new AudioContext({ sampleRate: 24000 });
-
-// 2. Create the AnalyserNode (Pass this to <RealtimeAvatar />)
 const analyser = audioCtx.createAnalyser();
 analyser.fftSize = 256;
 analyser.connect(audioCtx.destination);
 
-// 3. When you receive audio from your AI (e.g., via WebSocket):
-function playAudioChunk(base64Audio) {
-  // Decode base64 to Float32Array
-  // ... (standard base64 to PCM conversion) ...
-  
+function playAudioChunk(pcmData: Float32Array) {
   const buffer = audioCtx.createBuffer(1, pcmData.length, 24000);
   buffer.getChannelData(0).set(pcmData);
-
   const source = audioCtx.createBufferSource();
   source.buffer = buffer;
-  
-  // Connect the source to the analyser!
-  source.connect(analyser);
+  source.connect(analyser); // <- the analyser you pass to <RealtimeAvatar />
   source.start();
 }
 ```
 
-## Advanced: Custom 3D/2D Avatars
+## Positioning
 
-If you want to use **React Three Fiber** or your own custom SVG, you can build your own component and just use the `analyser` directly to drive your 3D blend shapes:
+The closest reference is [TalkingHead](https://github.com/met4citizen/TalkingHead) (3D, realistic lip-sync, Ready Player Me/Mixamo rigs). This library makes the opposite bet:
 
-```tsx
-import { useEffect } from 'react';
+| | TalkingHead & co. | react-realtime-avatar |
+|---|---|---|
+| Star of the show | the realistic human avatar | the LLM's speech + **state** flow |
+| Avatar | 3D full-body rigged | flat SVG, minimal (3D optional, not the focus) |
+| Technical focus | lip-sync fidelity | state + audio reactivity, simplicity |
+| Makes visible | the voice | the *thinking* |
+| Setup | avatar platform + Blender + rig | `npm i` + one component |
 
-function MyCustom3DAvatar({ analyser, state }) {
-  useEffect(() => {
-    if (!analyser || state !== 'speaking') return;
+## Demo / development
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    let animationFrameId;
+The repo ships a demo dashboard (Gemini Live + a no-API-key mock):
 
-    const renderLoop = () => {
-      analyser.getByteFrequencyData(dataArray);
-      
-      // Calculate volume (0-255)
-      const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-      
-      // Map 'volume' to your 3D model's jaw bone or blend shapes here!
-      // myModel.nodes.Jaw.rotation.x = volume * 0.01;
-
-      animationFrameId = requestAnimationFrame(renderLoop);
-    };
-    
-    renderLoop();
-
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [analyser, state]);
-
-  return <canvas>...</canvas>;
-}
+```bash
+npm install
+npm run dev        # starts the demo at :3000 (MOCK_REALTIME=true needs no API key)
+npm test           # vitest: engine, layer contract, SSR, parsers
+npm run build:lib  # builds the publishable package into dist/lib
 ```
 
 ## License
 
-MIT License - feel free to use this in your own projects, commercial or personal!
+MIT — for the library, the runtime and all built-in presets. Use it commercially, fork it, reskin it. SVGs you bring via `byos` keep whatever license they had.
