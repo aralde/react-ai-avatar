@@ -125,7 +125,8 @@ export function RealtimeAvatar({
     } as const;
     const Preset = presets[variant] ?? GeometricAvatar;
     AvatarComponent = (
-      <ContractAvatar {...avatarProps}>
+      // Keyed by variant so switching presets remounts the runtime cleanly
+      <ContractAvatar key={variant} {...avatarProps}>
         <Preset size={size} customization={customization} />
       </ContractAvatar>
     );

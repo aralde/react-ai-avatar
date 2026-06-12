@@ -73,32 +73,58 @@ export function useAvatarRuntime(
     const el = containerRef.current;
     if (el === null || typeof window === 'undefined') return;
 
-    // --- Collect contract elements and their rest values -----------------
-    const ring = el.querySelector('#rra-ring');
-    const mouth = el.querySelector('#rra-mouth') as SVGGraphicsElement | null;
-    const think = el.querySelector('#rra-think') as SVGGElement | null;
-    const thinkDots = think ? (Array.from(think.querySelectorAll('circle, rect')) as SVGGraphicsElement[]) : [];
-    const pupils = Array.from(el.querySelectorAll('.rra-pupil')) as SVGGraphicsElement[];
-    const lids = Array.from(el.querySelectorAll('.rra-lid')) as SVGRectElement[];
-
-    // Mouth: an ellipse opens via ry/rx; a rect (pixel-art) grows in height.
-    const mouthIsRect = mouth?.tagName.toLowerCase() === 'rect';
-    const baseRy = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'height' : 'ry') ?? '3') : 3;
-    const baseRx = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'width' : 'rx') ?? '9') : 9;
-    const mouthQuantize = mouth ? parseFloat(mouth.getAttribute('data-quantize') ?? '0') : 0;
-
-    const pupilBases = pupils.map((p) => {
-      const isRect = p.tagName.toLowerCase() === 'rect';
-      return {
-        isRect,
-        x: parseFloat(p.getAttribute('data-base-x') ?? p.getAttribute(isRect ? 'x' : 'cx') ?? '0'),
-        y: parseFloat(p.getAttribute('data-base-y') ?? p.getAttribute(isRect ? 'y' : 'cy') ?? '0'),
-        quantize: parseFloat(p.getAttribute('data-quantize') ?? '0'),
-      };
-    });
-    const lidMaxes = lids.map((l) => parseFloat(l.getAttribute('data-max-height') ?? '16'));
-
     const snap = (value: number, q: number) => (q > 0 ? Math.round(value / q) * q : value);
+
+    // --- Contract elements and their rest values --------------------------
+    // Collected lazily and re-collected whenever the SVG inside the
+    // container is swapped (e.g. the host re-renders a different preset):
+    // React replaces the nodes without remounting this component.
+    let ring: Element | null = null;
+    let mouth: SVGGraphicsElement | null = null;
+    let think: SVGGElement | null = null;
+    let thinkDots: SVGGraphicsElement[] = [];
+    let pupils: SVGGraphicsElement[] = [];
+    let lids: SVGRectElement[] = [];
+    let mouthIsRect = false;
+    let baseRy = 3;
+    let baseRx = 9;
+    let mouthQuantize = 0;
+    let pupilBases: { isRect: boolean; x: number; y: number; quantize: number }[] = [];
+    let lidMaxes: number[] = [];
+    let pupilCur: { x: number; y: number }[] = [];
+
+    const collectElements = () => {
+      ring = el.querySelector('#rra-ring');
+      mouth = el.querySelector('#rra-mouth') as SVGGraphicsElement | null;
+      think = el.querySelector('#rra-think') as SVGGElement | null;
+      thinkDots = think ? (Array.from(think.querySelectorAll('circle, rect')) as SVGGraphicsElement[]) : [];
+      pupils = Array.from(el.querySelectorAll('.rra-pupil')) as SVGGraphicsElement[];
+      lids = Array.from(el.querySelectorAll('.rra-lid')) as SVGRectElement[];
+
+      // Mouth: an ellipse opens via ry/rx; a rect (pixel-art) grows in height.
+      mouthIsRect = mouth?.tagName.toLowerCase() === 'rect';
+      baseRy = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'height' : 'ry') ?? '3') : 3;
+      baseRx = mouth ? parseFloat(mouth.getAttribute(mouthIsRect ? 'width' : 'rx') ?? '9') : 9;
+      mouthQuantize = mouth ? parseFloat(mouth.getAttribute('data-quantize') ?? '0') : 0;
+
+      pupilBases = pupils.map((p) => {
+        const isRect = p.tagName.toLowerCase() === 'rect';
+        return {
+          isRect,
+          x: parseFloat(p.getAttribute('data-base-x') ?? p.getAttribute(isRect ? 'x' : 'cx') ?? '0'),
+          y: parseFloat(p.getAttribute('data-base-y') ?? p.getAttribute(isRect ? 'y' : 'cy') ?? '0'),
+          quantize: parseFloat(p.getAttribute('data-quantize') ?? '0'),
+        };
+      });
+      lidMaxes = lids.map((l) => parseFloat(l.getAttribute('data-max-height') ?? '16'));
+      pupilCur = pupils.map(() => ({ x: 0, y: 0 }));
+    };
+
+    const elementsStale = () =>
+      (mouth ? !mouth.isConnected : el.querySelector('#rra-mouth') !== null) ||
+      (ring ? !ring.isConnected : el.querySelector('#rra-ring') !== null);
+
+    collectElements();
 
     // --- Loop state -------------------------------------------------------
     let engine: MouthEngine | null = null;
@@ -113,7 +139,6 @@ export function useAvatarRuntime(
     let blinkProgress = 0; // 0 open .. 1 closed
     let blinking = false;
 
-    const pupilCur = pupils.map(() => ({ x: 0, y: 0 }));
     let thinkOpacity = 0;
     let thinkPhase = 0;
 
@@ -123,6 +148,11 @@ export function useAvatarRuntime(
     const tick = (now: number) => {
       const dt = Math.min(100, now - lastT); // ms, clamped vs tab suspends
       lastT = now;
+
+      // The avatar SVG was replaced under us? Re-bind to the new nodes.
+      if (elementsStale()) {
+        collectElements();
+      }
 
       const opts = optsRef.current;
       const { state } = opts;
