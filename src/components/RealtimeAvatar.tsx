@@ -1,6 +1,8 @@
 import React, { Suspense, useEffect, useRef } from 'react';
 import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
 import { CustomAvatar } from './CustomAvatar';
+import { ContractAvatar } from './ContractAvatar';
+import { GeometricAvatar } from './GeometricAvatar';
 import { AvatarState } from '../lib/types';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
@@ -15,7 +17,9 @@ export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'default' | 'custom' | 'vrm';
+  variant?: 'geometric' | 'default' | 'custom' | 'vrm' | 'byos';
+  /** Your own contract-compliant SVG, rendered when variant="byos". */
+  children?: React.ReactNode;
   vrmUrl?: string;
   subtitle?: string;
   thought?: string;
@@ -66,7 +70,8 @@ export function RealtimeAvatar({
   state,
   analyser,
   size = 280,
-  variant = 'default',
+  variant = 'geometric',
+  children,
   vrmUrl,
   subtitle,
   thought,
@@ -104,8 +109,16 @@ export function RealtimeAvatar({
     );
   } else if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
-  } else {
+  } else if (variant === 'byos') {
+    AvatarComponent = <ContractAvatar {...avatarProps}>{children}</ContractAvatar>;
+  } else if (variant === 'default') {
     AvatarComponent = <DefaultAvatar {...avatarProps} />;
+  } else {
+    AvatarComponent = (
+      <ContractAvatar {...avatarProps}>
+        <GeometricAvatar size={size} customization={customization} />
+      </ContractAvatar>
+    );
   }
 
   // Motion values for volume-reactive pulsing

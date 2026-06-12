@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'motion/react';
 import { AvatarState } from '../lib/types';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { useAudioMouth } from '../lib/useAudioMouth';
 
 export interface AvatarCustomization {
   skinColor: string;
@@ -65,121 +66,35 @@ export function DefaultAvatar({
 }: AvatarProps) {
   const mouthControls = useAnimation();
   const eyeControls = useAnimation();
-  const requestRef = useRef<number | null>(null);
   const reducedMotion = useReducedMotion();
 
-  useEffect(() => {
-    if (state !== 'speaking') {
-      mouthControls.start({ d: "M 40 70 Q 50 70 60 70" }); // Closed mouth
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      return;
-    }
-
-    // No analyser? Degrade gracefully: animate the mouth with a synthetic
-    // speech-like pattern instead of leaving it frozen shut.
-    if (!analyser) {
-      let phase = Math.random() * 100;
-
-      const tickProcedural = () => {
-        phase += 0.18;
-        const amp =
-          0.35 +
-          0.30 * Math.sin(phase) +
-          0.25 * Math.sin(phase * 1.7 + 1.3) +
-          0.10 * Math.sin(phase * 3.1);
-        const level = Math.min(1, Math.max(0, amp));
-
-        const opening = level * maxMouthOpening * 0.8;
-        const widthOffset = level * 6;
-        mouthControls.set({ d: `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70` });
-
-        requestRef.current = requestAnimationFrame(tickProcedural);
-      };
-
-      requestRef.current = requestAnimationFrame(tickProcedural);
-      return () => {
-        if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      };
-    }
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
-
-    const sampleRate = analyser.context.sampleRate || 24000;
-    const Nyquist = sampleRate / 2;
-    const binWidth = Nyquist / analyser.frequencyBinCount;
-
-    const lowStart = Math.round(200 / binWidth);
-    const lowEnd = Math.round(800 / binWidth);
-    const midStart = Math.round(800 / binWidth);
-    const midEnd = Math.round(1800 / binWidth);
-    const highStart = Math.round(1800 / binWidth);
-    const highEnd = Math.round(3200 / binWidth);
-
-    let currentWidthMult = 1.0;
-    let currentHeightMult = 1.0;
-
-    const updateMouth = () => {
-      analyser.getByteTimeDomainData(dataArray);
-      analyser.getByteFrequencyData(frequencyData);
-      
-      // Calculate peak deviation from 128 (normalized volume between 0 and 1)
-      let maxVal = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const dev = Math.abs(dataArray[i] - 128);
-        if (dev > maxVal) {
-          maxVal = dev;
-        }
-      }
-      
-      const normalizedVolume = Math.min(1.0, maxVal / 128);
-
+  // Shared engine: audio-reactive when an analyser is provided, synthetic
+  // speech-like fallback otherwise (the mouth never freezes shut).
+  const mouthSmooth = useRef({ width: 1, height: 1 });
+  useAudioMouth({
+    analyser,
+    enabled: state === 'speaking',
+    onFrame: ({ level, shape }) => {
       let targetWidthMult = 1.0;
       let targetHeightMult = 1.0;
-
-      if (normalizedVolume > 0.05) {
-        let energyLow = 0;
-        for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData[i];
-        let energyMid = 0;
-        for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData[i];
-        let energyHigh = 0;
-        for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData[i];
-
-        const totalEnergy = energyLow + energyMid + energyHigh + 0.001;
-        const ratioHigh = energyHigh / totalEnergy;
-        const ratioMid = energyMid / totalEnergy;
-
-        if (ratioHigh > 0.35) {
-          // "E" viseme (Smile / Stretch)
-          targetWidthMult = 1.4;
-          targetHeightMult = 0.55;
-        } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
-          // "O" viseme (Round / Narrow)
-          targetWidthMult = 0.65;
-          targetHeightMult = 1.35;
-        }
+      if (shape === 'e') {
+        targetWidthMult = 1.4;
+        targetHeightMult = 0.55;
+      } else if (shape === 'o') {
+        targetWidthMult = 0.65;
+        targetHeightMult = 1.35;
       }
+      mouthSmooth.current.width += (targetWidthMult - mouthSmooth.current.width) * 0.25;
+      mouthSmooth.current.height += (targetHeightMult - mouthSmooth.current.height) * 0.25;
 
-      currentWidthMult += (targetWidthMult - currentWidthMult) * 0.25;
-      currentHeightMult += (targetHeightMult - currentHeightMult) * 0.25;
-      
-      // Map volume to mouth opening (0 to maxMouthOpening) and width (0 to 10)
-      const opening = normalizedVolume * maxMouthOpening * currentHeightMult;
-      const widthOffset = normalizedVolume * 10 * currentWidthMult;
-
-      const d = `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70`;
-      
-      mouthControls.set({ d });
-      
-      requestRef.current = requestAnimationFrame(updateMouth);
-    };
-
-    requestRef.current = requestAnimationFrame(updateMouth);
-
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [analyser, state, mouthControls, maxMouthOpening]);
+      const opening = level * maxMouthOpening * mouthSmooth.current.height;
+      const widthOffset = level * 10 * mouthSmooth.current.width;
+      mouthControls.set({ d: `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70` });
+    },
+    onStop: () => {
+      mouthControls.start({ d: 'M 40 70 Q 50 70 60 70' }); // Closed mouth
+    },
+  });
 
   // Blinking logic (disabled when the user prefers reduced motion)
   useEffect(() => {

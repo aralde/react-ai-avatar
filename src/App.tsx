@@ -3,6 +3,7 @@ import {
   Mic,
   MicOff,
   AlertCircle,
+  Shapes,
   Smile,
   Captions,
   CaptionsOff,
@@ -40,7 +41,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'default' | 'custom' | 'vrm'>('custom');
+  const [variant, setVariant] = useState<'geometric' | 'default' | 'custom' | 'vrm'>('geometric');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
@@ -321,6 +322,22 @@ function MyAvatarComponent() {
                 {controlTab === 'variant' && (
                   <div className="flex flex-col gap-4">
                     <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => setVariant('geometric')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'geometric'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Shapes className={`w-4.5 h-4.5 ${variant === 'geometric' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'geometric' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Geometric</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Default preset. Layer-contract SVG driven by the runtime.</span>
+                      </button>
+
                       <button
                         onClick={() => setVariant('default')}
                         className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${

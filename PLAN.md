@@ -44,11 +44,11 @@
 
 ## Phase 3 — Animation runtime (the heart)
 
-- [ ] `useAudioMouth(analyser, opts)`: single shared hook for amplitude + E/O/A band analysis (today copy-pasted in 3+ components).
-- [x] **Procedural mouth fallback**: `state="speaking"` + `analyser=null` animates the mouth with a synthetic pattern (sum of sines + pseudo-random variation). Done in `DefaultAvatar`; extend to `CustomAvatar`/presets with the `useAudioMouth` refactor.
-- [ ] **`thinking` is behavior, not a color**: `#rra-think` bubble with 3 dots pulsing out of phase + pupils up-left. In every preset.
-- [ ] **Layer contract** (`#rra-ring`, `#rra-head`, `#rra-mouth`, `.rra-pupil`, `.rra-lid`, `#rra-think`, …): runtime finds ids inside the container ref and drives them. Enables `variant="byos"` (bring-your-own-SVG; the dev's avatar license is the dev's problem).
-- [x] Production quality: `useReducedMotion` hook gates blink/bounce/ring-spin/ping in `DefaultAvatar` + `RealtimeAvatar` (extend to `CustomAvatar`/`VrmAvatar` mouse-tracking next); state pill is an `aria-live` status region. SSR audit still pending.
+- [x] `createMouthEngine` + `useAudioMouth`: single shared engine for amplitude + A/E/O band analysis, with the procedural fallback built in. `DefaultAvatar`, `VrmAvatar` and the contract runtime all consume it. Pending: migrate `CustomAvatar` (or replace it in Phase 4).
+- [x] **Procedural mouth fallback**: `state="speaking"` + `analyser=null` animates the mouth with a synthetic speech-like pattern — now in every engine consumer, including VRM.
+- [x] **`thinking` is behavior, not a color**: runtime fades in `#rra-think` and pulses its dots out of phase; pupils drift up-left. (Done for contract presets; `DefaultAvatar` smiley has no think bubble by design.)
+- [x] **Layer contract**: `useAvatarRuntime(containerRef, opts)` drives `#rra-ring`/`#rra-mouth`/`.rra-pupil`/`.rra-lid`/`#rra-think` found inside the container. `variant="byos"` ships: `<RealtimeAvatar variant="byos">{yourSvg}</RealtimeAvatar>`. Conformance test in `src/lib/contract.test.tsx`.
+- [x] Production quality: `useReducedMotion` gates blink/gaze/pulse in the runtime, `DefaultAvatar` and `RealtimeAvatar`; state pill is an `aria-live` status region; SSR render covered by test. Pending: `CustomAvatar`/`VrmAvatar` mouse-tracking gating.
 - [x] Fix known leaks: blink loop surviving unmount (timer now cleared). Pending: re-entrant `disconnect`, un-revoked Object URLs (demo-side).
 
 ## Phase 4 — The avatar catalog (the "wow")
@@ -58,7 +58,7 @@ All own design, MIT, head/bust only, all implementing the same layer contract
 
 | Preset | Style | Quality keys |
 |---|---|---|
-| `geometric` | GeometricAvatar (HANDOFF base) | Default preset + canonical byos example |
+| `geometric` ✅ | GeometricAvatar (HANDOFF base) | Default preset + canonical byos example — shipped, default variant |
 | `memoji` | Soft 3D-ish SVG, radial gradients | Volume shading, eye highlights, expressive brows per state |
 | `pixelart` | Logical 16×16/32×32 | `shape-rendering: crispEdges`, quantized pixel-row mouth, 2-frame blink |
 | `doodle` | Hand-drawn ink | Irregular strokes, subtle idle wobble, redrawn-stroke mouth |

@@ -5,6 +5,7 @@ import { VRM, VRMLoaderPlugin } from '@pixiv/three-vrm';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AvatarProps } from './DefaultAvatar';
+import { createMouthEngine, MouthEngine } from '../lib/mouthEngine';
 
 export interface VrmAvatarProps extends AvatarProps {
   vrmUrl?: string;
@@ -146,9 +147,9 @@ function VrmModel({
   const blinkVal = useRef(0);
   const isBlinking = useRef(false);
 
-  // Audio frequency arrays
-  const dataArray = useRef<Uint8Array | null>(null);
-  const frequencyData = useRef<Uint8Array | null>(null);
+  // Shared mouth engine (audio-reactive, or procedural when analyser=null)
+  const mouthEngine = useRef<MouthEngine | null>(null);
+  const mouthEngineAnalyser = useRef<AnalyserNode | null>(null);
 
   useFrame((threeState, delta) => {
     if (!vrm) return;
@@ -244,66 +245,26 @@ function VrmModel({
       setVrmExpression(vrm, 'relaxed', currentRelaxed.current);
       setVrmExpression(vrm, 'sad', currentSad.current);
 
-      // 5. Viseme-based Lip-Syncing
-      if (analyser && state === 'speaking') {
-        const binCount = analyser.frequencyBinCount;
-        if (!dataArray.current || dataArray.current.length !== binCount) {
-          dataArray.current = new Uint8Array(binCount);
-          frequencyData.current = new Uint8Array(binCount);
+      // 5. Audio-reactive mouth mapped onto VRM visemes
+      if (state === 'speaking') {
+        if (!mouthEngine.current || mouthEngineAnalyser.current !== analyser) {
+          mouthEngine.current = createMouthEngine(analyser);
+          mouthEngineAnalyser.current = analyser;
         }
+        const frame = mouthEngine.current.read();
 
-        analyser.getByteTimeDomainData(dataArray.current);
-        analyser.getByteFrequencyData(frequencyData.current);
-
-        // Normalized peak volume calculation
-        let maxVal = 0;
-        for (let i = 0; i < binCount; i++) {
-          const dev = Math.abs(dataArray.current[i] - 128);
-          if (dev > maxVal) maxVal = dev;
-        }
-        const volume = Math.min(1.0, maxVal / 128);
+        // Align maxMouthOpening px (10-60) scale to a standard Three-vrm multiplier
+        const scaleLimit = maxMouthOpening / 30.0;
 
         let targetAa = 0;
         let targetEe = 0;
         let targetOo = 0;
-
-        if (volume > 0.04) {
-          const sampleRate = analyser.context.sampleRate || 24000;
-          const Nyquist = sampleRate / 2;
-          const binWidth = Nyquist / binCount;
-
-          const lowStart = Math.round(200 / binWidth);
-          const lowEnd = Math.round(800 / binWidth);
-          const midStart = Math.round(800 / binWidth);
-          const midEnd = Math.round(1800 / binWidth);
-          const highStart = Math.round(1800 / binWidth);
-          const highEnd = Math.round(3200 / binWidth);
-
-          let energyLow = 0;
-          let energyMid = 0;
-          let energyHigh = 0;
-
-          for (let i = lowStart; i <= lowEnd; i++) energyLow += frequencyData.current[i] || 0;
-          for (let i = midStart; i <= midEnd; i++) energyMid += frequencyData.current[i] || 0;
-          for (let i = highStart; i <= highEnd; i++) energyHigh += frequencyData.current[i] || 0;
-
-          const total = energyLow + energyMid + energyHigh + 0.001;
-          const ratioHigh = energyHigh / total;
-          const ratioMid = energyMid / total;
-
-          // Align maxMouthOpening px (10-60) scale to a standard Three-vrm multiplier
-          const scaleLimit = maxMouthOpening / 30.0;
-
-          if (ratioHigh > 0.35) {
-            // "E" sound -> Ee smile viseme
-            targetEe = volume * 0.8 * scaleLimit;
-          } else if (ratioMid > 0.40 && ratioHigh < 0.20) {
-            // "O" sound -> Oo narrow mouth viseme
-            targetOo = volume * 0.8 * scaleLimit;
-          } else {
-            // "A" / Low sound -> Aa wide mouth viseme
-            targetAa = volume * 0.95 * scaleLimit;
-          }
+        if (frame.shape === 'e') {
+          targetEe = frame.level * 0.8 * scaleLimit;
+        } else if (frame.shape === 'o') {
+          targetOo = frame.level * 0.8 * scaleLimit;
+        } else if (frame.shape === 'a') {
+          targetAa = frame.level * 0.95 * scaleLimit;
         }
 
         currentAa.current = THREE.MathUtils.lerp(currentAa.current, targetAa, 0.25);
