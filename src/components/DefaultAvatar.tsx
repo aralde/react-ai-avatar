@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation } from 'motion/react';
 import { AvatarState } from '../lib/types';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
 export interface AvatarCustomization {
   skinColor: string;
@@ -65,12 +66,40 @@ export function DefaultAvatar({
   const mouthControls = useAnimation();
   const eyeControls = useAnimation();
   const requestRef = useRef<number | null>(null);
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
-    if (!analyser || state !== 'speaking') {
+    if (state !== 'speaking') {
       mouthControls.start({ d: "M 40 70 Q 50 70 60 70" }); // Closed mouth
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       return;
+    }
+
+    // No analyser? Degrade gracefully: animate the mouth with a synthetic
+    // speech-like pattern instead of leaving it frozen shut.
+    if (!analyser) {
+      let phase = Math.random() * 100;
+
+      const tickProcedural = () => {
+        phase += 0.18;
+        const amp =
+          0.35 +
+          0.30 * Math.sin(phase) +
+          0.25 * Math.sin(phase * 1.7 + 1.3) +
+          0.10 * Math.sin(phase * 3.1);
+        const level = Math.min(1, Math.max(0, amp));
+
+        const opening = level * maxMouthOpening * 0.8;
+        const widthOffset = level * 6;
+        mouthControls.set({ d: `M ${40 - widthOffset} 70 Q 50 ${70 + opening} ${60 + widthOffset} 70` });
+
+        requestRef.current = requestAnimationFrame(tickProcedural);
+      };
+
+      requestRef.current = requestAnimationFrame(tickProcedural);
+      return () => {
+        if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      };
     }
 
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -152,12 +181,16 @@ export function DefaultAvatar({
     };
   }, [analyser, state, mouthControls, maxMouthOpening]);
 
-  // Blinking logic
+  // Blinking logic (disabled when the user prefers reduced motion)
   useEffect(() => {
+    if (reducedMotion) return;
     let active = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const blink = async () => {
       while (active) {
-        await new Promise(resolve => setTimeout(resolve, Math.random() * (blinkIntervalMax - blinkIntervalMin) + blinkIntervalMin));
+        await new Promise(resolve => {
+          timer = setTimeout(resolve, Math.random() * (blinkIntervalMax - blinkIntervalMin) + blinkIntervalMin);
+        });
         if (!active) break;
         await eyeControls.start({ scaleY: 0.1, transition: { duration: blinkDuration / 1000 } });
         if (!active) break;
@@ -165,8 +198,11 @@ export function DefaultAvatar({
       }
     };
     blink();
-    return () => { active = false; };
-  }, [eyeControls, blinkIntervalMin, blinkIntervalMax, blinkDuration]);
+    return () => {
+      active = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [eyeControls, blinkIntervalMin, blinkIntervalMax, blinkDuration, reducedMotion]);
 
   // State colors
   const resolvedStateColors = {
@@ -183,7 +219,7 @@ export function DefaultAvatar({
         className="absolute inset-0 rounded-3xl blur-2xl opacity-50"
         animate={{
           backgroundColor: resolvedStateColors[state],
-          scale: state === 'speaking' || state === 'thinking' ? [1, 1.1, 1] : 1
+          scale: !reducedMotion && (state === 'speaking' || state === 'thinking') ? [1, 1.1, 1] : 1
         }}
         transition={{
           repeat: state === 'speaking' || state === 'thinking' ? Infinity : 0,
@@ -196,7 +232,7 @@ export function DefaultAvatar({
         viewBox="0 0 100 100"
         className="w-full h-full relative z-10 drop-shadow-2xl"
         animate={{
-          y: state === 'speaking' ? [0, -3, 0] : 0,
+          y: !reducedMotion && state === 'speaking' ? [0, -3, 0] : 0,
         }}
         transition={{
           repeat: state === 'speaking' ? Infinity : 0,

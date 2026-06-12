@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useRef } from 'react';
 import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
 import { CustomAvatar } from './CustomAvatar';
 import { AvatarState } from '../lib/types';
+import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
 
 // Lazy-loaded so the three.js stack (optional peer deps) is only fetched
@@ -112,6 +113,7 @@ export function RealtimeAvatar({
   const glowScaleValue = useMotionValue(1);
   const glowOpacityValue = useMotionValue(0.15);
   const requestRef = useRef<number | null>(null);
+  const reducedMotion = useReducedMotion();
 
   // Resolved theme mappings with standard fallbacks
   const resolvedStateColors = {
@@ -181,10 +183,10 @@ export function RealtimeAvatar({
           scale: scaleValue,
         }}
         animate={{
-          rotate: state === 'thinking' ? 360 : 0,
+          rotate: !reducedMotion && state === 'thinking' ? 360 : 0,
         }}
         transition={{
-          rotate: state === 'thinking' ? { repeat: Infinity, duration: 10, ease: "linear" } : { duration: 0.5 },
+          rotate: !reducedMotion && state === 'thinking' ? { repeat: Infinity, duration: 10, ease: "linear" } : { duration: 0.5 },
         }}
       />
 
@@ -229,6 +231,8 @@ export function RealtimeAvatar({
 
       {/* Unified State Indicator Pill (Positioned right under the avatar, consistent for all) */}
       <motion.div
+        role="status"
+        aria-live="polite"
         className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
         animate={{
           backgroundColor: resolvedStateColors[state],
@@ -237,7 +241,7 @@ export function RealtimeAvatar({
         transition={{ duration: 0.3 }}
       >
         <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full bg-white ${state === 'speaking' || state === 'thinking' ? 'animate-ping' : ''}`} />
+          <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
           {resolvedStateLabels[state]}
         </span>
       </motion.div>

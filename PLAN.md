@@ -45,11 +45,11 @@
 ## Phase 3 — Animation runtime (the heart)
 
 - [ ] `useAudioMouth(analyser, opts)`: single shared hook for amplitude + E/O/A band analysis (today copy-pasted in 3+ components).
-- [ ] **Procedural mouth fallback**: `state="speaking"` + `analyser=null` animates the mouth with a synthetic pattern (sum of sines + pseudo-random variation). This is the 80% use case.
+- [x] **Procedural mouth fallback**: `state="speaking"` + `analyser=null` animates the mouth with a synthetic pattern (sum of sines + pseudo-random variation). Done in `DefaultAvatar`; extend to `CustomAvatar`/presets with the `useAudioMouth` refactor.
 - [ ] **`thinking` is behavior, not a color**: `#rra-think` bubble with 3 dots pulsing out of phase + pupils up-left. In every preset.
 - [ ] **Layer contract** (`#rra-ring`, `#rra-head`, `#rra-mouth`, `.rra-pupil`, `.rra-lid`, `#rra-think`, …): runtime finds ids inside the container ref and drives them. Enables `variant="byos"` (bring-your-own-SVG; the dev's avatar license is the dev's problem).
-- [ ] Production quality: respect `prefers-reduced-motion` (kill blink/idle/mouse-tracking; keep the informative mouth), SSR-safe (no `window` at module scope), `stateLabels` as `aria-live` region.
-- [ ] Fix known leaks: blink loop surviving unmount, re-entrant `disconnect`, un-revoked Object URLs.
+- [x] Production quality: `useReducedMotion` hook gates blink/bounce/ring-spin/ping in `DefaultAvatar` + `RealtimeAvatar` (extend to `CustomAvatar`/`VrmAvatar` mouse-tracking next); state pill is an `aria-live` status region. SSR audit still pending.
+- [x] Fix known leaks: blink loop surviving unmount (timer now cleared). Pending: re-entrant `disconnect`, un-revoked Object URLs (demo-side).
 
 ## Phase 4 — The avatar catalog (the "wow")
 
