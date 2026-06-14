@@ -8,6 +8,7 @@ import {
   Grid3x3,
   Brush,
   Smile,
+  Dices,
   Captions,
   CaptionsOff,
   Cpu,
@@ -24,6 +25,7 @@ import { useGeminiLive } from './demo/useGeminiLive';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
+import { DICEBEAR_STYLES, DiceBearCollection } from './lib/dicebear';
 
 export default function App() {
   const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
@@ -44,10 +46,13 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm'>('geometric');
+  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm' | 'glb' | 'dicebear'>('geometric');
+  const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>('pixel-art');
+  const [dicebearSeed, setDicebearSeed] = useState<string>('realtime-avatar');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
+  const [glbUrl, setGlbUrl] = useState<string>('/models/rocketbox.glb');
   const [catalogSelection, setCatalogSelection] = useState<'alicia' | 'cyberpunk' | 'orion' | 'voxels'>('alicia');
   const catalogUrls = {
     alicia: '/models/default-avatar.vrm',
@@ -170,6 +175,87 @@ function MyAvatarComponent() {
 }`;
     }
 
+    if (variant === 'glb') {
+      return `import { RealtimeAvatar } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css';
+
+// Note: 3D GLB rendering requires installing the Three.js stack:
+// npm install three @react-three/fiber @react-three/drei
+// The .glb must expose ARKit blendshapes (jawOpen, eyeBlinkLeft, ...).
+
+function MyAvatarComponent() {
+  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
+  // and a WebAudio AnalyserNode for the audio-reactive mouth (optional:
+  // without it, "speaking" falls back to a synthetic mouth pattern)
+
+  return (
+    <RealtimeAvatar
+      state="idle"
+      analyser={null}
+      size={300}
+      variant="glb"
+      glbUrl="${glbUrl}"
+      maxMouthOpening={${maxMouthOpening}}
+      mouseTrackingIntensity={${mouseTrackingIntensity}}
+      blinkIntervalMin={${blinkIntervalMin}}
+      blinkIntervalMax={${blinkIntervalMax}}
+      blinkDuration={${blinkDuration}}
+      stateColors={{
+        idle: '${stateColors.idle}',
+        listening: '${stateColors.listening}',
+        thinking: '${stateColors.thinking}',
+        speaking: '${stateColors.speaking}'
+      }}
+      stateLabels={{
+        idle: '${stateLabels.idle}',
+        listening: '${stateLabels.listening}',
+        thinking: '${stateLabels.thinking}',
+        speaking: '${stateLabels.speaking}'
+      }}
+    />
+  );
+}`;
+    }
+
+    if (variant === 'dicebear') {
+      return `import { RealtimeAvatar } from 'react-realtime-avatar';
+import 'react-realtime-avatar/style.css';
+
+// DiceBear avatars are generated client-side. Install the optional peers:
+// npm install @dicebear/core @dicebear/collection
+// The curated catalog is CC0 1.0 — no attribution required.
+
+function MyAvatarComponent() {
+  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
+  // and a WebAudio AnalyserNode for the audio-reactive bounce (optional:
+  // without it, "speaking" falls back to a synthetic amplitude pattern)
+
+  return (
+    <RealtimeAvatar
+      state="idle"
+      analyser={null}
+      size={300}
+      variant="dicebear"
+      dicebearCollection="${dicebearCollection}"
+      dicebearSeed="${dicebearSeed}"
+      maxMouthOpening={${maxMouthOpening}}
+      stateColors={{
+        idle: '${stateColors.idle}',
+        listening: '${stateColors.listening}',
+        thinking: '${stateColors.thinking}',
+        speaking: '${stateColors.speaking}'
+      }}
+      stateLabels={{
+        idle: '${stateLabels.idle}',
+        listening: '${stateLabels.listening}',
+        thinking: '${stateLabels.thinking}',
+        speaking: '${stateLabels.speaking}'
+      }}
+    />
+  );
+}`;
+    }
+
     return `import { RealtimeAvatar } from 'react-realtime-avatar';
 import 'react-realtime-avatar/style.css';
 
@@ -217,12 +303,17 @@ function MyAvatarComponent() {
 }`;
   };
 
+  const installCommand =
+    variant === 'vrm'
+      ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm`
+      : variant === 'glb'
+      ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei`
+      : variant === 'dicebear'
+        ? `npm install react-realtime-avatar motion @dicebear/core @dicebear/collection`
+        : `npm install react-realtime-avatar motion`;
+
   const copyToClipboard = () => {
-    const text = activeTab === 'code' 
-      ? generateJSXCode() 
-      : (variant === 'vrm'
-          ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm`
-          : `npm install react-realtime-avatar motion`);
+    const text = activeTab === 'code' ? generateJSXCode() : installCommand;
     navigator.clipboard.writeText(text).then(() => {
       setCopiedText(true);
       setTimeout(() => setCopiedText(false), 2000);
@@ -430,6 +521,23 @@ function MyAvatarComponent() {
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Your custom SVG, compiled via our AI Agent builder.</span>
                       </button>
 
+                      {/* DiceBear Avatar Button */}
+                      <button
+                        onClick={() => setVariant('dicebear')}
+                        className={`col-span-2 flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'dicebear'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Dices className={`w-4.5 h-4.5 ${variant === 'dicebear' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'dicebear' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">DiceBear (CC0)</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Deterministic DiceBear styles, generated client-side. Talks via mouth-variant swapping.</span>
+                      </button>
+
                       {/* 3D VRM Avatar Button */}
                       <button
                         onClick={() => setVariant('vrm')}
@@ -448,6 +556,27 @@ function MyAvatarComponent() {
                         </div>
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">
                           Real-time 3D model with full visemes, skeletal physics, and look-at tracking.
+                        </span>
+                      </button>
+
+                      {/* 3D GLB + ARKit Avatar Button */}
+                      <button
+                        onClick={() => setVariant('glb')}
+                        className={`col-span-2 flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'glb'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">🧑</span>
+                            <span className="text-xs font-bold text-white">3D GLB · ARKit</span>
+                          </div>
+                          {variant === 'glb' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">
+                          Any .glb with the 52 ARKit blendshapes (e.g. Microsoft Rocketbox, MIT). Realistic lip-sync.
                         </span>
                       </button>
 
@@ -553,6 +682,72 @@ function MyAvatarComponent() {
                             </div>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    {/* GLB + ARKit Configuration Sub-Panel */}
+                    {variant === 'glb' && (
+                      <div className="bg-zinc-950/45 border border-zinc-800/60 rounded-xl p-3 flex flex-col gap-3">
+                        <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                          GLB Model Configuration
+                        </span>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">CORS-Enabled .glb URL (ARKit blendshapes)</label>
+                          <input
+                            type="text"
+                            value={glbUrl}
+                            onChange={(e) => setGlbUrl(e.target.value)}
+                            placeholder="/models/rocketbox.glb"
+                            className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-2 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50"
+                          />
+                          <span className="text-[9px] text-zinc-600 font-sans leading-normal">
+                            Drop a converted Microsoft Rocketbox (MIT) avatar into <code>public/models/rocketbox.glb</code>, or point to any glTF with the 52 ARKit morph targets (jawOpen, eyeBlinkLeft, …).
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* DiceBear Configuration Sub-Panel */}
+                    {variant === 'dicebear' && (
+                      <div className="bg-zinc-950/45 border border-zinc-800/60 rounded-xl p-3 flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                            DiceBear Style
+                          </span>
+                          <span className="text-[8px] font-mono uppercase tracking-wider text-zinc-500 bg-zinc-900/60 px-1.5 py-0.5 rounded border border-zinc-800">
+                            CC0 1.0 · no attribution
+                          </span>
+                        </div>
+
+                        {/* Style picker */}
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {DICEBEAR_STYLES.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => setDicebearCollection(s.id)}
+                              className={`px-2 py-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                                dicebearCollection === s.id
+                                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                  : 'bg-zinc-950/40 border-zinc-800/40 text-zinc-400 hover:border-zinc-700/60 hover:text-zinc-300'
+                              }`}
+                            >
+                              <span className="text-[10px] font-bold tracking-wide block leading-tight">{s.label}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Seed input */}
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Seed (deterministic)</label>
+                          <input
+                            type="text"
+                            value={dicebearSeed}
+                            onChange={(e) => setDicebearSeed(e.target.value)}
+                            placeholder="any-string"
+                            className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-lg px-2 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50"
+                          />
+                          <span className="text-[9px] text-zinc-600 font-sans leading-normal">Same seed + style always renders the same avatar. Styles with a face swap mouth/eye variants while speaking (real articulation); abstract styles bounce.</span>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -978,8 +1173,11 @@ function MyAvatarComponent() {
                 state={state} 
                 analyser={analyser} 
                 size={avatarSize} 
-                variant={variant} 
+                variant={variant}
                 vrmUrl={activeVrmUrl}
+                glbUrl={glbUrl}
+                dicebearCollection={dicebearCollection}
+                dicebearSeed={dicebearSeed}
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
@@ -1107,21 +1305,14 @@ function MyAvatarComponent() {
                     )}
                   </button>
                   <pre className="whitespace-pre overflow-x-auto select-text pr-16 max-h-[40vh] scrollbar-thin">
-                    {activeTab === 'code' ? generateJSXCode() : (variant === 'vrm' ? `# 1. Install react-realtime-avatar and 3D VRM dependencies
-npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm
+                    {activeTab === 'code' ? generateJSXCode() : `# 1. Install react-realtime-avatar${variant === 'vrm' ? ' and 3D VRM dependencies' : variant === 'glb' ? ' and the 3D GLB dependencies' : variant === 'dicebear' ? ' and the DiceBear packages (CC0 styles)' : ' and dependencies'}
+${installCommand}
 
 # 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
 import 'react-realtime-avatar/style.css';
 
 # 3. Mount the <RealtimeAvatar /> component inside your application
-# (See the "JSX Usage" tab for your customized code snippet)` : `# 1. Install react-realtime-avatar and dependencies
-npm install react-realtime-avatar motion
-
-# 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
-import 'react-realtime-avatar/style.css';
-
-# 3. Mount the <RealtimeAvatar /> component inside your application
-# (See the "JSX Usage" tab for your customized code snippet)`)}
+# (See the "JSX Usage" tab for your customized code snippet)`}
                   </pre>
                 </div>
 
@@ -1175,8 +1366,11 @@ import 'react-realtime-avatar/style.css';
                 state={state} 
                 analyser={analyser} 
                 size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)} 
-                variant={variant} 
+                variant={variant}
                 vrmUrl={activeVrmUrl}
+                glbUrl={glbUrl}
+                dicebearCollection={dicebearCollection}
+                dicebearSeed={dicebearSeed}
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}

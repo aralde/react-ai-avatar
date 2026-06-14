@@ -6,3 +6,8 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Rocketbox source assets: downloaded FBX + multi-MB TGA textures, regenerable
+# via tools/rocketbox-asset (only the converted public/models/rocketbox.glb is
+# committed, not the ~150 MB source dump).
+tools/rocketbox-asset/work/

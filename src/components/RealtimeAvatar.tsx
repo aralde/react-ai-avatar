@@ -6,7 +6,9 @@ import { GeometricAvatar } from './GeometricAvatar';
 import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
+import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
+import type { DiceBearCollection } from '../lib/dicebear';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
 
@@ -16,14 +18,30 @@ const VrmAvatarLazy = React.lazy(() =>
   import('./VrmAvatar').then((m) => ({ default: m.VrmAvatar }))
 );
 
+// Same deal for the GLB + ARKit renderer: the three.js stack is only fetched
+// when variant="glb" is actually rendered.
+const GlbAvatarLazy = React.lazy(() =>
+  import('./GlbArkitAvatar').then((m) => ({ default: m.GlbArkitAvatar }))
+);
+
+// Note: DiceBearAvatar itself is lightweight and imported directly. The
+// heavy, optional @dicebear/* packages are deferred at runtime by a dynamic
+// import *inside* the component — so they're only fetched when actually used.
+
 export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm' | 'byos';
+  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
   children?: React.ReactNode;
   vrmUrl?: string;
+  /** CORS-enabled .glb URL with ARKit blendshapes, for variant="glb". */
+  glbUrl?: string;
+  /** DiceBear style id (curated CC0 set), for variant="dicebear". */
+  dicebearCollection?: DiceBearCollection | string;
+  /** Deterministic DiceBear seed, for variant="dicebear". */
+  dicebearSeed?: string;
   subtitle?: string;
   thought?: string;
   showSubtitle?: boolean;
@@ -76,11 +94,14 @@ export function RealtimeAvatar({
   variant = 'geometric',
   children,
   vrmUrl,
+  glbUrl,
   subtitle,
   thought,
   showSubtitle = true,
   className = '',
   style,
+  dicebearCollection,
+  dicebearSeed,
   maxMouthOpening,
   blinkIntervalMin,
   blinkIntervalMax,
@@ -110,6 +131,24 @@ export function RealtimeAvatar({
         <VrmAvatarLazy {...avatarProps} vrmUrl={vrmUrl} />
       </Suspense>
     );
+  } else if (variant === 'glb') {
+    AvatarComponent = (
+      <Suspense fallback={null}>
+        <GlbAvatarLazy {...avatarProps} glbUrl={glbUrl} />
+      </Suspense>
+    );
+  } else if (variant === 'dicebear') {
+    AvatarComponent = (
+      <DiceBearAvatar
+        state={state}
+        analyser={analyser}
+        size={size}
+        maxMouthOpening={maxMouthOpening}
+        stateColors={stateColors}
+        collection={dicebearCollection}
+        seed={dicebearSeed}
+      />
+    );
   } else if (variant === 'custom') {
     AvatarComponent = <CustomAvatar {...avatarProps} />;
   } else if (variant === 'byos') {
@@ -133,7 +172,6 @@ export function RealtimeAvatar({
   }
 
   // Motion values for volume-reactive pulsing
-  const scaleValue = useMotionValue(1);
   const glowScaleValue = useMotionValue(1);
   const glowOpacityValue = useMotionValue(0.15);
   const requestRef = useRef<number | null>(null);
@@ -163,7 +201,6 @@ export function RealtimeAvatar({
 
   useEffect(() => {
     if (!analyser || (state !== 'speaking' && state !== 'listening')) {
-      scaleValue.set(1);
       glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
       glowOpacityValue.set(state === 'thinking' ? 0.35 : 0.15);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
@@ -181,7 +218,6 @@ export function RealtimeAvatar({
       }
       const vol = Math.min(1.0, maxVal / 128);
       
-      scaleValue.set(1 + vol * 0.08);
       glowScaleValue.set(1 + vol * 0.35);
       glowOpacityValue.set(0.15 + vol * 0.35);
       
@@ -192,28 +228,15 @@ export function RealtimeAvatar({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [analyser, state, scaleValue, glowScaleValue, glowOpacityValue]);
+  }, [analyser, state, glowScaleValue, glowOpacityValue]);
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
       
-      {/* Futuristic Holographic Projection Ring / Aura Behind Avatar */}
-      <motion.div
-        className="absolute rounded-[2rem] border-2 border-dashed pointer-events-none"
-        style={{
-          width: size * 1.05,
-          height: size * 1.05,
-          borderColor: hexToRgba(resolvedStateColors[state], 0.25),
-          scale: scaleValue,
-        }}
-        animate={{
-          rotate: !reducedMotion && state === 'thinking' ? 360 : 0,
-        }}
-        transition={{
-          rotate: !reducedMotion && state === 'thinking' ? { repeat: Infinity, duration: 10, ease: "linear" } : { duration: 0.5 },
-        }}
-      />
-
+      {/* Soft ambient color glow behind the avatar, reacting to audio + state.
+          The old dashed "holographic projection ring" was removed: several
+          avatars already carry their own container, so the rotating border was
+          redundant and clashed with the realistic 3D model. */}
       <motion.div
         className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
         style={{

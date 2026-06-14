@@ -37,6 +37,8 @@
     "test:watch": "vitest"
   },
   "peerDependencies": {
+    "@dicebear/collection": "^9.0.0",
+    "@dicebear/core": "^9.0.0",
     "@pixiv/three-vrm": "^3.0.0",
     "@react-three/drei": "^9.0.0 || ^10.0.0",
     "@react-three/fiber": "^8.0.0 || ^9.0.0",
@@ -46,6 +48,12 @@
     "three": ">=0.160.0"
   },
   "peerDependenciesMeta": {
+    "@dicebear/collection": {
+      "optional": true
+    },
+    "@dicebear/core": {
+      "optional": true
+    },
     "@pixiv/three-vrm": {
       "optional": true
     },
@@ -60,6 +68,8 @@
     }
   },
   "devDependencies": {
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.2",
     "@google/genai": "^1.29.0",
     "@pixiv/three-vrm": "^3.5.3",
     "@react-three/drei": "^10.7.7",

@@ -23,6 +23,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - 🦺 **Graceful degradation** — `analyser={null}` while `state="speaking"`? The mouth animates with a synthetic speech-like pattern instead of freezing. Perfect for demos and non-WebRTC apps.
 - 🧠 **A visible `thinking` state** — pulsing thought bubble + upward gaze. Your users *see* the LLM thinking, not just a color change.
 - 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
+- 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
 - ♿ **Production quality** — SSR-safe (Next.js friendly), honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - 🧊 **Optional 3D (VRM)** — `variant="vrm"` renders VRoid/VRM models with visemes and gaze tracking. The three.js stack is an *optional* peer dependency, lazy-loaded only if you use it.
@@ -56,7 +57,7 @@ export default function App() {
       state={aiState}
       analyser={analyser}
       size={300}
-      variant="geometric" // 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'byos'
+      variant="geometric" // 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'dicebear' | 'vrm' | 'glb' | 'byos'
       customization={{ skinColor: '#f5c7a9', hairColor: '#2c2c2c', glasses: true, headphones: true }}
       stateColors={{ idle: '#4b5563', listening: '#3b82f6', thinking: '#8b5cf6', speaking: '#10b981' }}
     />
@@ -72,10 +73,53 @@ export default function App() {
 | `memoji` | soft volumetric head | radial gradients, glossy eyes, blush |
 | `pixelart` | retro 32×32 grid | mouth and pupils move in whole pixels |
 | `doodle` | hand-drawn ink sketch | wobbly strokes, sketched thought bubble |
+| `dicebear` | [DiceBear](https://www.dicebear.com) styles | optional, lazy-loaded; curated CC0 set; pass `dicebearCollection` / `dicebearSeed` |
 | `vrm` | 3D VRoid/VRM model | optional, lazy-loaded; pass `vrmUrl` |
+| `glb` | 3D glTF + ARKit blendshapes | optional, lazy-loaded; pass `glbUrl`. Works with [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (MIT), Ready Player Me, or any `.glb` exposing the 52 ARKit morph targets |
 | `byos` | **your** SVG | pass it as children; see the layer contract |
 
 All built-in presets are original designs licensed MIT — nothing inside this package requires attribution.
+
+## DiceBear avatars (`dicebear`)
+
+Generate [DiceBear](https://www.dicebear.com) avatars client-side — deterministic per `seed`, no network call. The packages are **optional** peer dependencies, lazy-loaded only when this variant renders:
+
+```bash
+npm install @dicebear/core @dicebear/collection
+```
+
+```tsx
+<RealtimeAvatar
+  state={aiState}
+  analyser={analyser}
+  variant="dicebear"
+  dicebearCollection="open-peeps" // curated CC0 style id
+  dicebearSeed="ada-lovelace"     // same seed + style => same face
+/>
+```
+
+**Licensing:** DiceBear ships ~30 styles under mixed licenses. This library's catalog (`DICEBEAR_STYLES`) is curated to **CC0 1.0** styles that have a face — `pixel-art`(+`-neutral`), `lorelei`(+`-neutral`), `notionists`(+`-neutral`), `open-peeps`, `thumbs` — so it keeps the same no-attribution promise as the built-in presets. You *can* pass any other DiceBear style id to `dicebearCollection`, but then its license (e.g. CC BY 4.0 for `adventurer`, or "free for personal and commercial use" for `bottts`) is your responsibility — same deal as `byos`.
+
+**Animation:** DiceBear SVGs have no `#rra-*` hooks, but their *option API* lets us pick which mouth/eyes variant to render. So every curated style actually **talks**: it pre-generates a few frames of the same avatar (same seed ⇒ identical hair/skin/etc.) with closed / mid / open mouths — plus a blink frame where the style allows — and swaps which frame is shown per audio frame, with a subtle bounce on top. Real articulation via the supported API, no fragile path hacks. The per-style variant choices live in the exported `DICEBEAR_RIGS` map. (A non-rigged style id you pass yourself — e.g. a faceless abstract DiceBear style — falls back to a pure audio-reactive bounce.) State color and the thinking bubble still come from the surrounding `<RealtimeAvatar />` chrome.
+
+## 3D GLB + ARKit (`glb`)
+
+Render any `.glb` that exposes the **52 [ARKit blendshapes](https://arkit-face-blendshapes.com/)** (the standard `jawOpen`, `mouthFunnel`, `eyeBlinkLeft`, … morph targets). Same shared mouth engine as the flat presets drives them, so the model talks, blinks and follows the cursor. The three.js stack is optional and lazy-loaded — same deal as `vrm`, minus `@pixiv/three-vrm`:
+
+```bash
+npm install three @react-three/fiber @react-three/drei
+```
+
+```tsx
+<RealtimeAvatar
+  state={aiState}
+  analyser={analyser}
+  variant="glb"
+  glbUrl="/models/rocketbox.glb" // CORS-enabled .glb with ARKit morph targets
+/>
+```
+
+**Recommended example asset — Microsoft Rocketbox (MIT).** [Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) ships 115 rigged avatars with an ARKit-compatible blendshape variant, under the **MIT license** — the cleanest fit for this library's no-attribution-headaches philosophy. Rocketbox distributes `.fbx`, so convert one avatar to `.glb` once (offline, via [FBX2GLTF](https://github.com/facebookincubator/FBX2glTF) or Blender's glTF 2.0 export, keeping the blendshapes) and drop it in `public/models/`. Keep the MIT notice alongside it. [Ready Player Me](https://docs.readyplayer.me/ready-player-me/api-reference/avatars/morph-targets/apple-arkit) avatars (`?morphTargets=ARKit`) also work out of the box.
 
 ## Bring your own SVG (`byos`)
 
@@ -107,6 +151,9 @@ Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `da
 - `variant` — see catalog above. Default `'geometric'`.
 - `children` — your SVG, for `variant="byos"`.
 - `vrmUrl` (`string`) — CORS-enabled `.vrm` URL, for `variant="vrm"`.
+- `glbUrl` (`string`) — CORS-enabled `.glb` URL with ARKit blendshapes, for `variant="glb"`.
+- `dicebearCollection` (`string`) — DiceBear style id (curated CC0 set), for `variant="dicebear"`.
+- `dicebearSeed` (`string`) — deterministic DiceBear seed, for `variant="dicebear"`.
 - `subtitle` / `thought` (`string`) — optional movie-style captions and a thought bubble.
 - `showSubtitle` (`boolean`) — default `true`.
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.

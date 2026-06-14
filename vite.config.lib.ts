@@ -34,6 +34,7 @@ export default defineConfig({
         /^three($|\/)/,
         /^@react-three\//,
         /^@pixiv\/three-vrm($|\/)/,
+        /^@dicebear\//,
       ],
     },
   },
