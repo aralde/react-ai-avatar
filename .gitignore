@@ -11,3 +11,10 @@ coverage/
 # via tools/rocketbox-asset (only the converted public/models/rocketbox.glb is
 # committed, not the ~150 MB source dump).
 tools/rocketbox-asset/work/
+
+# Heavy 3D example assets are NOT versioned — they bloat clones and some carry
+# third-party licenses. The demo expects them locally; see public/models/README.md
+# for where to get them. The library itself ships no models.
+public/models/*.vrm
+public/models/*.glb
+public/animations/
