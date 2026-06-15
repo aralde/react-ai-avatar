@@ -30,8 +30,11 @@ export {
 } from './dicebear';
 export type { DiceBearCollection, DiceBearStyleMeta, DiceBearRig } from './dicebear';
 
-export { GlbArkitAvatar } from '../components/GlbArkitAvatar';
-export type { GlbArkitAvatarProps } from '../components/GlbArkitAvatar';
+// NOTE: GlbArkitAvatar and VrmAvatar are intentionally NOT re-exported here.
+// Both pull in the optional three.js peer stack, so they are only reached via
+// the lazy-loaded `variant="glb"` / `variant="vrm"` paths inside RealtimeAvatar.
+// Re-exporting them statically would drag three.js into the main entry chunk
+// and break the "optional, lazy-loaded only if you use it" promise.
 
 export { AudioVisualizer } from '../components/AudioVisualizer';
 export type { AudioVisualizerProps } from '../components/AudioVisualizer';

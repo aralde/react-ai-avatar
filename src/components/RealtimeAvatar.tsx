@@ -1,6 +1,5 @@
 import React, { Suspense, useEffect, useRef } from 'react';
-import { DefaultAvatar, AvatarCustomization } from './DefaultAvatar';
-import { CustomAvatar } from './CustomAvatar';
+import { AvatarCustomization } from './DefaultAvatar';
 import { ContractAvatar } from './ContractAvatar';
 import { GeometricAvatar } from './GeometricAvatar';
 import { MemojiAvatar } from './MemojiAvatar';
@@ -32,7 +31,7 @@ export interface RealtimeAvatarProps {
   state: AvatarState;
   analyser: AnalyserNode | null;
   size?: number;
-  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'default' | 'custom' | 'vrm' | 'glb' | 'dicebear' | 'byos';
+  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
   children?: React.ReactNode;
   vrmUrl?: string;
@@ -149,12 +148,8 @@ export function RealtimeAvatar({
         seed={dicebearSeed}
       />
     );
-  } else if (variant === 'custom') {
-    AvatarComponent = <CustomAvatar {...avatarProps} />;
   } else if (variant === 'byos') {
     AvatarComponent = <ContractAvatar {...avatarProps}>{children}</ContractAvatar>;
-  } else if (variant === 'default') {
-    AvatarComponent = <DefaultAvatar {...avatarProps} />;
   } else {
     const presets = {
       geometric: GeometricAvatar,
