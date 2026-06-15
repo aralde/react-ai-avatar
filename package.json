@@ -6,11 +6,11 @@
   "author": "Ariel A. <ariel.a.deibe@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aralde/react-avatar-llm.git"
+    "url": "git+https://github.com/aralde/react-realtime-avatar.git"
   },
-  "homepage": "https://github.com/aralde/react-avatar-llm#readme",
+  "homepage": "https://github.com/aralde/react-realtime-avatar#readme",
   "bugs": {
-    "url": "https://github.com/aralde/react-avatar-llm/issues"
+    "url": "https://github.com/aralde/react-realtime-avatar/issues"
   },
   "keywords": [
     "react",
