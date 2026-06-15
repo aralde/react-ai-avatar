@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+/* Custom Scrollbar Styles for Sleek Dashboard Feel */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.3);
+  border-radius: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(63, 63, 70, 0.4);
+  border-radius: 8px;
+  border: 1px solid rgba(24, 24, 27, 0.1);
+  transition: background 0.2s ease;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.35); /* subtle emerald glow on hover */
+}
+
+/* Firefox support */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(63, 63, 70, 0.4) rgba(24, 24, 27, 0.3);
+}
