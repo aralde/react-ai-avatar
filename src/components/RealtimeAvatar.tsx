@@ -8,6 +8,7 @@ import { DoodleAvatar } from './DoodleAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
 import type { SpeechActivitySource } from '../lib/speechActivity';
+import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
 import type { DiceBearCollection } from '../lib/dicebear';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
@@ -45,6 +46,15 @@ export interface RealtimeAvatarProps {
    * gets a face that tracks the stream. See `createSpeechActivity`.
    */
   speechActivity?: SpeechActivitySource;
+  /**
+   * Declarative mouth driver for text-streaming chats. Pass the *accumulated*
+   * assistant text (the kind a hook like the Vercel AI SDK's `useChat` hands
+   * you — it grows each render); the avatar diffs its growth internally and
+   * drives the mouth from token cadence. No `createSpeechActivity`, no reader
+   * loop. Ignored when `speechActivity` is set; takes precedence over
+   * `analyser`. See `useStreamingTextActivity`.
+   */
+  streamingText?: string;
   size?: number;
   variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
@@ -105,6 +115,7 @@ export function RealtimeAvatar({
   state,
   analyser = null,
   speechActivity,
+  streamingText,
   size = 280,
   variant = 'geometric',
   children,
@@ -128,9 +139,14 @@ export function RealtimeAvatar({
 }: RealtimeAvatarProps) {
   // A token-rate speech activity source takes precedence over the audio
   // analyser as the mouth driver, so a text-streaming LLM gets a face too.
-  // Both ride the same internal channel (the avatar components feed whatever
-  // they receive into createMouthEngine, which detects the kind).
-  const mouthSource = speechActivity ?? analyser;
+  // It can come two ways: the explicit `speechActivity` prop (imperative —
+  // host owns the stream and calls push()), or `streamingText` (declarative —
+  // host passes accumulated text and we diff its growth here). Both collapse
+  // to one SpeechActivitySource; explicit wins. Whatever we land on rides the
+  // same internal channel (createMouthEngine detects the kind).
+  const textActivity = useStreamingTextActivity(streamingText);
+  const activitySource = speechActivity ?? textActivity;
+  const mouthSource = activitySource ?? analyser;
 
   const avatarProps = {
     state,
@@ -220,7 +236,7 @@ export function RealtimeAvatar({
     // Glow reacts to whichever driver is live: audio amplitude when an
     // analyser is present, otherwise token-rate energy in text-stream mode.
     const audioReactive = analyser && (state === 'speaking' || state === 'listening');
-    const textReactive = !analyser && speechActivity && state === 'speaking';
+    const textReactive = !analyser && activitySource && state === 'speaking';
 
     if (!audioReactive && !textReactive) {
       glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
@@ -242,7 +258,7 @@ export function RealtimeAvatar({
         }
         vol = Math.min(1.0, maxVal / 128);
       } else {
-        vol = speechActivity ? speechActivity.sample() : 0;
+        vol = activitySource ? activitySource.sample() : 0;
       }
 
       glowScaleValue.set(1 + vol * 0.35);
@@ -255,7 +271,7 @@ export function RealtimeAvatar({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [analyser, speechActivity, state, glowScaleValue, glowOpacityValue]);
+  }, [analyser, activitySource, state, glowScaleValue, glowOpacityValue]);
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>

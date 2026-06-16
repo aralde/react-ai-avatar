@@ -157,7 +157,8 @@ Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `da
 
 - `state` (`'idle' | 'listening' | 'thinking' | 'speaking'`) — required. You resolve it; it is never inferred.
 - `analyser` (`AnalyserNode | null`) — optional. Drives the mouth from audio. Omitted or `null`, speaking falls back to the synthetic pattern.
-- `speechActivity` (`SpeechActivitySource`) — optional. Token-rate mouth driver for text-streaming LLMs, from `createSpeechActivity()`. Takes precedence over `analyser` when set.
+- `streamingText` (`string`) — optional. Declarative mouth driver: pass the accumulated assistant text (e.g. from `useChat`) and the avatar diffs its growth to drive the mouth. Takes precedence over `analyser`. See [Text-streaming LLMs](#text-streaming-llms-no-audio).
+- `speechActivity` (`SpeechActivitySource`) — optional. Imperative token-rate mouth driver, from `createSpeechActivity()`. Takes precedence over both `streamingText` and `analyser` when set.
 - `size` (`number`) — px, default `280`.
 - `variant` — see catalog above. Default `'geometric'`.
 - `children` — your SVG, for `variant="byos"`.
@@ -179,6 +180,7 @@ Everything the runtime uses is exported, so you can compose your own:
 - `useAvatarRuntime(containerRef, options)` — the animation runtime itself.
 - `createMouthEngine(source)` / `useAudioMouth(...)` — the source→mouth analysis (amplitude + A/E/O shapes), procedural fallback included. `source` is an `AnalyserNode`, a `SpeechActivitySource`, or `null`.
 - `createSpeechActivity(options?)` — the token-rate mouth driver for text streams (`push` / `end` / `reset` / `sample`).
+- `useStreamingTextActivity(text)` — declarative wrapper: diffs accumulated streaming text into a `SpeechActivitySource` for you (what the `streamingText` prop uses).
 - `useReducedMotion()` — SSR-safe `prefers-reduced-motion` hook.
 - `GeometricAvatar`, `MemojiAvatar`, `PixelArtAvatar`, `DoodleAvatar` — the raw presets.
 - `AudioVisualizer` — Siri-style waveform telemetry strip.
@@ -205,9 +207,38 @@ function playAudioChunk(pcmData: Float32Array) {
 
 ## Text-streaming LLMs (no audio)
 
-Not every assistant speaks. For a text-only LLM that streams tokens — OpenAI-style `/chat/completions` or `/responses` with `stream: true`, or local servers like Ollama / LM Studio / vLLM — there's no `AnalyserNode` to read. Instead, drive the mouth from **token cadence**: `createSpeechActivity()` turns the rhythm of arriving tokens into the same 0..1 energy signal the audio path produces. The mouth is busy while the model emits text and settles shut on pauses or when the stream ends.
+Not every assistant speaks. For a text-only LLM that streams tokens — OpenAI-style `/chat/completions` or `/responses` with `stream: true`, or local servers like Ollama / LM Studio / vLLM — there's no `AnalyserNode` to read. Instead, drive the mouth from **token cadence**: the rhythm of arriving text becomes the same 0..1 energy signal the audio path produces. The mouth is busy while the model emits text and settles shut on pauses or when the stream ends. The library still never fetches anything — you own the stream, it owns the face.
 
-The library still never fetches anything — you own the stream, it owns the face:
+There are two ways to feed it, matching the two ways React apps consume streams.
+
+### Declarative — `streamingText` (the easy path)
+
+If you use a streaming chat hook — the [Vercel AI SDK](https://sdk.vercel.ai)'s `useChat` is the de-facto standard — you never see raw chunks: you get the **accumulated** assistant message (it grows each render) plus a `status`. Both map straight onto the avatar. Pass the text, the avatar diffs its growth internally and drives the mouth. No refs, no reader loop:
+
+```tsx
+import { useChat } from '@ai-sdk/react';
+import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
+
+function ChatAvatar() {
+  const { messages, status } = useChat();
+  const last = messages.at(-1);
+
+  return (
+    <RealtimeAvatar
+      // status: 'submitted' (awaiting first token) | 'streaming' | 'ready'
+      state={status === 'submitted' ? 'thinking' : status === 'streaming' ? 'speaking' : 'idle'}
+      streamingText={last?.role === 'assistant' ? last.text : ''}
+    />
+  );
+}
+```
+
+That's the whole integration. `streamingText` takes precedence over `analyser`; the ambient glow reacts to it too. Works with every variant — flat presets, DiceBear, VRM and GLB.
+
+### Imperative — `createSpeechActivity()` (you own the reader loop)
+
+Hand-rolling `fetch` or driving the OpenAI SDK's `for await` yourself? Then you *do* have the raw chunks — feed their cadence directly with a `SpeechActivitySource`:
 
 ```tsx
 import { RealtimeAvatar, createSpeechActivity } from 'react-ai-avatar';
@@ -243,11 +274,11 @@ function TextAvatar() {
     setState('idle');
   }
 
-  return <RealtimeAvatar state={state} analyser={null} speechActivity={speech} subtitle={subtitle} />;
+  return <RealtimeAvatar state={state} speechActivity={speech} subtitle={subtitle} />;
 }
 ```
 
-`createSpeechActivity(options?)` accepts `chargePerChar`, `decayMs` and `maxChargePerPush` to tune how wide / how fast the mouth reacts. The returned source has `push(chunk)`, `end()`, `reset()` (drop energy on an interrupted turn) and `sample()`. When `speechActivity` is provided it takes precedence over `analyser` as the mouth driver, and the ambient glow reacts to it too. Works with every variant — flat presets, DiceBear, VRM and GLB.
+`createSpeechActivity(options?)` accepts `chargePerChar`, `decayMs` and `maxChargePerPush` to tune how wide / how fast the mouth reacts. The returned source has `push(chunk)`, `end()`, `reset()` (drop energy on an interrupted turn) and `sample()`. When `speechActivity` is provided it takes precedence over both `streamingText` and `analyser`. (`streamingText` is just this, with the diffing done for you — under the hood it's the exported `useStreamingTextActivity` hook.)
 
 > The demo dashboard ships this end-to-end: toggle **TEXT (STREAM)** to talk to an OpenAI-compatible endpoint (set `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL`, or leave them unset / `MOCK_REALTIME=true` for a no-key mock). See `src/demo/useStreamingLLM.ts` and the `/api/chat` route in `server.ts`.
 
