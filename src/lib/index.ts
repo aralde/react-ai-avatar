@@ -43,7 +43,11 @@ export { useAvatarRuntime } from './useAvatarRuntime';
 export type { AvatarRuntimeOptions } from './useAvatarRuntime';
 export { useAudioMouth } from './useAudioMouth';
 export { createMouthEngine } from './mouthEngine';
-export type { MouthEngine, MouthFrame, MouthShape } from './mouthEngine';
+export type { MouthEngine, MouthFrame, MouthShape, MouthSource } from './mouthEngine';
+
+// Token-rate mouth driver for text-streaming LLMs (completions/responses).
+export { createSpeechActivity, isSpeechActivity, SPEECH_ACTIVITY_BRAND } from './speechActivity';
+export type { SpeechActivitySource, SpeechActivityOptions } from './speechActivity';
 export { useReducedMotion } from './useReducedMotion';
 
 export type { AvatarState, StateColors, StateLabels } from './types';

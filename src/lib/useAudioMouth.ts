@@ -1,9 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { createMouthEngine, MouthFrame } from './mouthEngine';
+import { createMouthEngine, MouthFrame, MouthSource } from './mouthEngine';
 
 export interface UseAudioMouthOptions {
-  /** Audio source. `null` switches to the procedural fallback engine. */
-  analyser: AnalyserNode | null;
+  /**
+   * Mouth source: a WebAudio AnalyserNode (audio), a token-rate
+   * SpeechActivitySource (text streams), or `null` (procedural fallback).
+   */
+  analyser: MouthSource;
   /** Run the loop only while true (typically `state === 'speaking'`). */
   enabled: boolean;
   /** Called once per animation frame with the current mouth frame. */

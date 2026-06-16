@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { AvatarState, StateColors } from '../lib/types';
-import { createMouthEngine, MouthEngine } from '../lib/mouthEngine';
+import { createMouthEngine, MouthEngine, MouthSource } from '../lib/mouthEngine';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import {
   DiceBearCollection,
@@ -38,7 +38,8 @@ import {
 
 export interface DiceBearAvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   size?: number;
   /** Curated CC0 style; any DiceBear style id also works at your own licensing discretion. */
   collection?: DiceBearCollection | string;
@@ -191,7 +192,7 @@ export function DiceBearAvatar({
     const hasBlink = !!(rig && (rig.blink || rig.faceBlink));
 
     let engine: MouthEngine | null = null;
-    let engineAnalyser: AnalyserNode | null = null;
+    let engineAnalyser: MouthSource = null;
     let level = 0;
     let breathe = 0;
     let blinkTimer = 1500 + Math.random() * 2500;

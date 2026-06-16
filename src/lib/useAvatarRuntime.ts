@@ -1,6 +1,6 @@
 import { RefObject, useEffect, useRef } from 'react';
 import { AvatarState, StateColors } from './types';
-import { createMouthEngine, MouthEngine } from './mouthEngine';
+import { createMouthEngine, MouthEngine, MouthSource } from './mouthEngine';
 import { useReducedMotion } from './useReducedMotion';
 
 /**
@@ -28,7 +28,8 @@ import { useReducedMotion } from './useReducedMotion';
 
 export interface AvatarRuntimeOptions {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   stateColors?: StateColors;
   /** Scales mouth opening; ~30 ≈ ellipse ry growing ~12 viewBox units. */
   maxMouthOpening?: number;
@@ -128,7 +129,7 @@ export function useAvatarRuntime(
 
     // --- Loop state -------------------------------------------------------
     let engine: MouthEngine | null = null;
-    let engineAnalyser: AnalyserNode | null = null;
+    let engineAnalyser: MouthSource = null;
     let engineActive = false;
 
     let mouthLevel = 0;

@@ -11,7 +11,17 @@
  * phoneme-accurate lip-sync: an AnalyserNode gives energy, not phonemes.
  */
 
+import { isSpeechActivity, SpeechActivitySource } from './speechActivity';
+
 export type MouthShape = 'a' | 'e' | 'o' | 'closed';
+
+/**
+ * Anything that can drive the mouth: a WebAudio AnalyserNode (audio), a
+ * token-rate SpeechActivitySource (text streams), or `null` (procedural
+ * fallback). Components thread this through unchanged — the engine picks
+ * the right driver.
+ */
+export type MouthSource = AnalyserNode | SpeechActivitySource | null;
 
 export interface MouthFrame {
   /** Normalized mouth-opening level, 0 (closed) to 1 (max). */
@@ -115,9 +125,47 @@ function createProceduralEngine(): MouthEngine {
 }
 
 /**
- * Create a mouth engine for the given analyser. Pass `null` to get the
- * procedural (synthetic) fallback engine.
+ * Token-rate engine: maps a SpeechActivitySource's decayed energy onto a
+ * moving mouth. There are no frequency bands to read shapes from, so it
+ * overlays a syllable-like wobble and slow shape drift (same feel as the
+ * procedural engine) gated by how much token energy is present — the mouth
+ * is busy while tokens stream and settles shut on pauses.
  */
-export function createMouthEngine(analyser: AnalyserNode | null): MouthEngine {
-  return analyser ? createAnalyserEngine(analyser) : createProceduralEngine();
+function createTokenEngine(source: SpeechActivitySource): MouthEngine {
+  let phase = Math.random() * 100;
+
+  return {
+    read(): MouthFrame {
+      const energy = source.sample();
+      if (energy <= SILENCE_THRESHOLD) {
+        return { level: 0, shape: 'closed' };
+      }
+
+      // Syllable wobble that actually returns toward closed between openings,
+      // so the mouth *articulates* (open/close) rather than holding wide open
+      // on a steady stream. A sum of detuned sines (like the procedural engine)
+      // keeps the cadence speech-like instead of a mechanical pulse, and the
+      // deep troughs are what let discrete-viseme variants (DiceBear) swap back
+      // to closed/mid instead of pinning on the open smile.
+      phase += 0.3;
+      const wobble =
+        0.5 + 0.34 * Math.sin(phase) + 0.16 * Math.sin(phase * 1.7 + 1.3); // ~[0, 1]
+      const level = Math.min(1, energy * Math.max(0, wobble));
+
+      const s = Math.sin(phase * 0.41);
+      const shape: MouthShape = s > 0.55 ? 'o' : s < -0.6 ? 'e' : 'a';
+
+      return { level, shape };
+    },
+  };
+}
+
+/**
+ * Create a mouth engine for the given source: a WebAudio AnalyserNode
+ * (audio-reactive), a token-rate SpeechActivitySource (text streams), or
+ * `null` for the procedural (synthetic) fallback engine.
+ */
+export function createMouthEngine(source: MouthSource): MouthEngine {
+  if (isSpeechActivity(source)) return createTokenEngine(source);
+  return source ? createAnalyserEngine(source) : createProceduralEngine();
 }
