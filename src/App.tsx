@@ -18,17 +18,39 @@ import {
   Copy,
   Check,
   X,
-  Maximize
+  Maximize,
+  MessageSquare,
+  Send,
+  Square
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGeminiLive } from './demo/useGeminiLive';
+import { useStreamingLLM } from './demo/useStreamingLLM';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
 import { DICEBEAR_STYLES, DiceBearCollection } from './lib/dicebear';
 
 export default function App() {
-  const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
+  const gemini = useGeminiLive();
+  const textLLM = useStreamingLLM();
+
+  // Which engine drives the avatar: realtime voice (Gemini Live) or a
+  // text-streaming LLM (OpenAI-compatible completions). Both hooks always run;
+  // we select the active one's state below.
+  const [engine, setEngine] = useState<'voice' | 'text'>('voice');
+  const [prompt, setPrompt] = useState<string>('');
+  const isText = engine === 'text';
+
+  const { connect, disconnect, isConnected } = gemini;
+  const state = isText ? textLLM.state : gemini.state;
+  const subtitle = isText ? textLLM.subtitle : gemini.subtitle;
+  const thought = isText ? textLLM.thought : gemini.thought;
+  const error = isText ? textLLM.error : gemini.error;
+  // Audio analyser drives voice mode; the token-rate source drives text mode.
+  const analyser = isText ? null : gemini.analyser;
+  const speechActivity = isText ? textLLM.speechActivity : undefined;
+
   const [avatarSize, setAvatarSize] = useState<number>(300);
 
   useEffect(() => {
@@ -1030,30 +1052,95 @@ function MyAvatarComponent() {
 
             {/* Action Trigger / Button */}
             <div className="flex flex-col gap-2 shrink-0 mt-auto">
-              <button
-                onClick={isConnected ? disconnect : connect}
-                disabled={state === 'thinking'}
-                className={`
-                  w-full flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer
-                  ${isConnected 
-                    ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30' 
-                    : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-zinc-950 border border-emerald-400/20'
-                  }
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                `}
-              >
-                {isConnected ? (
-                  <>
-                    <MicOff className="w-4.5 h-4.5 stroke-[2.5]" />
-                    DISCONNECT SESSION
-                  </>
-                ) : (
-                  <>
-                    <Mic className="w-4.5 h-4.5 stroke-[2.5]" />
-                    ESTABLISH NEURAL CONNECT
-                  </>
-                )}
-              </button>
+              {/* Engine selector: realtime voice vs. text-streaming LLM */}
+              <div className="grid grid-cols-2 gap-1 bg-zinc-950/50 p-0.5 rounded-xl border border-zinc-800/60">
+                {([
+                  { id: 'voice', label: 'VOICE (LIVE)', Icon: Mic },
+                  { id: 'text', label: 'TEXT (STREAM)', Icon: MessageSquare },
+                ] as const).map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (engine === id) return;
+                      // Tear down the engine we're leaving.
+                      if (id === 'text' && isConnected) disconnect();
+                      if (id === 'voice') textLLM.stop();
+                      setEngine(id);
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-mono font-bold rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                      engine === id ? 'bg-emerald-500 text-zinc-950 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {!isText ? (
+                <button
+                  onClick={isConnected ? disconnect : connect}
+                  disabled={state === 'thinking'}
+                  className={`
+                    w-full flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer
+                    ${isConnected
+                      ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30'
+                      : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-zinc-950 border border-emerald-400/20'
+                    }
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  {isConnected ? (
+                    <>
+                      <MicOff className="w-4.5 h-4.5 stroke-[2.5]" />
+                      DISCONNECT SESSION
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4.5 h-4.5 stroke-[2.5]" />
+                      ESTABLISH NEURAL CONNECT
+                    </>
+                  )}
+                </button>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    textLLM.send(prompt);
+                    setPrompt('');
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Ask the streaming LLM something…"
+                    disabled={textLLM.isStreaming}
+                    className="flex-1 bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                  />
+                  {textLLM.isStreaming ? (
+                    <button
+                      type="button"
+                      onClick={textLLM.stop}
+                      className="flex items-center justify-center px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-all cursor-pointer"
+                      title="Stop streaming"
+                    >
+                      <Square className="w-4.5 h-4.5 stroke-[2.5]" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!prompt.trim()}
+                      className="flex items-center justify-center px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 border border-emerald-400/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Send"
+                    >
+                      <Send className="w-4.5 h-4.5 stroke-[2.5]" />
+                    </button>
+                  )}
+                </form>
+              )}
 
               {/* Session Time & Error banner */}
               {isConnected && (
@@ -1137,10 +1224,11 @@ function MyAvatarComponent() {
 
             {/* Center Avatar Core Stage */}
             <div className="flex-1 flex items-center justify-center w-full my-4 min-h-[300px] lg:min-h-[420px]">
-              <RealtimeAvatar 
-                state={state} 
-                analyser={analyser} 
-                size={avatarSize} 
+              <RealtimeAvatar
+                state={state}
+                analyser={analyser}
+                speechActivity={speechActivity}
+                size={avatarSize}
                 variant={variant}
                 vrmUrl={activeVrmUrl}
                 glbUrl={glbUrl}

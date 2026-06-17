@@ -7,6 +7,8 @@ import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
+import type { SpeechActivitySource } from '../lib/speechActivity';
+import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
 import type { DiceBearCollection } from '../lib/dicebear';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { motion, useMotionValue } from 'motion/react';
@@ -29,7 +31,30 @@ const GlbAvatarLazy = React.lazy(() =>
 
 export interface RealtimeAvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /**
+   * WebAudio AnalyserNode for the audio-reactive mouth (voice pipelines).
+   * Optional: omit it (or pass `null`) and `speaking` falls back to a
+   * synthetic speech-like pattern — so the minimal usage is just
+   * `<RealtimeAvatar state={state} />`.
+   */
+  analyser?: AnalyserNode | null;
+  /**
+   * Token-rate mouth driver for text-streaming LLMs (OpenAI-style
+   * `/chat/completions` or `/responses` with `stream: true`). Create one with
+   * `createSpeechActivity()` and `push()` each streamed chunk. When provided,
+   * it drives the mouth instead of `analyser` — so a text-only assistant still
+   * gets a face that tracks the stream. See `createSpeechActivity`.
+   */
+  speechActivity?: SpeechActivitySource;
+  /**
+   * Declarative mouth driver for text-streaming chats. Pass the *accumulated*
+   * assistant text (the kind a hook like the Vercel AI SDK's `useChat` hands
+   * you — it grows each render); the avatar diffs its growth internally and
+   * drives the mouth from token cadence. No `createSpeechActivity`, no reader
+   * loop. Ignored when `speechActivity` is set; takes precedence over
+   * `analyser`. See `useStreamingTextActivity`.
+   */
+  streamingText?: string;
   size?: number;
   variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
@@ -88,7 +113,9 @@ function hexToRgba(color: string, opacity: number): string {
 
 export function RealtimeAvatar({
   state,
-  analyser,
+  analyser = null,
+  speechActivity,
+  streamingText,
   size = 280,
   variant = 'geometric',
   children,
@@ -110,9 +137,20 @@ export function RealtimeAvatar({
   stateLabels,
   customization
 }: RealtimeAvatarProps) {
+  // A token-rate speech activity source takes precedence over the audio
+  // analyser as the mouth driver, so a text-streaming LLM gets a face too.
+  // It can come two ways: the explicit `speechActivity` prop (imperative —
+  // host owns the stream and calls push()), or `streamingText` (declarative —
+  // host passes accumulated text and we diff its growth here). Both collapse
+  // to one SpeechActivitySource; explicit wins. Whatever we land on rides the
+  // same internal channel (createMouthEngine detects the kind).
+  const textActivity = useStreamingTextActivity(streamingText);
+  const activitySource = speechActivity ?? textActivity;
+  const mouthSource = activitySource ?? analyser;
+
   const avatarProps = {
     state,
-    analyser,
+    analyser: mouthSource,
     size,
     maxMouthOpening,
     blinkIntervalMin,
@@ -140,7 +178,7 @@ export function RealtimeAvatar({
     AvatarComponent = (
       <DiceBearAvatar
         state={state}
-        analyser={analyser}
+        analyser={mouthSource}
         size={size}
         maxMouthOpening={maxMouthOpening}
         stateColors={stateColors}
@@ -195,27 +233,37 @@ export function RealtimeAvatar({
   };
 
   useEffect(() => {
-    if (!analyser || (state !== 'speaking' && state !== 'listening')) {
+    // Glow reacts to whichever driver is live: audio amplitude when an
+    // analyser is present, otherwise token-rate energy in text-stream mode.
+    const audioReactive = analyser && (state === 'speaking' || state === 'listening');
+    const textReactive = !analyser && activitySource && state === 'speaking';
+
+    if (!audioReactive && !textReactive) {
       glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
       glowOpacityValue.set(state === 'thinking' ? 0.35 : 0.15);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       return;
     }
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    
+    const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+
     const updateGlow = () => {
-      analyser.getByteTimeDomainData(dataArray);
-      let maxVal = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const dev = Math.abs(dataArray[i] - 128);
-        if (dev > maxVal) maxVal = dev;
+      let vol: number;
+      if (analyser && dataArray) {
+        analyser.getByteTimeDomainData(dataArray);
+        let maxVal = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const dev = Math.abs(dataArray[i] - 128);
+          if (dev > maxVal) maxVal = dev;
+        }
+        vol = Math.min(1.0, maxVal / 128);
+      } else {
+        vol = activitySource ? activitySource.sample() : 0;
       }
-      const vol = Math.min(1.0, maxVal / 128);
-      
+
       glowScaleValue.set(1 + vol * 0.35);
       glowOpacityValue.set(0.15 + vol * 0.35);
-      
+
       requestRef.current = requestAnimationFrame(updateGlow);
     };
 
@@ -223,7 +271,7 @@ export function RealtimeAvatar({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [analyser, state, glowScaleValue, glowOpacityValue]);
+  }, [analyser, activitySource, state, glowScaleValue, glowOpacityValue]);
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>

@@ -311,8 +311,115 @@ async function startServer() {
   });
 
   // API routes
+  app.use(express.json());
+
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // Text-streaming LLM endpoint (OpenAI-compatible chat/completions).
+  //
+  // This is the text counterpart to the Gemini Live voice WebSocket above:
+  // the model returns no audio, only tokens streamed over Server-Sent Events.
+  // The browser turns that token cadence into a mouth via createSpeechActivity().
+  // We proxy server-side so the API key (if any) never reaches the client.
+  const TEXT_SYSTEM_PROMPT =
+    "You are a friendly, concise, helpful assistant. Structure EVERY response as: " +
+    "one short sentence of reasoning inside <thought>...</thought>, then your spoken " +
+    "answer inside <speech>...</speech>. Output nothing outside those tags. The UI parses them live.";
+
+  const writeSse = (res: any, obj: unknown) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+
+  // Stream one of the canned MOCK_RESPONSES as SSE, char-chunked like a real model.
+  let mockChatIndex = 0;
+  function streamMockChat(res: any) {
+    const text = MOCK_RESPONSES[mockChatIndex % MOCK_RESPONSES.length];
+    mockChatIndex++;
+    let i = 0;
+    const chunkSize = 3;
+    const timer = setInterval(() => {
+      if (i >= text.length) {
+        clearInterval(timer);
+        writeSse(res, { done: true });
+        res.end();
+        return;
+      }
+      writeSse(res, { text: text.slice(i, i + chunkSize) });
+      i += chunkSize;
+    }, 35);
+    res.on("close", () => clearInterval(timer));
+  }
+
+  app.post("/api/chat", async (req, res) => {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders?.();
+
+    const userMessages = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    const baseUrl = process.env.OPENAI_BASE_URL;
+    const useMock = process.env.MOCK_REALTIME === "true" || !baseUrl;
+
+    if (useMock) {
+      console.log("[Chat-Mock] Streaming a canned text response.");
+      streamMockChat(res);
+      return;
+    }
+
+    try {
+      const upstream = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(process.env.OPENAI_API_KEY
+            ? { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
+            : {}),
+        },
+        body: JSON.stringify({
+          model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+          stream: true,
+          messages: [{ role: "system", content: TEXT_SYSTEM_PROMPT }, ...userMessages],
+        }),
+      });
+
+      if (!upstream.ok || !upstream.body) {
+        const detail = await upstream.text().catch(() => "");
+        throw new Error(`Upstream ${upstream.status}: ${detail.slice(0, 200)}`);
+      }
+
+      // Parse the upstream OpenAI SSE stream and relay only the text deltas.
+      const reader = upstream.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      req.on("close", () => reader.cancel().catch(() => {}));
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const payload = trimmed.slice(5).trim();
+          if (payload === "[DONE]") continue;
+          try {
+            const json = JSON.parse(payload);
+            const delta = json.choices?.[0]?.delta?.content;
+            if (delta) writeSse(res, { text: delta });
+          } catch {
+            // Ignore keep-alive comments / partial frames.
+          }
+        }
+      }
+      writeSse(res, { done: true });
+      res.end();
+    } catch (e: any) {
+      console.error("[Chat] Error:", e);
+      writeSse(res, { error: e.message || "Chat stream failed" });
+      res.end();
+    }
   });
 
   // Vite middleware for development

@@ -43,7 +43,14 @@ export { useAvatarRuntime } from './useAvatarRuntime';
 export type { AvatarRuntimeOptions } from './useAvatarRuntime';
 export { useAudioMouth } from './useAudioMouth';
 export { createMouthEngine } from './mouthEngine';
-export type { MouthEngine, MouthFrame, MouthShape } from './mouthEngine';
+export type { MouthEngine, MouthFrame, MouthShape, MouthSource } from './mouthEngine';
+
+// Token-rate mouth driver for text-streaming LLMs (completions/responses).
+export { createSpeechActivity, isSpeechActivity, SPEECH_ACTIVITY_BRAND } from './speechActivity';
+export type { SpeechActivitySource, SpeechActivityOptions } from './speechActivity';
+// Declarative bridge: drive the mouth from accumulated streaming text
+// (e.g. the Vercel AI SDK's `useChat`) instead of imperative push() calls.
+export { useStreamingTextActivity } from './useStreamingTextActivity';
 export { useReducedMotion } from './useReducedMotion';
 
 export type { AvatarState, StateColors, StateLabels } from './types';

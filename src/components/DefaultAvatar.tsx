@@ -3,6 +3,7 @@ import { motion, useAnimation } from 'motion/react';
 import { AvatarState } from '../lib/types';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { useAudioMouth } from '../lib/useAudioMouth';
+import type { MouthSource } from '../lib/mouthEngine';
 
 export interface AvatarCustomization {
   skinColor: string;
@@ -33,7 +34,8 @@ export function darkenColor(hex: string, percent: number): string {
 
 export interface AvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   size?: number;
   className?: string;
   style?: React.CSSProperties;
