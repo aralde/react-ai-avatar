@@ -1,0 +1,30 @@
+# Normalize line endings: store text as LF in the repo, regardless of the
+# contributor's OS. Stops the "LF will be replaced by CRLF" warnings on Windows.
+* text=auto eol=lf
+
+# Explicit text types (belt and suspenders)
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.mjs   text eol=lf
+*.cjs   text eol=lf
+*.json  text eol=lf
+*.css   text eol=lf
+*.html  text eol=lf
+*.md    text eol=lf
+*.svg   text eol=lf
+*.txt   text eol=lf
+
+# Binary assets — never touch their contents
+*.vrm   binary
+*.glb   binary
+*.gltf  binary
+*.fbx   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
