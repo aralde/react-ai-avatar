@@ -3,6 +3,7 @@ build/
 dist/
 coverage/
 .claude/
+.agents/
 .DS_Store
 *.log
 .env*
