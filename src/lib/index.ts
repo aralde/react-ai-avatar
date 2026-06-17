@@ -18,6 +18,9 @@ export type { PixelArtAvatarProps } from '../components/PixelArtAvatar';
 export { DoodleAvatar } from '../components/DoodleAvatar';
 export type { DoodleAvatarProps } from '../components/DoodleAvatar';
 
+export { CoderAvatar } from '../components/CoderAvatar';
+export type { CoderAvatarProps } from '../components/CoderAvatar';
+
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';
 export {

@@ -5,6 +5,7 @@ import { GeometricAvatar } from './GeometricAvatar';
 import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
+import { CoderAvatar } from './CoderAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
 import type { SpeechActivitySource } from '../lib/speechActivity';
@@ -56,7 +57,7 @@ export interface RealtimeAvatarProps {
    */
   streamingText?: string;
   size?: number;
-  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
+  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'coder' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
   children?: React.ReactNode;
   vrmUrl?: string;
@@ -194,6 +195,7 @@ export function RealtimeAvatar({
       memoji: MemojiAvatar,
       pixelart: PixelArtAvatar,
       doodle: DoodleAvatar,
+      coder: CoderAvatar,
     } as const;
     const Preset = presets[variant] ?? GeometricAvatar;
     AvatarComponent = (
