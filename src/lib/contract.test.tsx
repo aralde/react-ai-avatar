@@ -13,7 +13,7 @@ import { ContractAvatar } from '../components/ContractAvatar';
  * hooks the runtime drives. Add each new catalog preset to PRESETS.
  */
 
-const REQUIRED_IDS = ['rra-ring', 'rra-head', 'rra-mouth', 'rra-think'];
+const REQUIRED_IDS = ['rra-head', 'rra-mouth', 'rra-think'];
 const REQUIRED_CLASSES: Array<[string, number]> = [
   ['rra-pupil', 2],
   ['rra-lid', 2],

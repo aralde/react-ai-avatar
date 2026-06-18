@@ -4,7 +4,6 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface CoderAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -17,7 +16,6 @@ export interface CoderAvatarProps {
 export function CoderAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   className,
   style,
 }: CoderAvatarProps) {
@@ -44,17 +42,6 @@ export function CoderAvatar({
       className={className}
       style={style}
     >
-      {/* Dynamic State Ring */}
-      <circle
-        id="rra-ring"
-        cx="100"
-        cy="100"
-        r="92"
-        fill="none"
-        stroke={ringColor}
-        strokeWidth="3"
-      />
-
       {/* Main Background Circle */}
       <circle cx="100" cy="100" r="79" fill={bgColor} />
 

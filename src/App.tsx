@@ -11,6 +11,8 @@ import {
   Dices,
   Captions,
   CaptionsOff,
+  Cloud,
+  CloudOff,
   Cpu,
   Terminal,
   Clock,
@@ -21,12 +23,14 @@ import {
   Maximize,
   MessageSquare,
   Send,
-  Square
+  Square,
+  Squirrel
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGeminiLive } from './demo/useGeminiLive';
 import { useStreamingLLM } from './demo/useStreamingLLM';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
+import { SquirrelAvatar } from './components/SquirrelAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
 import { DICEBEAR_STYLES, DiceBearCollection } from './lib/dicebear';
@@ -68,7 +72,13 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'coder' | 'vrm' | 'glb' | 'dicebear'>('geometric');
+  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'coder' | 'vrm' | 'glb' | 'dicebear' | 'squirrel'>('geometric');
+
+  // The squirrel is a bring-your-own-SVG character, not a built-in variant: render
+  // it through `variant="byos"` with the component as children. For every other
+  // variant the children are ignored, so we can wire both render sites uniformly.
+  const effectiveVariant = variant === 'squirrel' ? 'byos' : variant;
+  const byosChild = variant === 'squirrel' ? <SquirrelAvatar /> : undefined;
   const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>('pixel-art');
   const [dicebearSeed, setDicebearSeed] = useState<string>('realtime-avatar');
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
@@ -97,6 +107,7 @@ export default function App() {
   }, [vrmFileUrl]);
 
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
+  const [showThought, setShowThought] = useState<boolean>(true);
   const [duration, setDuration] = useState<number>(0);
 
   // Configurable animation parameters
@@ -278,6 +289,61 @@ function MyAvatarComponent() {
 }`;
     }
 
+    if (variant === 'squirrel') {
+      return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
+
+// The squirrel is a "bring your own SVG" character: any SVG implementing the
+// #rra-* layer contract gets the full runtime (blink, gaze, mouth, thinking) via
+// variant="byos". See examples/08-character-avatar-squirrel.tsx for the full art.
+
+function SquirrelSvg() {
+  return (
+    <svg viewBox="0 0 200 200" width="100%" height="100%">
+      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke="#4b5563" strokeWidth="5" />
+      <circle cx="100" cy="100" r="79" fill="#6fb3bd" />
+      {/* …character art… (ears, tail, glasses, hoodie) */}
+      {/* eyes: ball -> .rra-pupil(data-base-*) -> .rra-lid(fur-colored rect, on top) */}
+      <ellipse id="rra-mouth" cx="100" cy="121" rx="7" ry="2.3" fill="#5a3324" />
+      <g id="rra-think" opacity="0" />
+    </svg>
+  );
+}
+
+function MyAvatarComponent() {
+  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
+  // and a WebAudio AnalyserNode for the audio-reactive mouth (optional).
+
+  return (
+    <RealtimeAvatar
+      state="idle"
+      analyser={null}
+      size={300}
+      variant="byos"
+      maxMouthOpening={${maxMouthOpening}}
+      mouseTrackingIntensity={${mouseTrackingIntensity}}
+      blinkIntervalMin={${blinkIntervalMin}}
+      blinkIntervalMax={${blinkIntervalMax}}
+      blinkDuration={${blinkDuration}}
+      stateColors={{
+        idle: '${stateColors.idle}',
+        listening: '${stateColors.listening}',
+        thinking: '${stateColors.thinking}',
+        speaking: '${stateColors.speaking}'
+      }}
+      stateLabels={{
+        idle: '${stateLabels.idle}',
+        listening: '${stateLabels.listening}',
+        thinking: '${stateLabels.thinking}',
+        speaking: '${stateLabels.speaking}'
+      }}
+    >
+      <SquirrelSvg />
+    </RealtimeAvatar>
+  );
+}`;
+    }
+
     return `import { RealtimeAvatar } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';
 
@@ -285,9 +351,9 @@ function MyAvatarComponent() {
   // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
   // and a WebAudio AnalyserNode for the audio-reactive mouth (optional:
   // without it, "speaking" falls back to a synthetic mouth pattern)
-  
+
   return (
-    <RealtimeAvatar 
+    <RealtimeAvatar
       state="idle"
       analyser={null}
       size={300}
@@ -525,6 +591,22 @@ function MyAvatarComponent() {
                         </div>
                         <span className="text-xs font-bold text-white mb-0.5">Coder</span>
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Developer in front of monitors with headphones and glasses.</span>
+                      </button>
+
+                      <button
+                        onClick={() => setVariant('squirrel')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'squirrel'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Squirrel className={`w-4.5 h-4.5 ${variant === 'squirrel' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'squirrel' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Squirrel</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Bring-your-own-SVG character on the #rra-* contract.</span>
                       </button>
 
                       {/* DiceBear Avatar Button */}
@@ -1219,6 +1301,28 @@ function MyAvatarComponent() {
                 </button>
 
                 <button
+                  onClick={() => setShowThought(!showThought)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border cursor-pointer ${
+                    showThought
+                      ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                      : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:text-zinc-300'
+                  }`}
+                  title="Toggle Thought Bubble"
+                >
+                  {showThought ? (
+                    <>
+                      <Cloud className="w-3.5 h-3.5" />
+                      <span>THOUGHT ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <CloudOff className="w-3.5 h-3.5" />
+                      <span>THOUGHT OFF</span>
+                    </>
+                  )}
+                </button>
+
+                <button
                   onClick={() => setIsCodeModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 cursor-pointer"
                   title="Get Avatar Integration Code"
@@ -1245,7 +1349,7 @@ function MyAvatarComponent() {
                 analyser={analyser}
                 speechActivity={speechActivity}
                 size={avatarSize}
-                variant={variant}
+                variant={effectiveVariant}
                 vrmUrl={activeVrmUrl}
                 glbUrl={glbUrl}
                 dicebearCollection={dicebearCollection}
@@ -1261,7 +1365,9 @@ function MyAvatarComponent() {
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-              />
+              >
+                {byosChild}
+              </RealtimeAvatar>
             </div>
 
             {/* Audio Waveform Telemetry Overlay */}
@@ -1434,11 +1540,11 @@ import 'react-ai-avatar/style.css';
               transition={{ type: 'spring', damping: 25, stiffness: 150 }}
               className="relative z-10 w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center"
             >
-              <RealtimeAvatar 
-                state={state} 
-                analyser={analyser} 
-                size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)} 
-                variant={variant}
+              <RealtimeAvatar
+                state={state}
+                analyser={analyser}
+                size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)}
+                variant={effectiveVariant}
                 vrmUrl={activeVrmUrl}
                 glbUrl={glbUrl}
                 dicebearCollection={dicebearCollection}
@@ -1446,6 +1552,7 @@ import 'react-ai-avatar/style.css';
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
+                showThought={showThought}
                 maxMouthOpening={maxMouthOpening}
                 mouseTrackingIntensity={mouseTrackingIntensity}
                 blinkIntervalMin={blinkIntervalMin}
@@ -1454,7 +1561,9 @@ import 'react-ai-avatar/style.css';
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-              />
+              >
+                {byosChild}
+              </RealtimeAvatar>
             </motion.div>
           </div>
         )}

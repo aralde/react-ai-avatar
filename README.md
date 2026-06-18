@@ -167,7 +167,7 @@ Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `da
 - `dicebearCollection` (`string`) — DiceBear style id (curated CC0 set), for `variant="dicebear"`.
 - `dicebearSeed` (`string`) — deterministic DiceBear seed, for `variant="dicebear"`.
 - `subtitle` / `thought` (`string`) — optional movie-style captions and a thought bubble.
-- `showSubtitle` (`boolean`) — default `true`.
+- `showGlow` / `showStatePill` / `showThought` / `showSubtitle` (`boolean`) — HUD satellites, each `true` by default. Set any to `false` to hide it individually: the reactive glow, the state pill, the thought bubble, and the subtitle respectively.
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
 - `stateColors`, `stateLabels` — theming; labels are announced via `aria-live`.
 - `customization` — preset colors and accessories (skin, hair, clothing, glasses, headphones…).

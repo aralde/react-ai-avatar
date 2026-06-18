@@ -12,7 +12,6 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface MemojiAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -20,7 +19,6 @@ export interface MemojiAvatarProps {
 export function MemojiAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   className,
   style,
 }: MemojiAvatarProps) {
@@ -68,7 +66,6 @@ export function MemojiAvatar({
         </linearGradient>
       </defs>
 
-      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke={ringColor} strokeWidth="3" />
       <circle cx="100" cy="100" r="78" fill={`url(#${bgGrad})`} />
       <clipPath id={`rra-memoji-clip-${uid}`}><circle cx="100" cy="100" r="78" /></clipPath>
 

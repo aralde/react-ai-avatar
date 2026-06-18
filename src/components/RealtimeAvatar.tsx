@@ -69,6 +69,10 @@ export interface RealtimeAvatarProps {
   dicebearSeed?: string;
   subtitle?: string;
   thought?: string;
+  /** HUD satellites — all on by default; set false to hide individually. */
+  showGlow?: boolean;
+  showStatePill?: boolean;
+  showThought?: boolean;
   showSubtitle?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -124,6 +128,9 @@ export function RealtimeAvatar({
   glbUrl,
   subtitle,
   thought,
+  showGlow = true,
+  showStatePill = true,
+  showThought = true,
   showSubtitle = true,
   className = '',
   style,
@@ -282,16 +289,18 @@ export function RealtimeAvatar({
           The old dashed "holographic projection ring" was removed: several
           avatars already carry their own container, so the rotating border was
           redundant and clashed with the realistic 3D model. */}
-      <motion.div
-        className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
-        style={{
-          width: size * 0.9,
-          height: size * 0.9,
-          backgroundColor: resolvedStateColors[state],
-          scale: glowScaleValue,
-          opacity: glowOpacityValue,
-        }}
-      />
+      {showGlow && (
+        <motion.div
+          className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
+          style={{
+            width: size * 0.9,
+            height: size * 0.9,
+            backgroundColor: resolvedStateColors[state],
+            scale: glowScaleValue,
+            opacity: glowOpacityValue,
+          }}
+        />
+      )}
       
       {/* Absolute center of the avatar image */}
       <div className="w-full h-full relative flex items-center justify-center z-10">
@@ -299,7 +308,7 @@ export function RealtimeAvatar({
       </div>
 
       {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar) */}
-      {showSubtitle && thought && (
+      {showThought && thought && (
         <motion.div 
           initial={{ opacity: 0, y: 15, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -322,21 +331,23 @@ export function RealtimeAvatar({
       )}
 
       {/* Unified State Indicator Pill (Positioned right under the avatar, consistent for all) */}
-      <motion.div
-        role="status"
-        aria-live="polite"
-        className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
-        animate={{
-          backgroundColor: resolvedStateColors[state],
-          boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
-          {resolvedStateLabels[state]}
-        </span>
-      </motion.div>
+      {showStatePill && (
+        <motion.div
+          role="status"
+          aria-live="polite"
+          className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
+          animate={{
+            backgroundColor: resolvedStateColors[state],
+            boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
+          }}
+          transition={{ duration: 0.3 }}
+        >
+          <span className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
+            {resolvedStateLabels[state]}
+          </span>
+        </motion.div>
+      )}
 
       {/* Movie-style Subtitles Overlay (Floats Centered BELOW the indicator, responsive & generous padding) */}
       {showSubtitle && subtitle && (

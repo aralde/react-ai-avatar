@@ -20,6 +20,7 @@ consumer would, so what you read is what you ship.
 | 05 | [`05-avatar-catalog.tsx`](05-avatar-catalog.tsx) | Switching `variant` across the flat presets + DiceBear. | `@dicebear/core` `@dicebear/collection` (only for the dicebear option) |
 | 06 | [`06-bring-your-own-svg.tsx`](06-bring-your-own-svg.tsx) | `variant="byos"`: a minimal custom SVG implementing the `#rra-*` layer contract. | — |
 | 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay (the repo's `server.ts`) |
+| 08 | [`08-character-avatar-squirrel.tsx`](08-character-avatar-squirrel.tsx) | `variant="byos"` taken further: a full branded character (squirrel dev) on the same `#rra-*` contract. | — |
 
 ## Shared helpers
 
