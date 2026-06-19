@@ -223,8 +223,8 @@ export function SquirrelAvatar({
           <g id="rra-working-workspace-paper">
             {/* Folder backing & paper & holding hand (grouped and rotated together for perfect alignment) */}
             <g id="rra-clipboard-folder" transform="rotate(-12 145 140)">
-              {/* Folder backing (slanted/open style folder with rounded corners) */}
-              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 172 113 Q 174 115, 173 118 L 163 162 Q 162 165, 159 165 L 122 165 Q 120 165, 120 163 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
+              {/* Folder backing (slanted/open style folder with rounded corners and folding perspective) */}
+              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 168 109 Q 170 111, 170 114 L 170 146 Q 170 149, 168 151 L 156 163 Q 154 165, 151 165 L 122 165 Q 120 165, 120 163 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
               {/* Crease line separating pages */}
               <line x1="153" y1="95" x2="153" y2="165" stroke="#d5cabb" strokeWidth="1" />
               {/* White paper sheet on the left page */}
