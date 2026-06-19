@@ -33,7 +33,14 @@ import { RealtimeAvatar } from './components/RealtimeAvatar';
 import { SquirrelAvatar } from './components/SquirrelAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
-import { DICEBEAR_STYLES, DiceBearCollection } from './lib/dicebear';
+import {
+  DICEBEAR_STYLES,
+  DiceBearCollection,
+  DICEBEAR_FEATURED_FACES,
+  DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
+} from './lib/dicebear';
+import { DiceBearThumb } from './components/DiceBearThumb';
 
 export default function App() {
   const gemini = useGeminiLive();
@@ -79,8 +86,8 @@ export default function App() {
   // variant the children are ignored, so we can wire both render sites uniformly.
   const effectiveVariant = variant === 'squirrel' ? 'byos' : variant;
   const byosChild = variant === 'squirrel' ? <SquirrelAvatar /> : undefined;
-  const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>('pixel-art');
-  const [dicebearSeed, setDicebearSeed] = useState<string>('realtime-avatar');
+  const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>(DEFAULT_DICEBEAR_COLLECTION);
+  const [dicebearSeed, setDicebearSeed] = useState<string>(DEFAULT_DICEBEAR_SEED);
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
@@ -807,7 +814,43 @@ function MyAvatarComponent() {
                           </span>
                         </div>
 
+                        {/* Featured faces gallery — curated {style, seed} pairs,
+                            rendered as live thumbnails so you pick a face, not a
+                            seed string. Click sets both style and seed. */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Featured faces</span>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {DICEBEAR_FEATURED_FACES.map((face) => {
+                              const selected =
+                                dicebearCollection === face.collection && dicebearSeed === face.seed;
+                              return (
+                                <button
+                                  key={`${face.collection}-${face.seed}`}
+                                  onClick={() => {
+                                    setDicebearCollection(face.collection);
+                                    setDicebearSeed(face.seed);
+                                  }}
+                                  title={`${face.collection} · ${face.seed}`}
+                                  className={`aspect-square rounded-lg border p-0.5 flex items-center justify-center transition-all cursor-pointer ${
+                                    selected
+                                      ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/40'
+                                      : 'bg-zinc-950/40 border-zinc-800/40 hover:border-zinc-700/60'
+                                  }`}
+                                >
+                                  <DiceBearThumb
+                                    collection={face.collection}
+                                    seed={face.seed}
+                                    size={40}
+                                    className="rounded-md"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         {/* Style picker */}
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide -mb-1.5">Or any style + seed</span>
                         <div className="grid grid-cols-3 gap-1.5">
                           {DICEBEAR_STYLES.map((s) => (
                             <button

@@ -23,15 +23,27 @@ export type { CoderAvatarProps } from '../components/CoderAvatar';
 
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';
+export { DiceBearThumb } from '../components/DiceBearThumb';
+export type { DiceBearThumbProps } from '../components/DiceBearThumb';
 export {
   DICEBEAR_STYLES,
   DICEBEAR_STYLE_BY_ID,
   DICEBEAR_RIGS,
+  DICEBEAR_FEATURED_FACES,
   DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
   collectionExportName,
   scopeSvgIds,
+  loadDiceBear,
+  renderDiceBearSvg,
 } from './dicebear';
-export type { DiceBearCollection, DiceBearStyleMeta, DiceBearRig } from './dicebear';
+export type {
+  DiceBearCollection,
+  DiceBearStyleMeta,
+  DiceBearRig,
+  DiceBearFeaturedFace,
+  DiceBearModules,
+} from './dicebear';
 
 // NOTE: GlbArkitAvatar and VrmAvatar are intentionally NOT re-exported here.
 // Both pull in the optional three.js peer stack, so they are only reached via

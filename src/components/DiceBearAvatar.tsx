@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { AvatarState, StateColors } from '../lib/types';
 import { createMouthEngine, MouthEngine, MouthSource } from '../lib/mouthEngine';
 import { useReducedMotion } from '../lib/useReducedMotion';
@@ -7,8 +7,10 @@ import {
   DiceBearRig,
   DICEBEAR_RIGS,
   DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
   collectionExportName,
   scopeSvgIds,
+  loadDiceBear,
 } from '../lib/dicebear';
 
 /**
@@ -57,22 +59,6 @@ export interface DiceBearAvatarProps {
 }
 
 type CreateAvatar = (style: unknown, options: Record<string, unknown>) => { toString(): string };
-type DiceBearModules = { createAvatar: CreateAvatar; collection: Record<string, unknown> };
-
-// Cache the dynamically-imported packages across mounts/instances.
-let modulesPromise: Promise<DiceBearModules> | null = null;
-function loadDiceBear(): Promise<DiceBearModules> {
-  if (!modulesPromise) {
-    modulesPromise = Promise.all([
-      import('@dicebear/core'),
-      import('@dicebear/collection'),
-    ]).then(([core, collection]) => ({
-      createAvatar: (core as any).createAvatar as CreateAvatar,
-      collection: collection as Record<string, unknown>,
-    }));
-  }
-  return modulesPromise;
-}
 
 interface Frame {
   key: string;
@@ -121,7 +107,7 @@ export function DiceBearAvatar({
   analyser,
   size = 300,
   collection = DEFAULT_DICEBEAR_COLLECTION,
-  seed = 'realtime-avatar',
+  seed = DEFAULT_DICEBEAR_SEED,
   backgroundColor,
   radius,
   className = '',
@@ -130,6 +116,14 @@ export function DiceBearAvatar({
   stateColors,
 }: DiceBearAvatarProps) {
   const reducedMotion = useReducedMotion();
+  // Per-instance id namespace. DiceBear SVGs carry internal clipPath / gradient
+  // ids; scopeSvgIds prefixes them so stacked frames don't collide. That prefix
+  // must also differ PER INSTANCE — otherwise two avatars of the same style on
+  // one page share ids, and when one hides a frame (display:none while talking
+  // or blinking) the other's url(#…) references break and it vanishes. Mirrors
+  // the useId() pattern the SVG presets already use.
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const idBase = `rra-db-${uid}`;
   const wrapRef = useRef<HTMLDivElement>(null);
   const frameElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
   const rafRef = useRef<number | null>(null);
@@ -165,11 +159,11 @@ export function DiceBearAvatar({
         frameElsRef.current = new Map();
         if (styleRig) {
           setRig(styleRig);
-          setFrames(buildRiggedFrames(createAvatar, styleObj, base, styleRig, 'rra-db'));
+          setFrames(buildRiggedFrames(createAvatar, styleObj, base, styleRig, idBase));
         } else {
           // Abstract style: single frame, animated by bounce only.
           setRig(null);
-          setFrames([{ key: 'base', html: scopeSvgIds(createAvatar(styleObj, base).toString(), 'rra-db-base') }]);
+          setFrames([{ key: 'base', html: scopeSvgIds(createAvatar(styleObj, base).toString(), `${idBase}-base`) }]);
         }
       })
       .catch((err) => {

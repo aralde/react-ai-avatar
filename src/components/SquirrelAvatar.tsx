@@ -8,9 +8,10 @@ import { AvatarCustomization } from './DefaultAvatar';
  * assets).
  *
  * It implements the layer contract (see useAvatarRuntime) exactly like the built-in
- * presets, so the runtime drives blink / gaze / mouth / ring for free. The fur color
- * is reused for BOTH eyelids on purpose — recolor it and a blink still reads as the
- * face coming down over the eye.
+ * presets, so the runtime drives blink / gaze / mouth for free. No state ring —
+ * matches the other presets, which dropped theirs. The fur color is reused for BOTH
+ * eyelids on purpose — recolor it and a blink still reads as the face coming down
+ * over the eye.
  *
  * In the demo it's rendered through `variant="byos"`; it's also the worked example
  * behind the `rra-character-avatar` skill.
@@ -19,7 +20,6 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface SquirrelAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -27,7 +27,6 @@ export interface SquirrelAvatarProps {
 export function SquirrelAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   className,
   style,
 }: SquirrelAvatarProps) {
@@ -47,7 +46,6 @@ export function SquirrelAvatar({
       className={className}
       style={style}
     >
-      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke={ringColor} strokeWidth="5" />
       <circle cx="100" cy="100" r="79" fill={bgColor} />
       <clipPath id="rra-squirrel-clip"><circle cx="100" cy="100" r="79" /></clipPath>
       <g clipPath="url(#rra-squirrel-clip)">

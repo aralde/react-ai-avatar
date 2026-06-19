@@ -90,6 +90,13 @@ export function useAvatarRuntime(
     let baseRy = 3;
     let baseRx = 9;
     let mouthQuantize = 0;
+    // The motion constants below (mouth opening, gaze/thinking pupil offsets) are
+    // expressed in the canonical 200-unit viewBox the built-in presets use. A
+    // preset on a different grid — e.g. the 32x32 pixel-art face — would have
+    // them applied ~6x too large (mouth swallowing the face, pupils flung clear
+    // of the eye). Normalize by the SVG's own viewBox width so every preset moves
+    // proportionally to its own coordinate system.
+    let vbScale = 1;
     let pupilBases: { isRect: boolean; x: number; y: number; quantize: number }[] = [];
     let lidMaxes: number[] = [];
     let pupilCur: { x: number; y: number }[] = [];
@@ -119,6 +126,12 @@ export function useAvatarRuntime(
       });
       lidMaxes = lids.map((l) => parseFloat(l.getAttribute('data-max-height') ?? '16'));
       pupilCur = pupils.map(() => ({ x: 0, y: 0 }));
+
+      // viewBox width vs the canonical 200 → scale factor for the motion
+      // constants. Falls back to 1 (no scaling) when no viewBox is present.
+      const svg = el.querySelector('svg');
+      const vbW = parseFloat(svg?.getAttribute('viewBox')?.split(/[\s,]+/)[2] ?? '200');
+      vbScale = vbW > 0 ? vbW / 200 : 1;
     };
 
     const elementsStale = () =>
@@ -158,7 +171,7 @@ export function useAvatarRuntime(
       const opts = optsRef.current;
       const { state } = opts;
       const colors = { ...DEFAULT_COLORS, ...opts.stateColors };
-      const maxMouthOpening = opts.maxMouthOpening ?? 30;
+      const maxMouthOpening = (opts.maxMouthOpening ?? 30) * vbScale;
       const trackIntensity = reducedMotion ? 0 : (opts.mouseTrackingIntensity ?? 1);
       const blinkMin = opts.blinkIntervalMin ?? 2000;
       const blinkMax = opts.blinkIntervalMax ?? 6000;
@@ -238,6 +251,9 @@ export function useAvatarRuntime(
           targetX += Math.sin(now * 0.0021) * 0.5;
           targetY += Math.cos(now * 0.0017) * 0.4;
         }
+        // Keep gaze travel proportional to the preset's own grid (see vbScale).
+        targetX *= vbScale;
+        targetY *= vbScale;
         pupils.forEach((p, i) => {
           const base = pupilBases[i];
           pupilCur[i].x += (targetX - pupilCur[i].x) * 0.12;
