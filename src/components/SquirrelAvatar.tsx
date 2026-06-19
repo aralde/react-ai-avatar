@@ -69,17 +69,6 @@ export function SquirrelAvatar({
         <path d="M150 158 C182 150 188 96 162 66 C150 52 130 52 124 66 C140 70 150 92 146 110 C142 132 132 148 150 158 Z" fill={fur} />
         <path d="M150 150 C172 142 176 100 156 76 C150 90 156 104 152 120 C148 134 140 142 150 150 Z" fill="#e3a368" />
 
-        {/* Office chair (only in paper working state, rendered behind head/body) */}
-        {state === 'working' && workingVariant === 'paper' && (
-          <g id="rra-office-chair" opacity="0.85">
-            {/* Support bar */}
-            <rect x="42" y="110" width="8" height="45" fill="#475569" rx="2" />
-            {/* Backrest */}
-            <rect x="24" y="80" width="36" height="52" rx="10" fill="#64748b" stroke="#334155" strokeWidth="2" />
-            {/* Headrest */}
-            <rect x="28" y="56" width="28" height="18" rx="6" fill="#475569" stroke="#334155" strokeWidth="2" />
-          </g>
-        )}
 
         {/* neck: fur from chin into the collar + a chin shadow for volume */}
         <path d="M84 118 Q82 140 78 150 L122 150 Q118 140 116 118 Z" fill={fur} />
@@ -232,50 +221,55 @@ export function SquirrelAvatar({
 
         {state === 'working' && workingVariant === 'paper' && (
           <g id="rra-working-workspace-paper">
-            {/* Folder backing & paper */}
+            {/* Folder backing & paper & holding hand (grouped and rotated together for perfect alignment) */}
             <g id="rra-clipboard-folder" transform="rotate(-12 145 140)">
-              <rect x="120" y="95" width="45" height="65" rx="3" fill="#c2a685" stroke="#8c7050" strokeWidth="1.5" />
-              <rect x="124" y="99" width="37" height="57" rx="1" fill="#f8fafc" />
+              {/* Folder backing (slanted/open style folder with rounded corners) */}
+              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 172 113 Q 174 115, 173 118 L 163 162 Q 162 165, 159 165 L 122 165 Q 120 165, 120 163 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
+              {/* Crease line separating pages */}
+              <line x1="153" y1="95" x2="153" y2="165" stroke="#d5cabb" strokeWidth="1" />
+              {/* White paper sheet on the left page */}
+              <rect x="122" y="99" width="29" height="60" rx="1" fill="#f8fafc" />
+              {/* Text lines representing code/text */}
               <g stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round">
-                <line x1="129" y1="107" x2="156" y2="107" />
-                <line x1="129" y1="113" x2="152" y2="113" />
-                <line x1="129" y1="119" x2="156" y2="119" />
-                <line x1="129" y1="125" x2="148" y2="125" />
-                <line x1="129" y1="131" x2="154" y2="131" />
-                <line x1="129" y1="137" x2="150" y2="137" />
-                <line x1="129" y1="143" x2="144" y2="143" />
+                <line x1="127" y1="107" x2="148" y2="107" />
+                <line x1="127" y1="113" x2="145" y2="113" />
+                <line x1="127" y1="119" x2="148" y2="119" />
+                <line x1="127" y1="125" x2="142" y2="125" />
+                <line x1="127" y1="131" x2="147" y2="131" />
+                <line x1="127" y1="137" x2="144" y2="137" />
+                <line x1="127" y1="143" x2="139" y2="143" />
+              </g>
+
+              {/* Right arm/hand holding the folder (rotated together with the folder) */}
+              <g id="rra-holding-arm">
+                <path d="M160 182 L150 152 L144 156 L153 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+                <g fill={fur} stroke="#b05418" strokeWidth="1">
+                  <rect x="146" y="158" width="7" height="10" rx="3" transform="rotate(20 149 163)" />
+                  <rect x="152" y="160" width="7" height="10" rx="3" transform="rotate(20 155 165)" />
+                  <rect x="158" y="161" width="6" height="9" rx="2.5" transform="rotate(20 161 165)" />
+                </g>
               </g>
             </g>
 
-            {/* Right arm/hand holding folder */}
-            <g id="rra-holding-arm">
-              <path d="M164 182 L150 152 L140 158 L155 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
-              <g fill={fur} stroke="#b05418" strokeWidth="1">
-                <rect x="138" y="146" width="8" height="10" rx="3.5" transform="rotate(30 142 151)" />
-                <rect x="141" y="149" width="8" height="10" rx="3.5" transform="rotate(30 145 154)" />
-                <rect x="144" y="152" width="8" height="10" rx="3.5" transform="rotate(30 148 157)" />
-              </g>
-            </g>
-
-            {/* Left arm/hand pointing/scanning */}
+            {/* Left arm/hand pointing/scanning (outside rotated group so it can animate independently) */}
             <g id="rra-pointing-paw">
               <animateTransform
                 attributeName="transform"
                 type="translate"
-                values="0,0; 3,-1.5; 0.5,1; 2.5,-0.5; 0,0"
-                dur="2s"
+                values="0,0; 2,-1.5; -1,1; 1.5,-0.5; 0,0"
+                dur="2.5s"
                 repeatCount="indefinite"
               />
               {/* Sleeve */}
-              <path d="M36 182 L105 138 L111 146 L45 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
-              {/* Palm */}
-              <circle cx="108" cy="142" r="7" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <path d="M36 182 L100 144 L106 152 L45 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+              {/* Palm/Fist */}
+              <circle cx="104" cy="149" r="6.5" fill={fur} stroke="#b05418" strokeWidth="1" />
               {/* Pointing index finger */}
-              <path d="M108 138 L124 130 C127 128.5, 126 125, 122 127 L105 137 Z" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <path d="M104 145 L121 137 C123.5 135.5, 125 138, 122 140 L106 149 Z" fill={fur} stroke="#b05418" strokeWidth="1" />
               {/* Folded fingers */}
-              <circle cx="106" cy="144" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
-              <circle cx="110" cy="146" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
-              <circle cx="114" cy="144" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <circle cx="102" cy="151" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <circle cx="105" cy="153" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <circle cx="108" cy="151" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
             </g>
           </g>
         )}
