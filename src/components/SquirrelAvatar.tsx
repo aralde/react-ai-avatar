@@ -39,6 +39,18 @@ export function SquirrelAvatar({
     bgColor = '#6fb3bd',
   } = customization ?? {};
 
+  const [workingVariant, setWorkingVariant] = React.useState<'wires' | 'paper'>(() =>
+    Math.random() < 0.5 ? 'wires' : 'paper'
+  );
+  const lastStateRef = React.useRef(state);
+
+  React.useEffect(() => {
+    if (state === 'working' && lastStateRef.current !== 'working') {
+      setWorkingVariant(Math.random() < 0.5 ? 'wires' : 'paper');
+    }
+    lastStateRef.current = state;
+  }, [state]);
+
   return (
     <svg
       viewBox="0 0 200 200"
@@ -56,6 +68,18 @@ export function SquirrelAvatar({
         {/* bushy tail (back-most prop) */}
         <path d="M150 158 C182 150 188 96 162 66 C150 52 130 52 124 66 C140 70 150 92 146 110 C142 132 132 148 150 158 Z" fill={fur} />
         <path d="M150 150 C172 142 176 100 156 76 C150 90 156 104 152 120 C148 134 140 142 150 150 Z" fill="#e3a368" />
+
+        {/* Office chair (only in paper working state, rendered behind head/body) */}
+        {state === 'working' && workingVariant === 'paper' && (
+          <g id="rra-office-chair" opacity="0.85">
+            {/* Support bar */}
+            <rect x="42" y="110" width="8" height="45" fill="#475569" rx="2" />
+            {/* Backrest */}
+            <rect x="24" y="80" width="36" height="52" rx="10" fill="#64748b" stroke="#334155" strokeWidth="2" />
+            {/* Headrest */}
+            <rect x="28" y="56" width="28" height="18" rx="6" fill="#475569" stroke="#334155" strokeWidth="2" />
+          </g>
+        )}
 
         {/* neck: fur from chin into the collar + a chin shadow for volume */}
         <path d="M84 118 Q82 140 78 150 L122 150 Q118 140 116 118 Z" fill={fur} />
@@ -120,7 +144,7 @@ export function SquirrelAvatar({
           <rect className="rra-lid" data-max-height="18" x="109" y="83" width="18" height="0" fill={fur} />
         </g>
 
-        {state === 'working' && (
+        {state === 'working' && workingVariant === 'wires' && (
           <g id="rra-safety-goggles">
             {/* Strap/elastic band on the sides */}
             <path d="M 52 92 C 45 92, 45 96, 40 96 M 148 92 C 155 92, 155 96, 160 96" fill="none" stroke="#2d3748" strokeWidth="4" strokeLinecap="round" />
@@ -146,8 +170,8 @@ export function SquirrelAvatar({
           <path d="M80 116 L62 113 M80 120 L62 121 M120 116 L138 113 M120 120 L138 121" />
         </g>
 
-        {state === 'working' && (
-          <g id="rra-working-workspace">
+        {state === 'working' && workingVariant === 'wires' && (
+          <g id="rra-working-workspace-wires">
             {/* Light bulb radial glow (flickering) */}
             <circle cx="100" cy="162" r="22" fill="#fef08a" fillOpacity="0.25">
               <animate attributeName="opacity" values="1;0.2;0.9;0.1;0.8;0.3;1" dur="1.2s" repeatCount="indefinite" />
@@ -163,8 +187,6 @@ export function SquirrelAvatar({
             <path d="M97 167 L99 160 L101 160 L103 167" fill="none" stroke="#ca8a04" strokeWidth="1">
               <animate attributeName="stroke" values="#ca8a04;#ca8a04;#78350f;#ca8a04;#ca8a04;#78350f;#ca8a04" dur="1.2s" repeatCount="indefinite" />
             </path>
-
-
 
             {/* Left Arm & Cable shaking system */}
             <g id="rra-left-arm-cable">
@@ -204,6 +226,56 @@ export function SquirrelAvatar({
                 <rect x="132" y="160" width="10" height="12" rx="4" transform="rotate(10 137 166)" />
                 <rect x="129" y="163" width="9" height="10" rx="3" transform="rotate(15 133.5 168)" />
               </g>
+            </g>
+          </g>
+        )}
+
+        {state === 'working' && workingVariant === 'paper' && (
+          <g id="rra-working-workspace-paper">
+            {/* Folder backing & paper */}
+            <g id="rra-clipboard-folder" transform="rotate(-12 145 140)">
+              <rect x="120" y="95" width="45" height="65" rx="3" fill="#c2a685" stroke="#8c7050" strokeWidth="1.5" />
+              <rect x="124" y="99" width="37" height="57" rx="1" fill="#f8fafc" />
+              <g stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round">
+                <line x1="129" y1="107" x2="156" y2="107" />
+                <line x1="129" y1="113" x2="152" y2="113" />
+                <line x1="129" y1="119" x2="156" y2="119" />
+                <line x1="129" y1="125" x2="148" y2="125" />
+                <line x1="129" y1="131" x2="154" y2="131" />
+                <line x1="129" y1="137" x2="150" y2="137" />
+                <line x1="129" y1="143" x2="144" y2="143" />
+              </g>
+            </g>
+
+            {/* Right arm/hand holding folder */}
+            <g id="rra-holding-arm">
+              <path d="M164 182 L150 152 L140 158 L155 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+              <g fill={fur} stroke="#b05418" strokeWidth="1">
+                <rect x="138" y="146" width="8" height="10" rx="3.5" transform="rotate(30 142 151)" />
+                <rect x="141" y="149" width="8" height="10" rx="3.5" transform="rotate(30 145 154)" />
+                <rect x="144" y="152" width="8" height="10" rx="3.5" transform="rotate(30 148 157)" />
+              </g>
+            </g>
+
+            {/* Left arm/hand pointing/scanning */}
+            <g id="rra-pointing-paw">
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                values="0,0; 3,-1.5; 0.5,1; 2.5,-0.5; 0,0"
+                dur="2s"
+                repeatCount="indefinite"
+              />
+              {/* Sleeve */}
+              <path d="M36 182 L105 138 L111 146 L45 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+              {/* Palm */}
+              <circle cx="108" cy="142" r="7" fill={fur} stroke="#b05418" strokeWidth="1" />
+              {/* Pointing index finger */}
+              <path d="M108 138 L124 130 C127 128.5, 126 125, 122 127 L105 137 Z" fill={fur} stroke="#b05418" strokeWidth="1" />
+              {/* Folded fingers */}
+              <circle cx="106" cy="144" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <circle cx="110" cy="146" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
+              <circle cx="114" cy="144" r="3" fill={fur} stroke="#b05418" strokeWidth="1" />
             </g>
           </g>
         )}
