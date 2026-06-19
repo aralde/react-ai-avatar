@@ -223,8 +223,8 @@ export function SquirrelAvatar({
           <g id="rra-working-workspace-paper">
             {/* Folder backing & paper & holding hand (grouped and rotated together for perfect alignment) */}
             <g id="rra-clipboard-folder" transform="rotate(-12 145 140)">
-              {/* Folder backing (slanted/open style folder with rounded corners and folding perspective) */}
-              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 168 109 Q 170 111, 170 114 L 170 146 Q 170 149, 168 151 L 156 163 Q 154 165, 151 165 L 122 165 Q 120 165, 120 163 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
+              {/* Folder backing (slanted/open style folder with rounded corners, folding perspective, and bottom-left pointed tab) */}
+              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 168 109 Q 170 111, 170 114 L 156 150 Q 154 152, 154 155 L 154 163 Q 154 165, 151 165 L 120 172 Q 116 174, 117 171 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
               {/* Crease line separating pages */}
               <line x1="153" y1="95" x2="153" y2="165" stroke="#d5cabb" strokeWidth="1" />
               {/* White paper sheet on the left page */}
@@ -240,13 +240,14 @@ export function SquirrelAvatar({
                 <line x1="127" y1="143" x2="139" y2="143" />
               </g>
 
-              {/* Right arm/hand holding the folder (rotated together with the folder) */}
+              {/* Right arm/hand holding the folder slanted edge (rotated together with the folder) */}
               <g id="rra-holding-arm">
-                <path d="M160 182 L150 152 L144 156 L153 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+                <path d="M165 182 L157 142 L149 146 L154 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
                 <g fill={fur} stroke="#b05418" strokeWidth="1">
-                  <rect x="146" y="158" width="7" height="10" rx="3" transform="rotate(20 149 163)" />
-                  <rect x="152" y="160" width="7" height="10" rx="3" transform="rotate(20 155 165)" />
-                  <rect x="158" y="161" width="6" height="9" rx="2.5" transform="rotate(20 161 165)" />
+                  <rect x="159" y="129" width="9" height="6" rx="2.5" transform="rotate(-23 163.5 132)" />
+                  <rect x="156" y="135" width="9" height="6" rx="2.5" transform="rotate(-23 160.5 138)" />
+                  <rect x="153" y="141" width="9" height="6" rx="2.5" transform="rotate(-23 157.5 144)" />
+                  <rect x="150" y="147" width="8" height="5.5" rx="2.2" transform="rotate(-23 154 150)" />
                 </g>
               </g>
             </g>
