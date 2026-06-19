@@ -12,6 +12,7 @@ export interface AudioVisualizerProps {
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
 }
 
@@ -48,7 +49,8 @@ export function AudioVisualizer({
     idle: stateColors?.idle ?? '#9ca3af',
     listening: stateColors?.listening ?? '#3b82f6',
     thinking: stateColors?.thinking ?? '#8b5cf6',
-    speaking: stateColors?.speaking ?? '#10b981'
+    speaking: stateColors?.speaking ?? '#10b981',
+    working: stateColors?.working ?? '#f59e0b'
   };
 
   useEffect(() => {
@@ -181,6 +183,27 @@ export function AudioVisualizer({
           const y = h / 2 + Math.sin(x * 0.03 + phase) * 5 + Math.sin(x * 0.01 - phase * 0.5) * 8;
           if (x === 0) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+      } else if (state === 'working') {
+        // Working state: Render a digital computing-style stepped wave
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = hexToRgba(resolvedStateColors.working, 0.4);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = hexToRgba(resolvedStateColors.working, 0.7);
+
+        ctx.beginPath();
+        for (let x = 0; x < w; x += 8) {
+          const rawY = h / 2 + Math.sin(x * 0.04 + phase * 2.5) * 12 + Math.cos(x * 0.01 - phase) * 6;
+          // Step it (stepped wave)
+          const y = h / 2 + Math.round((rawY - h / 2) / 6) * 6;
+          if (x === 0) ctx.moveTo(x, y);
+          else {
+            ctx.lineTo(x, y);
+            ctx.lineTo(Math.min(w, x + 8), y);
+          }
         }
         ctx.stroke();
         ctx.shadowBlur = 0;

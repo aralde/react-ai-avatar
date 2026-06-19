@@ -69,6 +69,7 @@ export interface RealtimeAvatarProps {
   dicebearSeed?: string;
   subtitle?: string;
   thought?: string;
+  tool?: string;
   /** HUD satellites — all on by default; set false to hide individually. */
   showGlow?: boolean;
   showStatePill?: boolean;
@@ -128,6 +129,7 @@ export function RealtimeAvatar({
   glbUrl,
   subtitle,
   thought,
+  tool,
   showGlow = true,
   showStatePill = true,
   showThought = true,
@@ -208,7 +210,7 @@ export function RealtimeAvatar({
     AvatarComponent = (
       // Keyed by variant so switching presets remounts the runtime cleanly
       <ContractAvatar key={variant} {...avatarProps}>
-        <Preset size={size} customization={customization} />
+        <Preset size={size} customization={customization} state={state} />
       </ContractAvatar>
     );
   }
@@ -224,21 +226,24 @@ export function RealtimeAvatar({
     idle: stateColors?.idle ?? '#4b5563', // gray-600
     listening: stateColors?.listening ?? '#3b82f6', // blue-500
     thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
-    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
+    speaking: stateColors?.speaking ?? '#10b981', // emerald-500
+    working: stateColors?.working ?? '#f59e0b', // amber-500
   };
 
   const resolvedStateLabels = {
     idle: stateLabels?.idle ?? 'Idle',
     listening: stateLabels?.listening ?? 'Listening',
     thinking: stateLabels?.thinking ?? 'Thinking...',
-    speaking: stateLabels?.speaking ?? 'Speaking'
+    speaking: stateLabels?.speaking ?? 'Speaking',
+    working: stateLabels?.working ?? 'Working',
   };
 
   const glowShadows = {
     idle: hexToRgba(resolvedStateColors.idle, 0.15),
     listening: hexToRgba(resolvedStateColors.listening, 0.35),
     thinking: hexToRgba(resolvedStateColors.thinking, 0.4),
-    speaking: hexToRgba(resolvedStateColors.speaking, 0.45)
+    speaking: hexToRgba(resolvedStateColors.speaking, 0.45),
+    working: hexToRgba(resolvedStateColors.working, 0.4),
   };
 
   useEffect(() => {
@@ -248,8 +253,8 @@ export function RealtimeAvatar({
     const textReactive = !analyser && activitySource && state === 'speaking';
 
     if (!audioReactive && !textReactive) {
-      glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
-      glowOpacityValue.set(state === 'thinking' ? 0.35 : 0.15);
+      glowScaleValue.set(state === 'thinking' || state === 'working' ? 1.05 : 1);
+      glowOpacityValue.set(state === 'thinking' || state === 'working' ? 0.35 : 0.15);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       return;
     }
@@ -344,7 +349,7 @@ export function RealtimeAvatar({
         >
           <span className="flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
-            {resolvedStateLabels[state]}
+            {state === 'working' && tool ? `Working: ${tool}` : resolvedStateLabels[state]}
           </span>
         </motion.div>
       )}

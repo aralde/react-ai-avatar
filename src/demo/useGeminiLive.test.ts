@@ -7,6 +7,7 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: 'This is my reasoning.',
+      tool: '',
       speech: 'Hello, world!'
     });
   });
@@ -16,6 +17,7 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: 'Still thinking about what to say',
+      tool: '',
       speech: ''
     });
   });
@@ -25,6 +27,7 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: 'Done thinking.',
+      tool: '',
       speech: 'Hello, how can I'
     });
   });
@@ -34,6 +37,7 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: '',
+      tool: '',
       speech: 'Hello, this has no tags.'
     });
   });
@@ -42,18 +46,21 @@ describe('parseModelText', () => {
     const input1 = '<thought>Thinking</thought><speech>Hello</s';
     expect(parseModelText(input1)).toEqual({
       thought: 'Thinking',
+      tool: '',
       speech: 'Hello'
     });
 
     const input2 = '<thought>Thinking</thought><speech>Hello</sp';
     expect(parseModelText(input2)).toEqual({
       thought: 'Thinking',
+      tool: '',
       speech: 'Hello'
     });
 
     const input3 = '<thought>Thinking</thought><speech>Hello<';
     expect(parseModelText(input3)).toEqual({
       thought: 'Thinking',
+      tool: '',
       speech: 'Hello'
     });
   });
@@ -63,6 +70,7 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: 'Thinking...',
+      tool: '',
       speech: 'Hello!'
     });
   });
@@ -72,7 +80,18 @@ describe('parseModelText', () => {
     const result = parseModelText(input);
     expect(result).toEqual({
       thought: 'Thinking: Need to greet user',
+      tool: '',
       speech: 'Hi!'
+    });
+  });
+
+  it('should parse tool tags', () => {
+    const input = '<thought>Need to call database</thought><tool>fetching data...</tool><speech>Here is the data</speech>';
+    const result = parseModelText(input);
+    expect(result).toEqual({
+      thought: 'Need to call database',
+      tool: 'fetching data...',
+      speech: 'Here is the data'
     });
   });
 });

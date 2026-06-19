@@ -17,9 +17,12 @@ import { AvatarCustomization } from './DefaultAvatar';
  * behind the `rra-character-avatar` skill.
  */
 
+import { AvatarState } from '../lib/types';
+
 export interface SquirrelAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -27,6 +30,7 @@ export interface SquirrelAvatarProps {
 export function SquirrelAvatar({
   size = 300,
   customization,
+  state,
   className,
   style,
 }: SquirrelAvatarProps) {
@@ -116,6 +120,20 @@ export function SquirrelAvatar({
           <rect className="rra-lid" data-max-height="18" x="109" y="83" width="18" height="0" fill={fur} />
         </g>
 
+        {state === 'working' && (
+          <g id="rra-safety-goggles">
+            {/* Strap/elastic band on the sides */}
+            <path d="M 52 92 C 45 92, 45 96, 40 96 M 148 92 C 155 92, 155 96, 160 96" fill="none" stroke="#2d3748" strokeWidth="4" strokeLinecap="round" />
+            {/* Goggles Frame (single large rounded capsule) */}
+            <rect x="58" y="78" width="84" height="28" rx="14" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+            {/* Goggles Lens (semi-transparent light blue/white glare) */}
+            <rect x="60" y="80" width="80" height="24" rx="12" fill="#e0f2fe" fillOpacity="0.15" />
+            {/* Left/Right dark pivot dots */}
+            <circle cx="56" cy="92" r="3" fill="#475569" />
+            <circle cx="144" cy="92" r="3" fill="#475569" />
+          </g>
+        )}
+
         {/* nose */}
         <path d="M93 107 Q100 101 107 107 Q100 113 93 107 Z" fill="#7a4a32" />
         <path d="M100 113 L100 118" stroke="#7a4a32" strokeWidth="1.6" strokeLinecap="round" />
@@ -127,6 +145,68 @@ export function SquirrelAvatar({
         <g stroke="#caa074" strokeWidth="1" strokeLinecap="round" opacity="0.8" fill="none">
           <path d="M80 116 L62 113 M80 120 L62 121 M120 116 L138 113 M120 120 L138 121" />
         </g>
+
+        {state === 'working' && (
+          <g id="rra-working-workspace">
+            {/* Light bulb radial glow (flickering) */}
+            <circle cx="100" cy="162" r="22" fill="#fef08a" fillOpacity="0.25">
+              <animate attributeName="opacity" values="1;0.2;0.9;0.1;0.8;0.3;1" dur="1.2s" repeatCount="indefinite" />
+            </circle>
+            {/* Bulb base socket */}
+            <rect x="94" y="172" width="12" height="8" fill="#94a3b8" rx="1" />
+            <rect x="96" y="175" width="8" height="2" fill="#64748b" />
+            {/* Bulb glass dome (flickering fill) */}
+            <path d="M92 165 C92 153, 108 153, 108 165 C108 171, 104 172, 104 174 L96 174 C96 172, 92 171, 92 165 Z" fill="#fef08a" stroke="#ca8a04" strokeWidth="1.5">
+              <animate attributeName="fill" values="#fef08a;#fef08a;#78350f;#fef08a;#fef08a;#78350f;#fef08a" dur="1.2s" repeatCount="indefinite" />
+            </path>
+            {/* Filament (flickering stroke) */}
+            <path d="M97 167 L99 160 L101 160 L103 167" fill="none" stroke="#ca8a04" strokeWidth="1">
+              <animate attributeName="stroke" values="#ca8a04;#ca8a04;#78350f;#ca8a04;#ca8a04;#78350f;#ca8a04" dur="1.2s" repeatCount="indefinite" />
+            </path>
+
+
+
+            {/* Left Arm & Cable shaking system */}
+            <g id="rra-left-arm-cable">
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                values="0,0; -0.6,0.3; 0.4,-0.2; -0.3,-0.5; 0,0"
+                dur="0.18s"
+                repeatCount="indefinite"
+              />
+              {/* Sleeves (Grey hoodie color #2b2f36) */}
+              <path d="M36 182 L55 162 L64 168 L45 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+              {/* Wires */}
+              <path d="M 45 180 C 45 165, 80 170, 94 174" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" />
+              {/* Paws / fingers wrapping the wires */}
+              <g fill={fur} stroke="#b05418" strokeWidth="1">
+                <rect x="58" y="160" width="10" height="12" rx="4" transform="rotate(-10 63 166)" />
+                <rect x="62" y="163" width="9" height="10" rx="3" transform="rotate(-15 66.5 168)" />
+              </g>
+            </g>
+
+            {/* Right Arm & Cable shaking system */}
+            <g id="rra-right-arm-cable">
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                values="0,0; 0.5,-0.3; -0.4,0.2; 0.3,0.4; 0,0"
+                dur="0.15s"
+                repeatCount="indefinite"
+              />
+              {/* Sleeves (Grey hoodie color #2b2f36) */}
+              <path d="M164 182 L145 162 L136 168 L155 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+              {/* Wires */}
+              <path d="M 155 180 C 155 165, 120 170, 106 174" fill="none" stroke="#1e293b" strokeWidth="2.5" strokeLinecap="round" />
+              {/* Paws / fingers wrapping the wires */}
+              <g fill={fur} stroke="#b05418" strokeWidth="1">
+                <rect x="132" y="160" width="10" height="12" rx="4" transform="rotate(10 137 166)" />
+                <rect x="129" y="163" width="9" height="10" rx="3" transform="rotate(15 133.5 168)" />
+              </g>
+            </g>
+          </g>
+        )}
       </g>
 
       {/* thought bubble: OUTSIDE the clip so it floats past the disc */}

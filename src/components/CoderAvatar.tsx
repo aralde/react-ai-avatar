@@ -1,9 +1,12 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
 
+import { AvatarState } from '../lib/types';
+
 export interface CoderAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -16,6 +19,7 @@ export interface CoderAvatarProps {
 export function CoderAvatar({
   size = 300,
   customization,
+  state,
   className,
   style,
 }: CoderAvatarProps) {
@@ -61,7 +65,7 @@ export function CoderAvatar({
         <rect x="25" y="85" width="52" height="34" rx="2.5" fill="#1b2a2d" stroke="#48686f" strokeWidth="2" />
         <path d="M51 119 L51 129 M44 129 L58 129" stroke="#48686f" strokeWidth="2" strokeLinecap="round" />
         {/* Code Lines on Left Monitor */}
-        <g stroke="#10b981" strokeWidth="1.2" strokeLinecap="round" opacity="0.45">
+        <g stroke={state === 'working' ? '#34d399' : '#10b981'} strokeWidth="1.2" strokeLinecap="round" opacity={state === 'working' ? 0.95 : 0.45} style={{ transition: 'all 0.3s ease' }}>
           <path d="M30 91 L48 91 M30 96 L40 96 M30 101 L52 101 M30 106 L44 106 M30 111 L36 111" />
         </g>
 
@@ -69,7 +73,7 @@ export function CoderAvatar({
         <rect x="123" y="85" width="52" height="34" rx="2.5" fill="#1b2a2d" stroke="#48686f" strokeWidth="2" />
         <path d="M149 119 L149 129 M142 129 L156 129" stroke="#48686f" strokeWidth="2" strokeLinecap="round" />
         {/* Code Lines on Right Monitor */}
-        <g stroke="#10b981" strokeWidth="1.2" strokeLinecap="round" opacity="0.45">
+        <g stroke={state === 'working' ? '#34d399' : '#10b981'} strokeWidth="1.2" strokeLinecap="round" opacity={state === 'working' ? 0.95 : 0.45} style={{ transition: 'all 0.3s ease' }}>
           <path d="M128 91 L142 91 M128 96 L160 96 M128 101 L146 101 M128 106 L154 106 M128 111 L138 111" />
         </g>
 

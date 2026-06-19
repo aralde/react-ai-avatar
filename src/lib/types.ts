@@ -6,13 +6,14 @@
  * the library renders the face.
  */
 
-export type AvatarState = 'idle' | 'listening' | 'thinking' | 'speaking';
+export type AvatarState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'working';
 
 export interface StateColors {
   idle?: string;
   listening?: string;
   thinking?: string;
   speaking?: string;
+  working?: string;
 }
 
 export interface StateLabels {
@@ -20,4 +21,5 @@ export interface StateLabels {
   listening?: string;
   thinking?: string;
   speaking?: string;
+  working?: string;
 }

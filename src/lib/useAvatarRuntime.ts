@@ -240,13 +240,16 @@ export function useAvatarRuntime(
         lids.forEach((lid, i) => lid.setAttribute('height', String(closed * lidMaxes[i])));
       }
 
-      // 4. Pupils: gaze tracking, thinking looks up-left, listening micro-moves
+      // 4. Pupils: gaze tracking, thinking looks up-left, working looks down, listening micro-moves
       if (pupils.length > 0) {
         let targetX = pointerRef.current.x * 3 * trackIntensity;
         let targetY = pointerRef.current.y * 2.2 * trackIntensity;
         if (state === 'thinking') {
           targetX = -2.5;
           targetY = -3;
+        } else if (state === 'working') {
+          targetX = 0;
+          targetY = 3.5;
         } else if (state === 'listening' && !reducedMotion) {
           targetX += Math.sin(now * 0.0021) * 0.5;
           targetY += Math.cos(now * 0.0017) * 0.4;

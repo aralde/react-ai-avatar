@@ -16,6 +16,10 @@ const MOCK_RESPONSES = [
   "Un día, una estrella fugaz le envió una señal. " +
   "Y en ese instante, supe que no estaba solo en el universo.</speech>",
 
+  "<thought>El usuario solicita buscar información técnica. Ejecutando herramienta de consulta.</thought>" +
+  "<tool>Buscando en la base de datos de ardillas ingenieras...</tool>" +
+  "<speech>¡Listo! He realizado la consulta. Los sistemas de almacenamiento de bellotas de las ardillas reducen la pérdida de semillas en un ochenta por ciento mediante geolocalización olfativa.</speech>",
+
   "<thought>El usuario ha terminado de hablar. Generando una historia sobre una pequeña nube.</thought>" +
   "<speech>¡Qué interesante! Aquí tienes otra historia corta de cinco líneas. " +
   "Una pequeña nube de algodón flotaba muy alto en el cielo. " +
@@ -90,11 +94,14 @@ function setupMockSession(clientWs: any) {
       clientWs.send(JSON.stringify({ text: chunk }));
       
       const streamedSoFar = text.slice(0, textIndex);
-      if (streamedSoFar.includes("</thought>")) {
-        isThinking = false;
+      let inSpeech = false;
+      if (streamedSoFar.includes("<speech>")) {
+        inSpeech = true;
+      } else if (!text.includes("<speech") && streamedSoFar.includes("</thought>")) {
+        inSpeech = true;
       }
       
-      if (!isThinking) {
+      if (inSpeech) {
         const { base64, nextPhase } = generateMockAudioChunk(intervalMs, audioPhase);
         audioPhase = nextPhase;
         clientWs.send(JSON.stringify({ audio: base64 }));

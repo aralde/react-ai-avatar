@@ -17,6 +17,7 @@ export function useStreamingLLM() {
   const [state, setState] = useState<AvatarState>('idle');
   const [subtitle, setSubtitle] = useState('');
   const [thought, setThought] = useState('');
+  const [tool, setTool] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
 
@@ -37,6 +38,7 @@ export function useStreamingLLM() {
     speechActivity.reset();
     setIsStreaming(false);
     setState('idle');
+    setTool('');
   }, [speechActivity]);
 
   const send = useCallback(
@@ -47,6 +49,7 @@ export function useStreamingLLM() {
       setError(null);
       setSubtitle('');
       setThought('');
+      setTool('');
       setState('thinking');
       setIsStreaming(true);
       speechActivity.reset();
@@ -92,7 +95,12 @@ export function useStreamingLLM() {
             const parsed = parseModelText(raw);
             setThought(parsed.thought);
             setSubtitle(parsed.speech);
-            if (parsed.speech) setState('speaking');
+            setTool(parsed.tool);
+            if (parsed.speech) {
+              setState('speaking');
+            } else if (parsed.tool) {
+              setState('working');
+            }
           }
         }
 
@@ -114,10 +122,11 @@ export function useStreamingLLM() {
     historyRef.current = [];
     setSubtitle('');
     setThought('');
+    setTool('');
     setError(null);
   }, [stop]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  return { send, stop, reset, state, subtitle, thought, error, isStreaming, speechActivity };
+  return { send, stop, reset, state, subtitle, thought, tool, error, isStreaming, speechActivity };
 }

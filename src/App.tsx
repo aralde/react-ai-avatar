@@ -54,9 +54,12 @@ export default function App() {
   const isText = engine === 'text';
 
   const { connect, disconnect, isConnected } = gemini;
-  const state = isText ? textLLM.state : gemini.state;
+  const liveState = isText ? textLLM.state : gemini.state;
+  const [manualState, setManualState] = useState<AvatarState | 'auto'>('auto');
+  const state = manualState === 'auto' ? liveState : manualState;
   const subtitle = isText ? textLLM.subtitle : gemini.subtitle;
   const thought = isText ? textLLM.thought : gemini.thought;
+  const tool = isText ? textLLM.tool : gemini.tool;
   const error = isText ? textLLM.error : gemini.error;
   // Audio analyser drives voice mode; the token-rate source drives text mode.
   const analyser = isText ? null : gemini.analyser;
@@ -85,7 +88,7 @@ export default function App() {
   // it through `variant="byos"` with the component as children. For every other
   // variant the children are ignored, so we can wire both render sites uniformly.
   const effectiveVariant = variant === 'squirrel' ? 'byos' : variant;
-  const byosChild = variant === 'squirrel' ? <SquirrelAvatar /> : undefined;
+  const byosChild = variant === 'squirrel' ? <SquirrelAvatar state={state} /> : undefined;
   const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>(DEFAULT_DICEBEAR_COLLECTION);
   const [dicebearSeed, setDicebearSeed] = useState<string>(DEFAULT_DICEBEAR_SEED);
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
@@ -144,14 +147,16 @@ export default function App() {
     idle: '#4b5563',
     listening: '#3b82f6',
     thinking: '#8b5cf6',
-    speaking: '#10b981'
+    speaking: '#10b981',
+    working: '#f59e0b'
   });
 
   const [stateLabels, setStateLabels] = useState({
     idle: 'Idle',
     listening: 'Listening',
     thinking: 'Thinking...',
-    speaking: 'Speaking'
+    speaking: 'Speaking',
+    working: 'Working'
   });
 
   // Code exporter modal state
@@ -440,6 +445,7 @@ function MyAvatarComponent() {
     idle: 'Console Standby. Ready to initiate neural link.',
     listening: 'Neural connection open. Listening to audio input...',
     thinking: 'Synthesizing response. Analyzing neural vectors...',
+    working: 'Executing tools. Processing neural parameters...',
     speaking: 'Broadcasting voice output. Driving the audio-reactive mouth.'
   };
 
@@ -886,6 +892,32 @@ function MyAvatarComponent() {
 
                 {controlTab === 'calibrate' && (
                   <div className="flex flex-col gap-4">
+                    {/* Manual State Override */}
+                    <div className="flex flex-col gap-1.5 bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/40">
+                      <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                        Manual State Override (Testing)
+                      </span>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-zinc-950/80 p-0.5 rounded-lg border border-zinc-800">
+                        {(['auto', 'idle', 'listening', 'thinking', 'speaking', 'working'] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setManualState(s)}
+                            className={`py-1 text-[9px] font-mono font-bold rounded uppercase transition-all cursor-pointer ${
+                              manualState === s
+                                ? 'bg-emerald-500 text-zinc-950 shadow-sm font-black'
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-zinc-500 font-sans leading-normal">
+                        Select any state to override the live connection state and preview the avatar visual response (e.g. safety goggles in 'working' state).
+                      </p>
+                    </div>
+
                     {/* Mouth Opening Sensitivity */}
                     <div className="flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs">
@@ -991,13 +1023,15 @@ function MyAvatarComponent() {
                             idle: '#4b5563',
                             listening: '#3b82f6',
                             thinking: '#8b5cf6',
-                            speaking: '#10b981'
+                            speaking: '#10b981',
+                            working: '#f59e0b'
                           });
                           setStateLabels({
                             idle: 'Idle',
                             listening: 'Listening',
                             thinking: 'Thinking...',
-                            speaking: 'Speaking'
+                            speaking: 'Speaking',
+                            working: 'Working'
                           });
                         }}
                         className="text-[9px] bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white px-2 py-0.5 rounded font-mono transition-colors border border-zinc-800/60 cursor-pointer"
@@ -1399,6 +1433,7 @@ function MyAvatarComponent() {
                 dicebearSeed={dicebearSeed}
                 subtitle={subtitle}
                 thought={thought}
+                tool={tool}
                 showSubtitle={showSubtitle}
                 maxMouthOpening={maxMouthOpening}
                 mouseTrackingIntensity={mouseTrackingIntensity}
