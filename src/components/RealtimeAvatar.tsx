@@ -5,13 +5,13 @@ import { GeometricAvatar } from './GeometricAvatar';
 import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
-import { CoderAvatar } from './CoderAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
 import type { SpeechActivitySource } from '../lib/speechActivity';
 import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
 import type { DiceBearCollection } from '../lib/dicebear';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { hexToRgba } from '../lib/color';
 import { motion, useMotionValue } from 'motion/react';
 
 // Lazy-loaded so the three.js stack (optional peer deps) is only fetched
@@ -57,7 +57,7 @@ export interface RealtimeAvatarProps {
    */
   streamingText?: string;
   size?: number;
-  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'coder' | 'vrm' | 'glb' | 'dicebear' | 'byos';
+  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
   children?: React.ReactNode;
   vrmUrl?: string;
@@ -91,30 +91,16 @@ export interface RealtimeAvatarProps {
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   stateLabels?: {
     idle?: string;
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   customization?: AvatarCustomization;
-}
-
-function hexToRgba(color: string, opacity: number): string {
-  if (!color || !color.startsWith('#')) return color || 'transparent';
-  const cleanHex = color.replace('#', '');
-  let r = 0, g = 0, b = 0;
-  if (cleanHex.length === 3) {
-    r = parseInt(cleanHex[0] + cleanHex[0], 16);
-    g = parseInt(cleanHex[1] + cleanHex[1], 16);
-    b = parseInt(cleanHex[2] + cleanHex[2], 16);
-  } else if (cleanHex.length === 6) {
-    r = parseInt(cleanHex.substring(0, 2), 16);
-    g = parseInt(cleanHex.substring(2, 4), 16);
-    b = parseInt(cleanHex.substring(4, 6), 16);
-  }
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
 export function RealtimeAvatar({
@@ -204,7 +190,6 @@ export function RealtimeAvatar({
       memoji: MemojiAvatar,
       pixelart: PixelArtAvatar,
       doodle: DoodleAvatar,
-      coder: CoderAvatar,
     } as const;
     const Preset = presets[variant] ?? GeometricAvatar;
     AvatarComponent = (

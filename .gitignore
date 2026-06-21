@@ -6,6 +6,9 @@ coverage/
 .agents/
 .DS_Store
 *.log
+
+# npm pack artifacts (regenerable; never commit the tarball)
+*.tgz
 .env*
 !.env.example
 

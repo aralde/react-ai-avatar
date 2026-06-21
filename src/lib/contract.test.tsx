@@ -5,7 +5,6 @@ import { GeometricAvatar } from '../components/GeometricAvatar';
 import { MemojiAvatar } from '../components/MemojiAvatar';
 import { PixelArtAvatar } from '../components/PixelArtAvatar';
 import { DoodleAvatar } from '../components/DoodleAvatar';
-import { CoderAvatar } from '../components/CoderAvatar';
 import { ContractAvatar } from '../components/ContractAvatar';
 
 /**
@@ -24,7 +23,6 @@ const PRESETS: Array<[string, ReactElement]> = [
   ['memoji', <MemojiAvatar key="m" />],
   ['pixelart', <PixelArtAvatar key="p" />],
   ['doodle', <DoodleAvatar key="d" />],
-  ['coder', <CoderAvatar key="c" />],
 ];
 
 describe('layer contract', () => {

@@ -45,6 +45,7 @@ const DEFAULT_COLORS: Required<StateColors> = {
   listening: '#3b82f6',
   thinking: '#8b5cf6',
   speaking: '#10b981',
+  working: '#f59e0b',
 };
 
 export function useAvatarRuntime(

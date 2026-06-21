@@ -199,8 +199,10 @@ export function DiceBearAvatar({
     const showFrame = (key: string) => {
       if (key === lastKey) return;
       const next = els.get(key) ?? els.get(frames[0].key);
+      // Toggle visibility (compositor-only) rather than display, which would
+      // force a layout/reflow on every viseme swap.
       els.forEach((el) => {
-        el.style.display = el === next ? 'block' : 'none';
+        el.style.visibility = el === next ? 'visible' : 'hidden';
       });
       lastKey = key;
     };
@@ -309,7 +311,7 @@ export function DiceBearAvatar({
       style={{ width: size, height: size, ...style }}
     >
       {frames && (
-        <div ref={wrapRef} className="relative w-full h-full will-change-transform" role="img" aria-label="Avatar">
+        <div ref={wrapRef} className="relative w-full h-full" role="img" aria-label="Avatar">
           {frames.map((f, i) => (
             <div
               key={f.key}
@@ -319,7 +321,7 @@ export function DiceBearAvatar({
               }}
               dangerouslySetInnerHTML={{ __html: f.html }}
               className="absolute inset-0 [&>svg]:w-full [&>svg]:h-full"
-              style={{ display: i === 0 ? 'block' : 'none' }}
+              style={{ visibility: i === 0 ? 'visible' : 'hidden' }}
             />
           ))}
         </div>

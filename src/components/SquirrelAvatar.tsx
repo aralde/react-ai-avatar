@@ -1,5 +1,5 @@
 import React from 'react';
-import { AvatarCustomization } from './DefaultAvatar';
+import type { AvatarCustomization } from './DefaultAvatar';
 
 /**
  * SquirrelAvatar — a full branded character (red-squirrel developer) drawn as a
@@ -17,10 +17,13 @@ import { AvatarCustomization } from './DefaultAvatar';
  * behind the `rra-character-avatar` skill.
  */
 
-import { AvatarState } from '../lib/types';
+import type { AvatarState } from '../lib/types';
 
 export interface SquirrelAvatarProps {
-  size?: number;
+  /** SVG width/height. Defaults to `'100%'` so the squirrel fills its (sized)
+   *  container — e.g. the box `ContractAvatar`/`RealtimeAvatar` already reserves.
+   *  Pass a number for a fixed pixel size. */
+  size?: number | string;
   customization?: Partial<AvatarCustomization>;
   state?: AvatarState;
   className?: string;
@@ -28,7 +31,7 @@ export interface SquirrelAvatarProps {
 }
 
 export function SquirrelAvatar({
-  size = 300,
+  size = '100%',
   customization,
   state,
   className,
@@ -84,79 +87,107 @@ export function SquirrelAvatar({
         </g>
         <path d="M96 150 L94 170 M104 150 L106 170" stroke="#e9eef2" strokeWidth="1.6" strokeLinecap="round" fill="none" />
 
-        {/* tufted squirrel ears */}
-        <path d="M66 80 L58 42 Q74 50 86 72 Z" fill={fur} />
-        <path d="M134 80 L142 42 Q126 50 114 72 Z" fill={fur} />
-        <path d="M68 74 L63 52 Q72 56 80 70 Z" fill="#a8451c" />
-        <path d="M132 74 L137 52 Q128 56 120 70 Z" fill="#a8451c" />
-        <g stroke="#f0d9b8" strokeWidth="1.4" strokeLinecap="round" fill="none">
-          <path d="M60 46 L57 38 M63 47 L62 39 M66 49 L66 41" />
-          <path d="M140 46 L143 38 M137 47 L138 39 M134 49 L134 41" />
-        </g>
-
-        {/* head + cheek fluff + lighter muzzle */}
-        <ellipse cx="100" cy="98" rx="40" ry="37" fill={fur} />
-        <path d="M62 96 Q54 90 58 100 Q56 108 64 106 Z" fill={fur} />
-        <path d="M138 96 Q146 90 142 100 Q144 108 136 106 Z" fill={fur} />
-        <ellipse cx="100" cy="112" rx="23" ry="18" fill="#ecc090" />
-
-        {/* brown quiff */}
-        <path d="M64 78 Q60 50 86 46 Q78 54 82 60 Q92 44 110 48 Q102 56 106 60 Q120 50 134 74 Q124 62 112 66 Q100 56 88 66 Q76 64 64 78 Z" fill="#3a2820" />
-
-        {/* brows */}
-        <g stroke="#5a3a22" strokeWidth="3" strokeLinecap="round" fill="none">
-          <path d="M70 80 Q78 75 88 79" />
-          <path d="M112 79 Q122 75 130 80" />
-        </g>
-
-        {/* round glasses, drawn over the brows */}
-        <g stroke="#1a1a1a" strokeWidth="3" fill="none">
-          <path d="M95 92 Q100 89 105 92" />
-          <path d="M69 90 L60 86" />
-          <path d="M131 90 L140 86" />
-        </g>
-        <circle cx="82" cy="92" r="13.5" fill="#fbf7ef" stroke="#1a1a1a" strokeWidth="3" />
-        <circle cx="118" cy="92" r="13.5" fill="#fbf7ef" stroke="#1a1a1a" strokeWidth="3" />
-
-        {/* LEFT EYE: ball -> pupil(.rra-pupil, data-base-*) -> lid(.rra-lid, fur-colored, on top) */}
-        <g>
-          <ellipse cx="82" cy="93" rx="8" ry="8.5" fill="#ffffff" />
-          <circle className="rra-pupil" data-base-x={82} data-base-y={93} cx="82" cy="93" r="4.6" fill="#2b1b12" />
-          <circle cx="84" cy="90" r="1.5" fill="#ffffff" />
-          <rect className="rra-lid" data-max-height="18" x="73" y="83" width="18" height="0" fill={fur} />
-        </g>
-        {/* RIGHT EYE */}
-        <g>
-          <ellipse cx="118" cy="93" rx="8" ry="8.5" fill="#ffffff" />
-          <circle className="rra-pupil" data-base-x={118} data-base-y={93} cx="118" cy="93" r="4.6" fill="#2b1b12" />
-          <circle cx="120" cy="90" r="1.5" fill="#ffffff" />
-          <rect className="rra-lid" data-max-height="18" x="109" y="83" width="18" height="0" fill={fur} />
-        </g>
-
-        {state === 'working' && workingVariant === 'wires' && (
-          <g id="rra-safety-goggles">
-            {/* Strap/elastic band on the sides */}
-            <path d="M 52 92 C 45 92, 45 96, 40 96 M 148 92 C 155 92, 155 96, 160 96" fill="none" stroke="#2d3748" strokeWidth="4" strokeLinecap="round" />
-            {/* Goggles Frame (single large rounded capsule) */}
-            <rect x="58" y="78" width="84" height="28" rx="14" fill="none" stroke="#e2e8f0" strokeWidth="4" />
-            {/* Goggles Lens (semi-transparent light blue/white glare) */}
-            <rect x="60" y="80" width="80" height="24" rx="12" fill="#e0f2fe" fillOpacity="0.15" />
-            {/* Left/Right dark pivot dots */}
-            <circle cx="56" cy="92" r="3" fill="#475569" />
-            <circle cx="144" cy="92" r="3" fill="#475569" />
+        <g id="rra-squirrel-head" transform={state === 'thinking' ? 'rotate(6 100 120)' : undefined}>
+          {/* tufted squirrel ears */}
+          <path d="M66 80 L58 42 Q74 50 86 72 Z" fill={fur} />
+          <path d="M134 80 L142 42 Q126 50 114 72 Z" fill={fur} />
+          <path d="M68 74 L63 52 Q72 56 80 70 Z" fill="#a8451c" />
+          <path d="M132 74 L137 52 Q128 56 120 70 Z" fill="#a8451c" />
+          <g stroke="#f0d9b8" strokeWidth="1.4" strokeLinecap="round" fill="none">
+            <path d="M60 46 L57 38 M63 47 L62 39 M66 49 L66 41" />
+            <path d="M140 46 L143 38 M137 47 L138 39 M134 49 L134 41" />
           </g>
-        )}
 
-        {/* nose */}
-        <path d="M93 107 Q100 101 107 107 Q100 113 93 107 Z" fill="#7a4a32" />
-        <path d="M100 113 L100 118" stroke="#7a4a32" strokeWidth="1.6" strokeLinecap="round" />
+          {/* head + cheek fluff + lighter muzzle */}
+          <ellipse cx="100" cy="98" rx="40" ry="37" fill={fur} />
+          <path d="M62 96 Q54 90 58 100 Q56 108 64 106 Z" fill={fur} />
+          <path d="M138 96 Q146 90 142 100 Q144 108 136 106 Z" fill={fur} />
+          <ellipse cx="100" cy="112" rx="23" ry="18" fill="#ecc090" />
 
-        {/* mouth: thin ellipse, resting ry=2.3 — the runtime opens it from here */}
-        <ellipse id="rra-mouth" cx="100" cy="121" rx="7" ry="2.3" fill="#5a3324" />
+          {/* brown quiff */}
+          <path d="M64 78 Q60 50 86 46 Q78 54 82 60 Q92 44 110 48 Q102 56 106 60 Q120 50 134 74 Q124 62 112 66 Q100 56 88 66 Q76 64 64 78 Z" fill="#3a2820" />
 
-        {/* whiskers */}
-        <g stroke="#caa074" strokeWidth="1" strokeLinecap="round" opacity="0.8" fill="none">
-          <path d="M80 116 L62 113 M80 120 L62 121 M120 116 L138 113 M120 120 L138 121" />
+          {/* brows */}
+          <g stroke="#5a3a22" strokeWidth="3" strokeLinecap="round" fill="none">
+            <path d="M70 80 Q78 75 88 79" />
+            <path d="M112 79 Q122 75 130 80" />
+          </g>
+
+          {/* round glasses, drawn over the brows */}
+          <g stroke="#1a1a1a" strokeWidth="3" fill="none">
+            <path d="M95 92 Q100 89 105 92" />
+            <path d="M69 90 L60 86" />
+            <path d="M131 90 L140 86" />
+          </g>
+          <circle cx="82" cy="92" r="13.5" fill="#fbf7ef" stroke="#1a1a1a" strokeWidth="3" />
+          <circle cx="118" cy="92" r="13.5" fill="#fbf7ef" stroke="#1a1a1a" strokeWidth="3" />
+
+          {/* LEFT EYE: ball -> pupil(.rra-pupil, data-base-*) -> lid(.rra-lid, fur-colored, on top) */}
+          <g>
+            <ellipse cx="82" cy="93" rx="8" ry="8.5" fill="#ffffff" />
+            <g transform={state === 'thinking' ? 'translate(5, 0)' : undefined}>
+              <circle className="rra-pupil" data-base-x={82} data-base-y={93} cx="82" cy="93" r="4.6" fill="#2b1b12" />
+            </g>
+            <circle cx="84" cy="90" r="1.5" fill="#ffffff" />
+            <rect className="rra-lid" data-max-height="18" x="73" y="83" width="18" height="0" fill={fur} />
+          </g>
+          {/* RIGHT EYE */}
+          <g>
+            <ellipse cx="118" cy="93" rx="8" ry="8.5" fill="#ffffff" />
+            <g transform={state === 'thinking' ? 'translate(5, 0)' : undefined}>
+              <circle className="rra-pupil" data-base-x={118} data-base-y={93} cx="118" cy="93" r="4.6" fill="#2b1b12" />
+            </g>
+            <circle cx="120" cy="90" r="1.5" fill="#ffffff" />
+            <rect className="rra-lid" data-max-height="18" x="109" y="83" width="18" height="0" fill={fur} />
+          </g>
+
+          {state === 'working' && workingVariant === 'wires' && (
+            <g id="rra-safety-goggles">
+              {/* Strap/elastic band on the sides */}
+              <path d="M 52 92 C 45 92, 45 96, 40 96 M 148 92 C 155 92, 155 96, 160 96" fill="none" stroke="#2d3748" strokeWidth="4" strokeLinecap="round" />
+              {/* Goggles Frame (single large rounded capsule) */}
+              <rect x="58" y="78" width="84" height="28" rx="14" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+              {/* Goggles Lens (semi-transparent light blue/white glare) */}
+              <rect x="60" y="80" width="80" height="24" rx="12" fill="#e0f2fe" fillOpacity="0.15" />
+              {/* Left/Right dark pivot dots */}
+              <circle cx="56" cy="92" r="3" fill="#475569" />
+              <circle cx="144" cy="92" r="3" fill="#475569" />
+            </g>
+          )}
+
+          {/* nose */}
+          <path d="M93 107 Q100 101 107 107 Q100 113 93 107 Z" fill="#7a4a32" />
+          <path d="M100 113 L100 118" stroke="#7a4a32" strokeWidth="1.6" strokeLinecap="round" />
+
+          {/* mouth: thin ellipse, resting ry=2.3 — the runtime opens it from here */}
+          <ellipse id="rra-mouth" cx="100" cy="121" rx="7" ry="2.3" fill="#5a3324" />
+
+          {/* whiskers */}
+          <g stroke="#caa074" strokeWidth="1" strokeLinecap="round" opacity="0.8" fill="none">
+            <path d="M80 116 L62 113 M80 120 L62 121 M120 116 L138 113 M120 120 L138 121" />
+          </g>
+
+          {/* hand touching the chin, rendered only when thinking */}
+          {state === 'thinking' && (
+            <g id="rra-thinking-hand">
+              {/* Sleeve coming up from the bottom right to the chin */}
+              <path
+                d="M136 182 L112 144 L124 138 L152 182 Z"
+                fill="#2b2f36"
+                stroke="#1e293b"
+                strokeWidth="1.2"
+              />
+              {/* Hand with index finger touching chin, thumb pointing left */}
+              <g fill={fur} stroke="#b05418" strokeWidth="1.2" strokeLinejoin="round" strokeLinecap="round">
+                {/* Index finger pointing up-left, touching the chin/cheek */}
+                <path d="M112 144 C110 138, 107 130, 105 124 C104 121, 108 121, 109 124 C111 130, 113 136, 115 141" />
+                {/* Curled fingers (middle, ring, pinky) */}
+                <path d="M115 141 C117 139, 120 140, 119 143 C121 142, 123 144, 121 147 C122 147, 123 149, 121 151 C120 152, 116 150, 115 145" />
+                {/* Thumb pointing left under the chin */}
+                <path d="M110 139 C104 139, 96 135, 92 132 C90 130, 93 128, 95 130 C100 133, 106 135, 110 136" />
+              </g>
+            </g>
+          )}
         </g>
 
         {state === 'working' && workingVariant === 'wires' && (
@@ -221,56 +252,49 @@ export function SquirrelAvatar({
 
         {state === 'working' && workingVariant === 'paper' && (
           <g id="rra-working-workspace-paper">
-            {/* Folder backing & paper & holding hand (grouped and rotated together for perfect alignment) */}
-            <g id="rra-clipboard-folder" transform="rotate(-12 145 140)">
-              {/* Folder backing (slanted/open style folder with rounded corners, folding perspective, and bottom-left pointed tab) */}
-              <path d="M 122 95 L 151 95 Q 154 95, 156 97 L 168 109 Q 170 111, 170 114 L 156 150 Q 154 152, 154 155 L 154 163 Q 154 165, 151 165 L 120 172 Q 116 174, 117 171 L 120 97 Q 120 95, 122 95 Z" fill="#f0e6d2" stroke="#c8bfae" strokeWidth="1.5" />
-              {/* Crease line separating pages */}
-              <line x1="153" y1="95" x2="153" y2="165" stroke="#d5cabb" strokeWidth="1" />
-              {/* White paper sheet on the left page */}
-              <rect x="122" y="99" width="29" height="60" rx="1" fill="#f8fafc" />
-              {/* Text lines representing code/text */}
-              <g stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round">
-                <line x1="127" y1="107" x2="148" y2="107" />
-                <line x1="127" y1="113" x2="145" y2="113" />
-                <line x1="127" y1="119" x2="148" y2="119" />
-                <line x1="127" y1="125" x2="142" y2="125" />
-                <line x1="127" y1="131" x2="147" y2="131" />
-                <line x1="127" y1="137" x2="144" y2="137" />
-                <line x1="127" y1="143" x2="139" y2="143" />
-              </g>
+            {/* Whole open book + hands gently breathe while reading */}
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values="0,0; 0,1; 0,0; 0,1; 0,0"
+              dur="3.2s"
+              repeatCount="indefinite"
+            />
 
-              {/* Right arm/hand holding the folder slanted edge (rotated together with the folder) */}
-              <g id="rra-holding-arm">
-                <path d="M165 182 L157 142 L149 146 L154 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
-                <g fill={fur} stroke="#b05418" strokeWidth="1">
-                  <rect x="159" y="129" width="9" height="6" rx="2.5" transform="rotate(-23 163.5 132)" />
-                  <rect x="156" y="135" width="9" height="6" rx="2.5" transform="rotate(-23 160.5 138)" />
-                  <rect x="153" y="141" width="9" height="6" rx="2.5" transform="rotate(-23 157.5 144)" />
-                  <rect x="150" y="147" width="8" height="5.5" rx="2.2" transform="rotate(-23 154 150)" />
-                </g>
-              </g>
+            {/* Sleeves coming up from the hoodie to grip the lower-outer book corners */}
+            <path d="M36 182 L54 168 L64 176 L48 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+            <path d="M164 182 L146 168 L136 176 L152 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
+
+            {/* White page block BEHIND the covers — only its top edge peeks out above the
+                black covers (the canto/edge of the stacked sheets). Valley (∨) at center. */}
+            <path d="M50 118 C 66 120 84 128 100 134 C 116 128 134 120 150 118 L 148 124 C 134 126 116 134 100 150 C 84 134 66 126 52 124 Z" fill="#f8fafc" stroke="#d9d2c4" strokeWidth="1" />
+            {/* A couple of page-edge lines on the visible white strip (slope follows the ∨) */}
+            <g stroke="#9aa4b2" strokeWidth="1.1" strokeLinecap="round">
+              <line x1="60" y1="124" x2="92" y2="137" />
+              <line x1="140" y1="124" x2="108" y2="137" />
             </g>
 
-            {/* Left arm/hand pointing/scanning (outside rotated group so it can animate independently) */}
-            <g id="rra-pointing-paw">
-              <animateTransform
-                attributeName="transform"
-                type="translate"
-                values="0,0; 2,-1.5; -1,1; 1.5,-0.5; 0,0"
-                dur="2.5s"
-                repeatCount="indefinite"
-              />
-              {/* Sleeve */}
-              <path d="M36 182 L100 144 L106 152 L45 182 Z" fill="#2b2f36" stroke="#1e293b" strokeWidth="1" />
-              {/* Palm/Fist */}
-              <circle cx="104" cy="149" r="6.5" fill={fur} stroke="#b05418" strokeWidth="1" />
-              {/* Pointing index finger */}
-              <path d="M104 145 L121 137 C123.5 135.5, 125 138, 122 140 L106 149 Z" fill={fur} stroke="#b05418" strokeWidth="1" />
-              {/* Folded fingers */}
-              <circle cx="102" cy="151" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
-              <circle cx="105" cy="153" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
-              <circle cx="108" cy="151" r="2.5" fill={fur} stroke="#b05418" strokeWidth="1" />
+            {/* BLACK book covers (the outside, facing us while the squirrel reads the inside).
+                Diagonals inverted vs. before: gutter dips at the center, covers rise to the
+                upper-outer corners, drooping to the lower-outer corners held by the paws. */}
+            <path d="M100 148 C 84 136 68 130 52 126 L 60 182 C 78 178 90 177 100 176 Z" fill="#20242b" stroke="#0f1216" strokeWidth="1.5" />
+            <path d="M100 148 C 116 136 132 130 148 126 L 140 182 C 122 178 110 177 100 176 Z" fill="#20242b" stroke="#0f1216" strokeWidth="1.5" />
+            {/* Center fold / spine running down from the gutter */}
+            <line x1="100" y1="134" x2="100" y2="176" stroke="#0f1216" strokeWidth="1.4" />
+
+            {/* Left paw gripping the lower-outer corner, fingers curling over the page */}
+            <g fill={fur} stroke="#b05418" strokeWidth="1">
+              <circle cx="60" cy="180" r="7" />
+              <rect x="57" y="170" width="7" height="12" rx="3" />
+              <rect x="62" y="172" width="7" height="11" rx="3" />
+              <rect x="67" y="173" width="6" height="10" rx="3" />
+            </g>
+            {/* Right paw gripping the lower-outer corner */}
+            <g fill={fur} stroke="#b05418" strokeWidth="1">
+              <circle cx="140" cy="180" r="7" />
+              <rect x="136" y="170" width="7" height="12" rx="3" />
+              <rect x="131" y="172" width="7" height="11" rx="3" />
+              <rect x="127" y="173" width="6" height="10" rx="3" />
             </g>
           </g>
         )}

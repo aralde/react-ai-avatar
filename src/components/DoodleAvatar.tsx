@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * DoodleAvatar — hand-drawn ink-on-paper sketch style: wobbly outlines,
@@ -14,6 +15,8 @@ export interface DoodleAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
   inkColor?: string;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }

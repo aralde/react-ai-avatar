@@ -18,8 +18,11 @@ export type { PixelArtAvatarProps } from '../components/PixelArtAvatar';
 export { DoodleAvatar } from '../components/DoodleAvatar';
 export type { DoodleAvatarProps } from '../components/DoodleAvatar';
 
-export { CoderAvatar } from '../components/CoderAvatar';
-export type { CoderAvatarProps } from '../components/CoderAvatar';
+// Branded example character (bring-your-own-SVG). Not a generic preset — it's a
+// full red-squirrel developer face on the `#rra-*` contract, shipped so the demo
+// and docs site can render the same character from one source.
+export { SquirrelAvatar } from '../components/SquirrelAvatar';
+export type { SquirrelAvatarProps } from '../components/SquirrelAvatar';
 
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';

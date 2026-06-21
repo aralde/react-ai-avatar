@@ -49,6 +49,7 @@ export interface AvatarProps {
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   customization?: AvatarCustomization;
 }
@@ -126,7 +127,8 @@ export function DefaultAvatar({
     idle: stateColors?.idle ?? '#9ca3af', // gray-400
     listening: stateColors?.listening ?? '#3b82f6', // blue-500
     thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
-    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
+    speaking: stateColors?.speaking ?? '#10b981', // emerald-500
+    working: stateColors?.working ?? '#f59e0b' // amber-500
   };
 
   return (

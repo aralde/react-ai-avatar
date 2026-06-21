@@ -435,6 +435,7 @@ export function GlbArkitAvatar({
     listening: stateColors?.listening ?? '#3b82f6',
     thinking: stateColors?.thinking ?? '#8b5cf6',
     speaking: stateColors?.speaking ?? '#10b981',
+    working: stateColors?.working ?? '#f59e0b',
   };
 
   return (

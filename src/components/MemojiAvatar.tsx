@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * MemojiAvatar — soft, volumetric SVG head in the spirit of Apple's memoji:
@@ -12,6 +13,8 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface MemojiAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }

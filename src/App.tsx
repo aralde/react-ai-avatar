@@ -14,7 +14,6 @@ import {
   Cloud,
   CloudOff,
   Cpu,
-  Terminal,
   Clock,
   Code,
   Copy,
@@ -41,6 +40,7 @@ import {
   DEFAULT_DICEBEAR_SEED,
 } from './lib/dicebear';
 import { DiceBearThumb } from './components/DiceBearThumb';
+import { AvatarState } from './lib/types';
 
 export default function App() {
   const gemini = useGeminiLive();
@@ -82,7 +82,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'coder' | 'vrm' | 'glb' | 'dicebear' | 'squirrel'>('geometric');
+  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'squirrel'>('geometric');
 
   // The squirrel is a bring-your-own-SVG character, not a built-in variant: render
   // it through `variant="byos"` with the component as children. For every other
@@ -590,21 +590,6 @@ function MyAvatarComponent() {
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Hand-drawn ink sketch with wobbly strokes.</span>
                       </button>
 
-                      <button
-                        onClick={() => setVariant('coder')}
-                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
-                          variant === 'coder'
-                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
-                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <Terminal className={`w-4.5 h-4.5 ${variant === 'coder' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
-                          {variant === 'coder' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                        </div>
-                        <span className="text-xs font-bold text-white mb-0.5">Coder</span>
-                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Developer in front of monitors with headphones and glasses.</span>
-                      </button>
 
                       <button
                         onClick={() => setVariant('squirrel')}

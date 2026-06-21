@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * PixelArtAvatar — retro avatar on a logical 32x32 grid.
@@ -16,6 +17,8 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface PixelArtAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }

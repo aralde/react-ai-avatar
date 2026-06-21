@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * GeometricAvatar — minimalist geometric SVG avatar (head only).
@@ -15,6 +16,8 @@ export interface GeometricAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
   mouthColor?: string;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
