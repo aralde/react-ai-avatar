@@ -7,8 +7,11 @@ import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
 import { AvatarState } from '../lib/types';
+import type { SpeechActivitySource } from '../lib/speechActivity';
+import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
 import type { DiceBearCollection } from '../lib/dicebear';
 import { useReducedMotion } from '../lib/useReducedMotion';
+import { hexToRgba } from '../lib/color';
 import { motion, useMotionValue } from 'motion/react';
 
 // Lazy-loaded so the three.js stack (optional peer deps) is only fetched
@@ -29,7 +32,30 @@ const GlbAvatarLazy = React.lazy(() =>
 
 export interface RealtimeAvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /**
+   * WebAudio AnalyserNode for the audio-reactive mouth (voice pipelines).
+   * Optional: omit it (or pass `null`) and `speaking` falls back to a
+   * synthetic speech-like pattern — so the minimal usage is just
+   * `<RealtimeAvatar state={state} />`.
+   */
+  analyser?: AnalyserNode | null;
+  /**
+   * Token-rate mouth driver for text-streaming LLMs (OpenAI-style
+   * `/chat/completions` or `/responses` with `stream: true`). Create one with
+   * `createSpeechActivity()` and `push()` each streamed chunk. When provided,
+   * it drives the mouth instead of `analyser` — so a text-only assistant still
+   * gets a face that tracks the stream. See `createSpeechActivity`.
+   */
+  speechActivity?: SpeechActivitySource;
+  /**
+   * Declarative mouth driver for text-streaming chats. Pass the *accumulated*
+   * assistant text (the kind a hook like the Vercel AI SDK's `useChat` hands
+   * you — it grows each render); the avatar diffs its growth internally and
+   * drives the mouth from token cadence. No `createSpeechActivity`, no reader
+   * loop. Ignored when `speechActivity` is set; takes precedence over
+   * `analyser`. See `useStreamingTextActivity`.
+   */
+  streamingText?: string;
   size?: number;
   variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
   /** Your own contract-compliant SVG, rendered when variant="byos". */
@@ -43,6 +69,11 @@ export interface RealtimeAvatarProps {
   dicebearSeed?: string;
   subtitle?: string;
   thought?: string;
+  tool?: string;
+  /** HUD satellites — all on by default; set false to hide individually. */
+  showGlow?: boolean;
+  showStatePill?: boolean;
+  showThought?: boolean;
   showSubtitle?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -60,35 +91,23 @@ export interface RealtimeAvatarProps {
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   stateLabels?: {
     idle?: string;
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   customization?: AvatarCustomization;
 }
 
-function hexToRgba(color: string, opacity: number): string {
-  if (!color || !color.startsWith('#')) return color || 'transparent';
-  const cleanHex = color.replace('#', '');
-  let r = 0, g = 0, b = 0;
-  if (cleanHex.length === 3) {
-    r = parseInt(cleanHex[0] + cleanHex[0], 16);
-    g = parseInt(cleanHex[1] + cleanHex[1], 16);
-    b = parseInt(cleanHex[2] + cleanHex[2], 16);
-  } else if (cleanHex.length === 6) {
-    r = parseInt(cleanHex.substring(0, 2), 16);
-    g = parseInt(cleanHex.substring(2, 4), 16);
-    b = parseInt(cleanHex.substring(4, 6), 16);
-  }
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
-
 export function RealtimeAvatar({
   state,
-  analyser,
+  analyser = null,
+  speechActivity,
+  streamingText,
   size = 280,
   variant = 'geometric',
   children,
@@ -96,6 +115,10 @@ export function RealtimeAvatar({
   glbUrl,
   subtitle,
   thought,
+  tool,
+  showGlow = true,
+  showStatePill = true,
+  showThought = true,
   showSubtitle = true,
   className = '',
   style,
@@ -110,9 +133,20 @@ export function RealtimeAvatar({
   stateLabels,
   customization
 }: RealtimeAvatarProps) {
+  // A token-rate speech activity source takes precedence over the audio
+  // analyser as the mouth driver, so a text-streaming LLM gets a face too.
+  // It can come two ways: the explicit `speechActivity` prop (imperative —
+  // host owns the stream and calls push()), or `streamingText` (declarative —
+  // host passes accumulated text and we diff its growth here). Both collapse
+  // to one SpeechActivitySource; explicit wins. Whatever we land on rides the
+  // same internal channel (createMouthEngine detects the kind).
+  const textActivity = useStreamingTextActivity(streamingText);
+  const activitySource = speechActivity ?? textActivity;
+  const mouthSource = activitySource ?? analyser;
+
   const avatarProps = {
     state,
-    analyser,
+    analyser: mouthSource,
     size,
     maxMouthOpening,
     blinkIntervalMin,
@@ -140,7 +174,7 @@ export function RealtimeAvatar({
     AvatarComponent = (
       <DiceBearAvatar
         state={state}
-        analyser={analyser}
+        analyser={mouthSource}
         size={size}
         maxMouthOpening={maxMouthOpening}
         stateColors={stateColors}
@@ -161,7 +195,7 @@ export function RealtimeAvatar({
     AvatarComponent = (
       // Keyed by variant so switching presets remounts the runtime cleanly
       <ContractAvatar key={variant} {...avatarProps}>
-        <Preset size={size} customization={customization} />
+        <Preset size={size} customization={customization} state={state} />
       </ContractAvatar>
     );
   }
@@ -177,45 +211,58 @@ export function RealtimeAvatar({
     idle: stateColors?.idle ?? '#4b5563', // gray-600
     listening: stateColors?.listening ?? '#3b82f6', // blue-500
     thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
-    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
+    speaking: stateColors?.speaking ?? '#10b981', // emerald-500
+    working: stateColors?.working ?? '#f59e0b', // amber-500
   };
 
   const resolvedStateLabels = {
     idle: stateLabels?.idle ?? 'Idle',
     listening: stateLabels?.listening ?? 'Listening',
     thinking: stateLabels?.thinking ?? 'Thinking...',
-    speaking: stateLabels?.speaking ?? 'Speaking'
+    speaking: stateLabels?.speaking ?? 'Speaking',
+    working: stateLabels?.working ?? 'Working',
   };
 
   const glowShadows = {
     idle: hexToRgba(resolvedStateColors.idle, 0.15),
     listening: hexToRgba(resolvedStateColors.listening, 0.35),
     thinking: hexToRgba(resolvedStateColors.thinking, 0.4),
-    speaking: hexToRgba(resolvedStateColors.speaking, 0.45)
+    speaking: hexToRgba(resolvedStateColors.speaking, 0.45),
+    working: hexToRgba(resolvedStateColors.working, 0.4),
   };
 
   useEffect(() => {
-    if (!analyser || (state !== 'speaking' && state !== 'listening')) {
-      glowScaleValue.set(state === 'thinking' ? 1.1 : 1);
-      glowOpacityValue.set(state === 'thinking' ? 0.35 : 0.15);
+    // Glow reacts to whichever driver is live: audio amplitude when an
+    // analyser is present, otherwise token-rate energy in text-stream mode.
+    const audioReactive = analyser && (state === 'speaking' || state === 'listening');
+    const textReactive = !analyser && activitySource && state === 'speaking';
+
+    if (!audioReactive && !textReactive) {
+      glowScaleValue.set(state === 'thinking' || state === 'working' ? 1.05 : 1);
+      glowOpacityValue.set(state === 'thinking' || state === 'working' ? 0.35 : 0.15);
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
       return;
     }
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    
+    const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+
     const updateGlow = () => {
-      analyser.getByteTimeDomainData(dataArray);
-      let maxVal = 0;
-      for (let i = 0; i < dataArray.length; i++) {
-        const dev = Math.abs(dataArray[i] - 128);
-        if (dev > maxVal) maxVal = dev;
+      let vol: number;
+      if (analyser && dataArray) {
+        analyser.getByteTimeDomainData(dataArray);
+        let maxVal = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          const dev = Math.abs(dataArray[i] - 128);
+          if (dev > maxVal) maxVal = dev;
+        }
+        vol = Math.min(1.0, maxVal / 128);
+      } else {
+        vol = activitySource ? activitySource.sample() : 0;
       }
-      const vol = Math.min(1.0, maxVal / 128);
-      
+
       glowScaleValue.set(1 + vol * 0.35);
       glowOpacityValue.set(0.15 + vol * 0.35);
-      
+
       requestRef.current = requestAnimationFrame(updateGlow);
     };
 
@@ -223,7 +270,7 @@ export function RealtimeAvatar({
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [analyser, state, glowScaleValue, glowOpacityValue]);
+  }, [analyser, activitySource, state, glowScaleValue, glowOpacityValue]);
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
@@ -232,16 +279,18 @@ export function RealtimeAvatar({
           The old dashed "holographic projection ring" was removed: several
           avatars already carry their own container, so the rotating border was
           redundant and clashed with the realistic 3D model. */}
-      <motion.div
-        className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
-        style={{
-          width: size * 0.9,
-          height: size * 0.9,
-          backgroundColor: resolvedStateColors[state],
-          scale: glowScaleValue,
-          opacity: glowOpacityValue,
-        }}
-      />
+      {showGlow && (
+        <motion.div
+          className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
+          style={{
+            width: size * 0.9,
+            height: size * 0.9,
+            backgroundColor: resolvedStateColors[state],
+            scale: glowScaleValue,
+            opacity: glowOpacityValue,
+          }}
+        />
+      )}
       
       {/* Absolute center of the avatar image */}
       <div className="w-full h-full relative flex items-center justify-center z-10">
@@ -249,7 +298,7 @@ export function RealtimeAvatar({
       </div>
 
       {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar) */}
-      {showSubtitle && thought && (
+      {showThought && thought && (
         <motion.div 
           initial={{ opacity: 0, y: 15, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -272,21 +321,23 @@ export function RealtimeAvatar({
       )}
 
       {/* Unified State Indicator Pill (Positioned right under the avatar, consistent for all) */}
-      <motion.div
-        role="status"
-        aria-live="polite"
-        className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
-        animate={{
-          backgroundColor: resolvedStateColors[state],
-          boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <span className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
-          {resolvedStateLabels[state]}
-        </span>
-      </motion.div>
+      {showStatePill && (
+        <motion.div
+          role="status"
+          aria-live="polite"
+          className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
+          animate={{
+            backgroundColor: resolvedStateColors[state],
+            boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
+          }}
+          transition={{ duration: 0.3 }}
+        >
+          <span className="flex items-center gap-1.5">
+            <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
+            {state === 'working' && tool ? `Working: ${tool}` : resolvedStateLabels[state]}
+          </span>
+        </motion.div>
+      )}
 
       {/* Movie-style Subtitles Overlay (Floats Centered BELOW the indicator, responsive & generous padding) */}
       {showSubtitle && subtitle && (

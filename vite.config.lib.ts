@@ -19,9 +19,9 @@ export default defineConfig({
         index: path.resolve(__dirname, 'src/lib/index.ts'),
         vrm: path.resolve(__dirname, 'src/lib/vrm.ts'),
       },
-      name: 'ReactRealtimeAvatar',
+      name: 'ReactAiAvatar',
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
-      cssFileName: 'react-realtime-avatar',
+      cssFileName: 'react-ai-avatar',
       formats: ['es', 'cjs'],
     },
     rollupOptions: {

@@ -3,6 +3,7 @@ import { motion, useAnimation } from 'motion/react';
 import { AvatarState } from '../lib/types';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import { useAudioMouth } from '../lib/useAudioMouth';
+import type { MouthSource } from '../lib/mouthEngine';
 
 export interface AvatarCustomization {
   skinColor: string;
@@ -33,7 +34,8 @@ export function darkenColor(hex: string, percent: number): string {
 
 export interface AvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   size?: number;
   className?: string;
   style?: React.CSSProperties;
@@ -47,6 +49,7 @@ export interface AvatarProps {
     listening?: string;
     thinking?: string;
     speaking?: string;
+    working?: string;
   };
   customization?: AvatarCustomization;
 }
@@ -124,7 +127,8 @@ export function DefaultAvatar({
     idle: stateColors?.idle ?? '#9ca3af', // gray-400
     listening: stateColors?.listening ?? '#3b82f6', // blue-500
     thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
-    speaking: stateColors?.speaking ?? '#10b981' // emerald-500
+    speaking: stateColors?.speaking ?? '#10b981', // emerald-500
+    working: stateColors?.working ?? '#f59e0b' // amber-500
   };
 
   return (

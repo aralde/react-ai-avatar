@@ -5,7 +5,9 @@ import {
   DICEBEAR_STYLES,
   DICEBEAR_STYLE_BY_ID,
   DICEBEAR_RIGS,
+  DICEBEAR_FEATURED_FACES,
   DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
 } from './dicebear';
 
 describe('collectionExportName', () => {
@@ -48,6 +50,32 @@ describe('DICEBEAR_STYLES catalog', () => {
       expect(DICEBEAR_STYLE_BY_ID[s.id]).toBe(s);
     }
     expect(DICEBEAR_STYLE_BY_ID[DEFAULT_DICEBEAR_COLLECTION]).toBeDefined();
+  });
+});
+
+describe('DICEBEAR_FEATURED_FACES', () => {
+  it('only references styles in the curated catalog', () => {
+    const ids = new Set(DICEBEAR_STYLES.map((s) => s.id));
+    for (const face of DICEBEAR_FEATURED_FACES) {
+      expect(ids.has(face.collection)).toBe(true);
+      expect(face.seed.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('only features styles that articulate (have a rig)', () => {
+    for (const face of DICEBEAR_FEATURED_FACES) {
+      expect(DICEBEAR_RIGS[face.collection]).toBeDefined();
+    }
+  });
+
+  it('has unique {collection, seed} pairs', () => {
+    const keys = DICEBEAR_FEATURED_FACES.map((f) => `${f.collection}:${f.seed}`);
+    expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it('uses the first featured face as the default', () => {
+    expect(DEFAULT_DICEBEAR_COLLECTION).toBe(DICEBEAR_FEATURED_FACES[0].collection);
+    expect(DEFAULT_DICEBEAR_SEED).toBe(DICEBEAR_FEATURED_FACES[0].seed);
   });
 });
 

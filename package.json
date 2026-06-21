@@ -1,16 +1,16 @@
 {
-  "name": "react-realtime-avatar",
-  "version": "1.3.0",
+  "name": "react-ai-avatar",
+  "version": "0.1.0",
   "description": "A presentational React avatar for realtime LLM voice UIs — you bring the connection, it brings the face.",
   "license": "MIT",
   "author": "Ariel A. <ariel.a.deibe@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/aralde/react-realtime-avatar.git"
+    "url": "git+https://github.com/aralde/react-ai-avatar.git"
   },
-  "homepage": "https://github.com/aralde/react-realtime-avatar#readme",
+  "homepage": "https://github.com/aralde/react-ai-avatar#readme",
   "bugs": {
-    "url": "https://github.com/aralde/react-realtime-avatar/issues"
+    "url": "https://github.com/aralde/react-ai-avatar/issues"
   },
   "keywords": [
     "react",
@@ -45,7 +45,7 @@
       "import": "./dist/lib/vrm.js",
       "require": "./dist/lib/vrm.cjs"
     },
-    "./style.css": "./dist/lib/react-realtime-avatar.css"
+    "./style.css": "./dist/lib/react-ai-avatar.css"
   },
   "files": [
     "dist/lib"

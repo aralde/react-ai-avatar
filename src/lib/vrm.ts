@@ -1,5 +1,5 @@
 /**
- * Optional VRM entry point: `react-realtime-avatar/vrm`.
+ * Optional VRM entry point: `react-ai-avatar/vrm`.
  *
  * Importing this module pulls in three.js, @react-three/fiber, @react-three/drei
  * and @pixiv/three-vrm (optional peer dependencies). The main entry never does:

@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * DoodleAvatar — hand-drawn ink-on-paper sketch style: wobbly outlines,
@@ -13,8 +14,9 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface DoodleAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
   inkColor?: string;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -22,7 +24,6 @@ export interface DoodleAvatarProps {
 export function DoodleAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   inkColor = '#2f2a26',
   className,
   style,
@@ -44,19 +45,6 @@ export function DoodleAvatar({
       className={className}
       style={style}
     >
-      {/* State ring: dashed, hand-drawn feel */}
-      <circle
-        id="rra-ring"
-        cx="100"
-        cy="100"
-        r="92"
-        fill="none"
-        stroke={ringColor}
-        strokeWidth="2.5"
-        strokeDasharray="9 4 14 5 7 4"
-        strokeLinecap="round"
-        transform="rotate(-8 100 100)"
-      />
       <circle cx="100" cy="100" r="79" fill={bgColor} />
 
       <clipPath id="rra-doodle-clip"><circle cx="100" cy="100" r="79" /></clipPath>

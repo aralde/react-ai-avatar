@@ -1,6 +1,6 @@
 # Example 3D models (not versioned)
 
-The `react-realtime-avatar` **library ships no 3D models** — the `vrm` and `glb`
+The `react-ai-avatar` **library ships no 3D models** — the `vrm` and `glb`
 variants take a URL you provide (`vrmUrl` / `glbUrl`).
 
 The demo in this repo references a few example models by path

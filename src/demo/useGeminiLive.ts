@@ -4,104 +4,54 @@ import type { AvatarState } from '../lib/types';
 
 export type { AvatarState };
 
-export function parseModelText(raw: string): { thought: string; speech: string } {
+export function parseModelText(raw: string): { thought: string; tool: string; speech: string } {
   let thought = '';
+  let tool = '';
   let speech = '';
 
   const text = raw.trim();
 
-  // 1. Check if there's any `<thought` tag
-  const thoughtStartIdx = text.toLowerCase().indexOf('<thought');
-  
-  if (thoughtStartIdx !== -1) {
-    // Found the start of a thought tag.
-    const tagEndIdx = text.indexOf('>', thoughtStartIdx);
-    
-    if (tagEndIdx !== -1) {
-      // The `<thought>` tag is fully opened.
-      const contentAfterThoughtStart = text.slice(tagEndIdx + 1);
-      
-      // Look for `<thought>` closure.
-      const thoughtEndIdx = contentAfterThoughtStart.toLowerCase().indexOf('</thought>');
-      
-      if (thoughtEndIdx !== -1) {
-        // Thought is completely closed.
-        thought = contentAfterThoughtStart.slice(0, thoughtEndIdx).trim();
-        
-        // Everything after `</thought>` contains speech.
-        const contentAfterThoughtClose = contentAfterThoughtStart.slice(thoughtEndIdx + 10);
-        
-        // Search for `<speech` tag in remaining content.
-        const speechStartIdx = contentAfterThoughtClose.toLowerCase().indexOf('<speech');
-        if (speechStartIdx !== -1) {
-          const speechTagEndIdx = contentAfterThoughtClose.indexOf('>', speechStartIdx);
-          if (speechTagEndIdx !== -1) {
-            // `<speech>` is fully opened.
-            const contentAfterSpeechStart = contentAfterThoughtClose.slice(speechTagEndIdx + 1);
-            const speechEndIdx = contentAfterSpeechStart.toLowerCase().indexOf('</speech>');
-            if (speechEndIdx !== -1) {
-              speech = contentAfterSpeechStart.slice(0, speechEndIdx).trim();
-            } else {
-              speech = contentAfterSpeechStart.trim();
-            }
-          } else {
-            // `<speech` is being typed, hide partial tag.
-            speech = contentAfterThoughtClose.slice(0, speechStartIdx).trim();
-          }
-        } else {
-          speech = contentAfterThoughtClose.trim();
-        }
-      } else {
-        // Thought is still streaming and not closed yet.
-        // If `<speech` starting sequence appears without closing thought first:
-        const speechStartIdx = contentAfterThoughtStart.toLowerCase().indexOf('<speech');
-        if (speechStartIdx !== -1) {
-          thought = contentAfterThoughtStart.slice(0, speechStartIdx).trim();
-          const speechTagEndIdx = contentAfterThoughtStart.indexOf('>', speechStartIdx);
-          if (speechTagEndIdx !== -1) {
-            const contentAfterSpeechStart = contentAfterThoughtStart.slice(speechTagEndIdx + 1);
-            const speechEndIdx = contentAfterSpeechStart.toLowerCase().indexOf('</speech>');
-            if (speechEndIdx !== -1) {
-              speech = contentAfterSpeechStart.slice(0, speechEndIdx).trim();
-            } else {
-              speech = contentAfterSpeechStart.trim();
-            }
-          }
-        } else {
-          thought = contentAfterThoughtStart.trim();
-        }
+  // Helper to extract content inside a tag or from tag start to end of text if not closed
+  const extractTag = (tagName: string) => {
+    const startTag = `<${tagName}`;
+    const endTag = `</${tagName}>`;
+    const startIdx = text.toLowerCase().indexOf(startTag);
+    if (startIdx === -1) return '';
+    const closeBracketIdx = text.indexOf('>', startIdx);
+    if (closeBracketIdx === -1) return '';
+    const endIdx = text.toLowerCase().indexOf(endTag, closeBracketIdx);
+    if (endIdx === -1) {
+      // Not closed yet, return everything after the opening tag
+      // but stop if we encounter another tag
+      const remaining = text.slice(closeBracketIdx + 1);
+      const nextTagIdx = remaining.indexOf('<');
+      if (nextTagIdx !== -1) {
+        return remaining.slice(0, nextTagIdx).trim();
       }
-    } else {
-      // `<thought` tag itself is being typed. Hide it in subtitles.
-      speech = text.slice(0, thoughtStartIdx).trim();
+      return remaining.trim();
     }
-  } else {
-    // No `<thought` tag at all. Check if there is `<speech`.
-    const speechStartIdx = text.toLowerCase().indexOf('<speech');
-    if (speechStartIdx !== -1) {
-      const tagEndIdx = text.indexOf('>', speechStartIdx);
-      if (tagEndIdx !== -1) {
-        const contentAfterSpeechStart = text.slice(tagEndIdx + 1);
-        const speechEndIdx = contentAfterSpeechStart.toLowerCase().indexOf('</speech>');
-        if (speechEndIdx !== -1) {
-          speech = contentAfterSpeechStart.slice(0, speechEndIdx).trim();
-        } else {
-          speech = contentAfterSpeechStart.trim();
-        }
-      } else {
-        speech = text.slice(0, speechStartIdx).trim();
-      }
-    } else {
-      speech = text;
-    }
+    return text.slice(closeBracketIdx + 1, endIdx).trim();
+  };
+
+  thought = extractTag('thought');
+  tool = extractTag('tool');
+  speech = extractTag('speech');
+
+  // Fallback: if there are no tags at all, treat the whole text as speech
+  if (!text.includes('<thought') && !text.includes('<tool') && !text.includes('<speech')) {
+    speech = text;
   }
 
   // Strip trailing partial tags or stray XML symbols (e.g. <, </, </t, <s, etc.)
   speech = speech.replace(/<\/?[a-zA-Z]*$/g, '').trim();
   thought = thought.replace(/<\/?[a-zA-Z]*$/g, '').trim();
+  tool = tool.replace(/<\/?[a-zA-Z]*$/g, '').trim();
 
   if (thought.startsWith('>')) {
     thought = thought.slice(1).trim();
+  }
+  if (tool.startsWith('>')) {
+    tool = tool.slice(1).trim();
   }
   if (speech.startsWith('>')) {
     speech = speech.slice(1).trim();
@@ -109,8 +59,9 @@ export function parseModelText(raw: string): { thought: string; speech: string }
 
   // Clean up bold labels like **Thinking** if they slip in
   thought = thought.replace(/^\*\*(.*?)\*\*\s*/i, '$1: ');
+  tool = tool.replace(/^\*\*(.*?)\*\*\s*/i, '$1: ');
 
-  return { thought, speech };
+  return { thought, tool, speech };
 }
 
 export function useGeminiLive() {
@@ -126,6 +77,7 @@ export function useGeminiLive() {
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
   const [subtitle, setSubtitle] = useState<string>('');
   const [thought, setThought] = useState<string>('');
+  const [tool, setTool] = useState<string>('');
 
   const disconnect = useCallback(() => {
     micRecorderRef.current?.stop();
@@ -143,6 +95,7 @@ export function useGeminiLive() {
     setState('idle');
     setSubtitle('');
     setThought('');
+    setTool('');
     setAnalyser(null);
     isSpeakingRef.current = false;
     isTurnInitializedRef.current = false;
@@ -155,6 +108,7 @@ export function useGeminiLive() {
       setState('thinking');
       setSubtitle('');
       setThought('');
+      setTool('');
       rawTextRef.current = '';
       isTurnInitializedRef.current = false;
       
@@ -207,6 +161,7 @@ export function useGeminiLive() {
           setState('thinking');
           setSubtitle('');
           setThought('');
+          setTool('');
           rawTextRef.current = '';
           setAnalyser(null);
         };
@@ -229,10 +184,14 @@ export function useGeminiLive() {
           const parsed = parseModelText(rawTextRef.current);
           setThought(parsed.thought);
           setSubtitle(parsed.speech);
+          setTool(parsed.tool);
 
-          if (parsed.speech) {
+          const isCurrentlyPlaying = audioStreamerRef.current?.isPlaying();
+          if (parsed.speech || isCurrentlyPlaying) {
             setState('speaking');
             setAnalyser(audioStreamerRef.current?.analyser || null);
+          } else if (parsed.tool) {
+            setState('working');
           }
         }
 
@@ -247,10 +206,17 @@ export function useGeminiLive() {
           if (parsed.thought) {
             setThought(parsed.thought);
           }
-          if (parsed.speech) {
-            setSubtitle(parsed.speech);
+          if (parsed.tool) {
+            setTool(parsed.tool);
+          }
+
+          const isCurrentlyPlaying = audioStreamerRef.current?.isPlaying();
+          if (parsed.speech || isCurrentlyPlaying) {
+            setSubtitle(parsed.speech || rawTextRef.current);
             setState('speaking');
             setAnalyser(audioStreamerRef.current?.analyser || null);
+          } else if (parsed.tool) {
+            setState('working');
           } else {
             setSubtitle(rawTextRef.current);
             setState('speaking');
@@ -262,6 +228,7 @@ export function useGeminiLive() {
           audioStreamerRef.current?.stop();
           setSubtitle('');
           setThought('');
+          setTool('');
           isSpeakingRef.current = false;
           isTurnInitializedRef.current = false;
           rawTextRef.current = '';
@@ -322,6 +289,7 @@ export function useGeminiLive() {
     error,
     analyser,
     subtitle,
-    thought
+    thought,
+    tool
   };
 }

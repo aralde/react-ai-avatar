@@ -1,5 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { createMouthEngine, MouthFrame } from './mouthEngine';
+import { SPEECH_ACTIVITY_BRAND, SpeechActivitySource } from './speechActivity';
+
+/** SpeechActivitySource stand-in with a fixed energy reading. */
+function fakeSpeechActivity(energy: number): SpeechActivitySource {
+  return {
+    [SPEECH_ACTIVITY_BRAND]: true,
+    push() {},
+    end() {},
+    reset() {},
+    sample: () => energy,
+  };
+}
 
 /** Minimal AnalyserNode stand-in: injects fixed time/frequency data. */
 function fakeAnalyser(opts: {
@@ -78,5 +90,28 @@ describe('analyser engine', () => {
       fakeAnalyser({ peakDeviation: 60, energyBands: [{ lowHz: [200, 800], value: 200 }] })
     );
     expect(engine.read().shape).toBe('a');
+  });
+});
+
+describe('token engine (SpeechActivitySource)', () => {
+  it('reports closed when there is no token energy', () => {
+    const engine = createMouthEngine(fakeSpeechActivity(0));
+    expect(engine.read()).toEqual({ level: 0, shape: 'closed' });
+  });
+
+  it('produces a moving, open mouth while tokens stream', () => {
+    const engine = createMouthEngine(fakeSpeechActivity(0.9));
+    const levels: number[] = [];
+    for (let i = 0; i < 240; i++) levels.push(engine.read().level);
+    expect(Math.max(...levels)).toBeGreaterThan(0.5); // opens wide
+    // It articulates rather than holding one value (syllable wobble).
+    expect(new Set(levels.map((l) => l.toFixed(2))).size).toBeGreaterThan(10);
+  });
+
+  it('drifts between mouth shapes over time', () => {
+    const engine = createMouthEngine(fakeSpeechActivity(0.8));
+    const shapes = new Set<string>();
+    for (let i = 0; i < 600; i++) shapes.add(engine.read().shape);
+    expect(shapes.size).toBeGreaterThanOrEqual(3);
   });
 });

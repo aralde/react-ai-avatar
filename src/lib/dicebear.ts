@@ -139,8 +139,39 @@ export const DICEBEAR_RIGS: Partial<Record<DiceBearCollection, DiceBearRig>> = {
   // a host passes itself) gets the audio-reactive bounce fallback instead.
 };
 
-/** Default style when none is provided. */
-export const DEFAULT_DICEBEAR_COLLECTION: DiceBearCollection = 'pixel-art';
+/**
+ * Curated "featured faces": hand-picked {style, seed} pairs that look good out
+ * of the box, so a host (or the demo picker) can offer a gallery instead of
+ * asking users to guess a seed string. Seeds are deterministic — these exact
+ * faces render identically everywhere, offline, no network call.
+ */
+export interface DiceBearFeaturedFace {
+  /** Curated CC0 style id. */
+  collection: DiceBearCollection;
+  /** Deterministic seed picked for a nice-looking result. */
+  seed: string;
+}
+
+export const DICEBEAR_FEATURED_FACES: readonly DiceBearFeaturedFace[] = [
+  { collection: 'notionists', seed: 'lg9gf48i' },
+  { collection: 'notionists', seed: '8c1jvg09' },
+  { collection: 'notionists', seed: 'glk0g9uv' },
+  { collection: 'notionists', seed: 'pp70crp6' },
+  { collection: 'open-peeps', seed: '2ehwdy6e' },
+  { collection: 'open-peeps', seed: '1q3sb396' },
+  { collection: 'open-peeps', seed: 'k8adqmt7' },
+  { collection: 'open-peeps', seed: 'x6kn3bke' },
+  { collection: 'lorelei', seed: 'b2wi3z2j' },
+  { collection: 'lorelei', seed: 'lp1iegj9' },
+  { collection: 'lorelei', seed: '6umh2s52' },
+  { collection: 'pixel-art', seed: 'smmje3r6' },
+  { collection: 'pixel-art', seed: 'wxhz14w1' },
+  { collection: 'pixel-art', seed: 'uovelmrj' },
+];
+
+/** Default face when none is provided — the first featured face. */
+export const DEFAULT_DICEBEAR_COLLECTION: DiceBearCollection = DICEBEAR_FEATURED_FACES[0].collection;
+export const DEFAULT_DICEBEAR_SEED: string = DICEBEAR_FEATURED_FACES[0].seed;
 
 /** O(1) lookup by id. */
 export const DICEBEAR_STYLE_BY_ID: Record<DiceBearCollection, DiceBearStyleMeta> =
@@ -148,3 +179,42 @@ export const DICEBEAR_STYLE_BY_ID: Record<DiceBearCollection, DiceBearStyleMeta>
     DiceBearCollection,
     DiceBearStyleMeta
   >;
+
+// --- Lazy package loading -------------------------------------------------
+// `@dicebear/core` + `@dicebear/collection` are optional peer deps; import them
+// only when actually rendering a DiceBear avatar (or thumbnail). The module
+// promise is cached so every caller on the page shares one load.
+
+type CreateAvatar = (style: unknown, options: Record<string, unknown>) => { toString(): string };
+export type DiceBearModules = { createAvatar: CreateAvatar; collection: Record<string, unknown> };
+
+let modulesPromise: Promise<DiceBearModules> | null = null;
+
+export function loadDiceBear(): Promise<DiceBearModules> {
+  if (!modulesPromise) {
+    modulesPromise = Promise.all([
+      import('@dicebear/core'),
+      import('@dicebear/collection'),
+    ]).then(([core, collection]) => ({
+      createAvatar: (core as { createAvatar: CreateAvatar }).createAvatar,
+      collection: collection as Record<string, unknown>,
+    }));
+  }
+  return modulesPromise;
+}
+
+/**
+ * Render a single static DiceBear SVG string for a given style + seed. Used for
+ * non-animated thumbnails (e.g. a face-picker gallery). Throws if the style id
+ * is unknown.
+ */
+export async function renderDiceBearSvg(
+  collection: DiceBearCollection | string,
+  seed: string,
+  options: Record<string, unknown> = {}
+): Promise<string> {
+  const { createAvatar, collection: coll } = await loadDiceBear();
+  const styleObj = coll[collectionExportName(String(collection))];
+  if (!styleObj) throw new Error(`Unknown DiceBear style "${collection}"`);
+  return createAvatar(styleObj, { seed, ...options }).toString();
+}

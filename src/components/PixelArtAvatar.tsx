@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * PixelArtAvatar — retro avatar on a logical 32x32 grid.
@@ -16,7 +17,8 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface PixelArtAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -24,7 +26,6 @@ export interface PixelArtAvatarProps {
 export function PixelArtAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   className,
   style,
 }: PixelArtAvatarProps) {
@@ -47,8 +48,6 @@ export function PixelArtAvatar({
       style={{ imageRendering: 'pixelated', ...style }}
       shapeRendering="crispEdges"
     >
-      {/* State ring: a 1px pixel frame */}
-      <rect id="rra-ring" x="0.5" y="0.5" width="31" height="31" fill="none" stroke={ringColor} strokeWidth="1" />
       <rect x="2" y="2" width="28" height="28" fill={bgColor} />
 
       {/* Shoulders / clothing */}

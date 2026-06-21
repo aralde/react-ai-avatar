@@ -18,17 +18,35 @@ export type { PixelArtAvatarProps } from '../components/PixelArtAvatar';
 export { DoodleAvatar } from '../components/DoodleAvatar';
 export type { DoodleAvatarProps } from '../components/DoodleAvatar';
 
+// Branded example character (bring-your-own-SVG). Not a generic preset — it's a
+// full red-squirrel developer face on the `#rra-*` contract, shipped so the demo
+// and docs site can render the same character from one source.
+export { SquirrelAvatar } from '../components/SquirrelAvatar';
+export type { SquirrelAvatarProps } from '../components/SquirrelAvatar';
+
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';
+export { DiceBearThumb } from '../components/DiceBearThumb';
+export type { DiceBearThumbProps } from '../components/DiceBearThumb';
 export {
   DICEBEAR_STYLES,
   DICEBEAR_STYLE_BY_ID,
   DICEBEAR_RIGS,
+  DICEBEAR_FEATURED_FACES,
   DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
   collectionExportName,
   scopeSvgIds,
+  loadDiceBear,
+  renderDiceBearSvg,
 } from './dicebear';
-export type { DiceBearCollection, DiceBearStyleMeta, DiceBearRig } from './dicebear';
+export type {
+  DiceBearCollection,
+  DiceBearStyleMeta,
+  DiceBearRig,
+  DiceBearFeaturedFace,
+  DiceBearModules,
+} from './dicebear';
 
 // NOTE: GlbArkitAvatar and VrmAvatar are intentionally NOT re-exported here.
 // Both pull in the optional three.js peer stack, so they are only reached via
@@ -43,7 +61,14 @@ export { useAvatarRuntime } from './useAvatarRuntime';
 export type { AvatarRuntimeOptions } from './useAvatarRuntime';
 export { useAudioMouth } from './useAudioMouth';
 export { createMouthEngine } from './mouthEngine';
-export type { MouthEngine, MouthFrame, MouthShape } from './mouthEngine';
+export type { MouthEngine, MouthFrame, MouthShape, MouthSource } from './mouthEngine';
+
+// Token-rate mouth driver for text-streaming LLMs (completions/responses).
+export { createSpeechActivity, isSpeechActivity, SPEECH_ACTIVITY_BRAND } from './speechActivity';
+export type { SpeechActivitySource, SpeechActivityOptions } from './speechActivity';
+// Declarative bridge: drive the mouth from accumulated streaming text
+// (e.g. the Vercel AI SDK's `useChat`) instead of imperative push() calls.
+export { useStreamingTextActivity } from './useStreamingTextActivity';
 export { useReducedMotion } from './useReducedMotion';
 
 export type { AvatarState, StateColors, StateLabels } from './types';

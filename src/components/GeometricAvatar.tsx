@@ -1,5 +1,6 @@
 import React from 'react';
 import { AvatarCustomization } from './DefaultAvatar';
+import { AvatarState } from '../lib/types';
 
 /**
  * GeometricAvatar — minimalist geometric SVG avatar (head only).
@@ -14,8 +15,9 @@ import { AvatarCustomization } from './DefaultAvatar';
 export interface GeometricAvatarProps {
   size?: number;
   customization?: Partial<AvatarCustomization>;
-  ringColor?: string;
   mouthColor?: string;
+  /** Accepted for a uniform preset API; this head-only preset doesn't use it. */
+  state?: AvatarState;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -23,7 +25,6 @@ export interface GeometricAvatarProps {
 export function GeometricAvatar({
   size = 300,
   customization,
-  ringColor = '#4b5563',
   mouthColor = '#7a3b2e',
   className,
   style,
@@ -51,7 +52,6 @@ export function GeometricAvatar({
       className={className}
       style={style}
     >
-      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke={ringColor} strokeWidth="3" />
       <circle cx="100" cy="100" r="78" fill={bgColor} />
       <clipPath id="rra-clip"><circle cx="100" cy="100" r="78" /></clipPath>
 

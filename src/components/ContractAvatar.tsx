@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { AvatarState, StateColors } from '../lib/types';
 import { useAvatarRuntime } from '../lib/useAvatarRuntime';
+import type { MouthSource } from '../lib/mouthEngine';
 
 /**
  * Wraps any SVG implementing the layer contract (`#rra-*` hooks) and runs
@@ -11,7 +12,8 @@ import { useAvatarRuntime } from '../lib/useAvatarRuntime';
 
 export interface ContractAvatarProps {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   size?: number;
   className?: string;
   style?: React.CSSProperties;

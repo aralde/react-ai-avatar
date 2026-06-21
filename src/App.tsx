@@ -11,24 +11,60 @@ import {
   Dices,
   Captions,
   CaptionsOff,
+  Cloud,
+  CloudOff,
   Cpu,
-  Terminal,
   Clock,
   Code,
   Copy,
   Check,
   X,
-  Maximize
+  Maximize,
+  MessageSquare,
+  Send,
+  Square,
+  Squirrel
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useGeminiLive } from './demo/useGeminiLive';
+import { useStreamingLLM } from './demo/useStreamingLLM';
 import { RealtimeAvatar } from './components/RealtimeAvatar';
+import { SquirrelAvatar } from './components/SquirrelAvatar';
 import { AudioVisualizer } from './components/AudioVisualizer';
 import { AvatarCustomization } from './components/DefaultAvatar';
-import { DICEBEAR_STYLES, DiceBearCollection } from './lib/dicebear';
+import {
+  DICEBEAR_STYLES,
+  DiceBearCollection,
+  DICEBEAR_FEATURED_FACES,
+  DEFAULT_DICEBEAR_COLLECTION,
+  DEFAULT_DICEBEAR_SEED,
+} from './lib/dicebear';
+import { DiceBearThumb } from './components/DiceBearThumb';
+import { AvatarState } from './lib/types';
 
 export default function App() {
-  const { connect, disconnect, isConnected, state, error, analyser, subtitle, thought } = useGeminiLive();
+  const gemini = useGeminiLive();
+  const textLLM = useStreamingLLM();
+
+  // Which engine drives the avatar: realtime voice (Gemini Live) or a
+  // text-streaming LLM (OpenAI-compatible completions). Both hooks always run;
+  // we select the active one's state below.
+  const [engine, setEngine] = useState<'voice' | 'text'>('voice');
+  const [prompt, setPrompt] = useState<string>('');
+  const isText = engine === 'text';
+
+  const { connect, disconnect, isConnected } = gemini;
+  const liveState = isText ? textLLM.state : gemini.state;
+  const [manualState, setManualState] = useState<AvatarState | 'auto'>('auto');
+  const state = manualState === 'auto' ? liveState : manualState;
+  const subtitle = isText ? textLLM.subtitle : gemini.subtitle;
+  const thought = isText ? textLLM.thought : gemini.thought;
+  const tool = isText ? textLLM.tool : gemini.tool;
+  const error = isText ? textLLM.error : gemini.error;
+  // Audio analyser drives voice mode; the token-rate source drives text mode.
+  const analyser = isText ? null : gemini.analyser;
+  const speechActivity = isText ? textLLM.speechActivity : undefined;
+
   const [avatarSize, setAvatarSize] = useState<number>(300);
 
   useEffect(() => {
@@ -46,9 +82,15 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear'>('geometric');
-  const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>('pixel-art');
-  const [dicebearSeed, setDicebearSeed] = useState<string>('realtime-avatar');
+  const [variant, setVariant] = useState<'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'squirrel'>('geometric');
+
+  // The squirrel is a bring-your-own-SVG character, not a built-in variant: render
+  // it through `variant="byos"` with the component as children. For every other
+  // variant the children are ignored, so we can wire both render sites uniformly.
+  const effectiveVariant = variant === 'squirrel' ? 'byos' : variant;
+  const byosChild = variant === 'squirrel' ? <SquirrelAvatar state={state} /> : undefined;
+  const [dicebearCollection, setDicebearCollection] = useState<DiceBearCollection>(DEFAULT_DICEBEAR_COLLECTION);
+  const [dicebearSeed, setDicebearSeed] = useState<string>(DEFAULT_DICEBEAR_SEED);
   const [vrmModelSource, setVrmModelSource] = useState<'default' | 'url' | 'file'>('default');
   const [vrmUrl, setVrmUrl] = useState<string>('/models/default-avatar.vrm');
   const [vrmFileUrl, setVrmFileUrl] = useState<string | null>(null);
@@ -75,6 +117,7 @@ export default function App() {
   }, [vrmFileUrl]);
 
   const [showSubtitle, setShowSubtitle] = useState<boolean>(true);
+  const [showThought, setShowThought] = useState<boolean>(true);
   const [duration, setDuration] = useState<number>(0);
 
   // Configurable animation parameters
@@ -104,14 +147,16 @@ export default function App() {
     idle: '#4b5563',
     listening: '#3b82f6',
     thinking: '#8b5cf6',
-    speaking: '#10b981'
+    speaking: '#10b981',
+    working: '#f59e0b'
   });
 
   const [stateLabels, setStateLabels] = useState({
     idle: 'Idle',
     listening: 'Listening',
     thinking: 'Thinking...',
-    speaking: 'Speaking'
+    speaking: 'Speaking',
+    working: 'Working'
   });
 
   // Code exporter modal state
@@ -135,8 +180,8 @@ export default function App() {
   const generateJSXCode = () => {
     if (variant === 'vrm') {
       const displayUrl = vrmModelSource === 'url' ? vrmUrl : (vrmModelSource === 'file' ? '/* ObjectURL from local file */' : catalogUrls[catalogSelection]);
-      return `import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
+      return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
 
 // Note: 3D VRM rendering requires installing Three.js, React Three Fiber & Pixiv VRM:
 // npm install three @react-three/fiber @react-three/drei @pixiv/three-vrm
@@ -176,8 +221,8 @@ function MyAvatarComponent() {
     }
 
     if (variant === 'glb') {
-      return `import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
+      return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
 
 // Note: 3D GLB rendering requires installing the Three.js stack:
 // npm install three @react-three/fiber @react-three/drei
@@ -218,8 +263,8 @@ function MyAvatarComponent() {
     }
 
     if (variant === 'dicebear') {
-      return `import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
+      return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
 
 // DiceBear avatars are generated client-side. Install the optional peers:
 // npm install @dicebear/core @dicebear/collection
@@ -256,16 +301,71 @@ function MyAvatarComponent() {
 }`;
     }
 
-    return `import { RealtimeAvatar } from 'react-realtime-avatar';
-import 'react-realtime-avatar/style.css';
+    if (variant === 'squirrel') {
+      return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
+
+// The squirrel is a "bring your own SVG" character: any SVG implementing the
+// #rra-* layer contract gets the full runtime (blink, gaze, mouth, thinking) via
+// variant="byos". See examples/08-character-avatar-squirrel.tsx for the full art.
+
+function SquirrelSvg() {
+  return (
+    <svg viewBox="0 0 200 200" width="100%" height="100%">
+      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke="#4b5563" strokeWidth="5" />
+      <circle cx="100" cy="100" r="79" fill="#6fb3bd" />
+      {/* …character art… (ears, tail, glasses, hoodie) */}
+      {/* eyes: ball -> .rra-pupil(data-base-*) -> .rra-lid(fur-colored rect, on top) */}
+      <ellipse id="rra-mouth" cx="100" cy="121" rx="7" ry="2.3" fill="#5a3324" />
+      <g id="rra-think" opacity="0" />
+    </svg>
+  );
+}
+
+function MyAvatarComponent() {
+  // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
+  // and a WebAudio AnalyserNode for the audio-reactive mouth (optional).
+
+  return (
+    <RealtimeAvatar
+      state="idle"
+      analyser={null}
+      size={300}
+      variant="byos"
+      maxMouthOpening={${maxMouthOpening}}
+      mouseTrackingIntensity={${mouseTrackingIntensity}}
+      blinkIntervalMin={${blinkIntervalMin}}
+      blinkIntervalMax={${blinkIntervalMax}}
+      blinkDuration={${blinkDuration}}
+      stateColors={{
+        idle: '${stateColors.idle}',
+        listening: '${stateColors.listening}',
+        thinking: '${stateColors.thinking}',
+        speaking: '${stateColors.speaking}'
+      }}
+      stateLabels={{
+        idle: '${stateLabels.idle}',
+        listening: '${stateLabels.listening}',
+        thinking: '${stateLabels.thinking}',
+        speaking: '${stateLabels.speaking}'
+      }}
+    >
+      <SquirrelSvg />
+    </RealtimeAvatar>
+  );
+}`;
+    }
+
+    return `import { RealtimeAvatar } from 'react-ai-avatar';
+import 'react-ai-avatar/style.css';
 
 function MyAvatarComponent() {
   // Pass active connection state ('idle' | 'listening' | 'thinking' | 'speaking')
   // and a WebAudio AnalyserNode for the audio-reactive mouth (optional:
   // without it, "speaking" falls back to a synthetic mouth pattern)
-  
+
   return (
-    <RealtimeAvatar 
+    <RealtimeAvatar
       state="idle"
       analyser={null}
       size={300}
@@ -305,12 +405,12 @@ function MyAvatarComponent() {
 
   const installCommand =
     variant === 'vrm'
-      ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm`
+      ? `npm install react-ai-avatar motion three @react-three/fiber @react-three/drei @pixiv/three-vrm`
       : variant === 'glb'
-      ? `npm install react-realtime-avatar motion three @react-three/fiber @react-three/drei`
+      ? `npm install react-ai-avatar motion three @react-three/fiber @react-three/drei`
       : variant === 'dicebear'
-        ? `npm install react-realtime-avatar motion @dicebear/core @dicebear/collection`
-        : `npm install react-realtime-avatar motion`;
+        ? `npm install react-ai-avatar motion @dicebear/core @dicebear/collection`
+        : `npm install react-ai-avatar motion`;
 
   const copyToClipboard = () => {
     const text = activeTab === 'code' ? generateJSXCode() : installCommand;
@@ -345,6 +445,7 @@ function MyAvatarComponent() {
     idle: 'Console Standby. Ready to initiate neural link.',
     listening: 'Neural connection open. Listening to audio input...',
     thinking: 'Synthesizing response. Analyzing neural vectors...',
+    working: 'Executing tools. Processing neural parameters...',
     speaking: 'Broadcasting voice output. Driving the audio-reactive mouth.'
   };
 
@@ -487,6 +588,23 @@ function MyAvatarComponent() {
                         </div>
                         <span className="text-xs font-bold text-white mb-0.5">Doodle</span>
                         <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Hand-drawn ink sketch with wobbly strokes.</span>
+                      </button>
+
+
+                      <button
+                        onClick={() => setVariant('squirrel')}
+                        className={`flex flex-col text-left p-3 rounded-xl border transition-all duration-355 group relative overflow-hidden cursor-pointer ${
+                          variant === 'squirrel'
+                            ? 'bg-zinc-800/60 border-emerald-500/40 shadow-[0_0_15px_rgba(16,185,129,0.05)]'
+                            : 'bg-zinc-950/40 border-zinc-800/60 hover:bg-zinc-900/40 hover:border-zinc-700/60'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <Squirrel className={`w-4.5 h-4.5 ${variant === 'squirrel' ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                          {variant === 'squirrel' && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                        </div>
+                        <span className="text-xs font-bold text-white mb-0.5">Squirrel</span>
+                        <span className="text-[10px] text-zinc-500 group-hover:text-zinc-400 leading-snug">Bring-your-own-SVG character on the #rra-* contract.</span>
                       </button>
 
                       {/* DiceBear Avatar Button */}
@@ -687,7 +805,43 @@ function MyAvatarComponent() {
                           </span>
                         </div>
 
+                        {/* Featured faces gallery — curated {style, seed} pairs,
+                            rendered as live thumbnails so you pick a face, not a
+                            seed string. Click sets both style and seed. */}
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide">Featured faces</span>
+                          <div className="grid grid-cols-5 gap-1.5">
+                            {DICEBEAR_FEATURED_FACES.map((face) => {
+                              const selected =
+                                dicebearCollection === face.collection && dicebearSeed === face.seed;
+                              return (
+                                <button
+                                  key={`${face.collection}-${face.seed}`}
+                                  onClick={() => {
+                                    setDicebearCollection(face.collection);
+                                    setDicebearSeed(face.seed);
+                                  }}
+                                  title={`${face.collection} · ${face.seed}`}
+                                  className={`aspect-square rounded-lg border p-0.5 flex items-center justify-center transition-all cursor-pointer ${
+                                    selected
+                                      ? 'bg-emerald-500/15 border-emerald-500/50 ring-1 ring-emerald-500/40'
+                                      : 'bg-zinc-950/40 border-zinc-800/40 hover:border-zinc-700/60'
+                                  }`}
+                                >
+                                  <DiceBearThumb
+                                    collection={face.collection}
+                                    seed={face.seed}
+                                    size={40}
+                                    className="rounded-md"
+                                  />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         {/* Style picker */}
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-wide -mb-1.5">Or any style + seed</span>
                         <div className="grid grid-cols-3 gap-1.5">
                           {DICEBEAR_STYLES.map((s) => (
                             <button
@@ -723,6 +877,32 @@ function MyAvatarComponent() {
 
                 {controlTab === 'calibrate' && (
                   <div className="flex flex-col gap-4">
+                    {/* Manual State Override */}
+                    <div className="flex flex-col gap-1.5 bg-zinc-950/40 p-3 rounded-xl border border-zinc-800/40">
+                      <span className="text-[9px] font-bold font-mono uppercase tracking-widest text-emerald-400">
+                        Manual State Override (Testing)
+                      </span>
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 bg-zinc-950/80 p-0.5 rounded-lg border border-zinc-800">
+                        {(['auto', 'idle', 'listening', 'thinking', 'speaking', 'working'] as const).map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => setManualState(s)}
+                            className={`py-1 text-[9px] font-mono font-bold rounded uppercase transition-all cursor-pointer ${
+                              manualState === s
+                                ? 'bg-emerald-500 text-zinc-950 shadow-sm font-black'
+                                : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/40'
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[9px] text-zinc-500 font-sans leading-normal">
+                        Select any state to override the live connection state and preview the avatar visual response (e.g. safety goggles in 'working' state).
+                      </p>
+                    </div>
+
                     {/* Mouth Opening Sensitivity */}
                     <div className="flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs">
@@ -828,13 +1008,15 @@ function MyAvatarComponent() {
                             idle: '#4b5563',
                             listening: '#3b82f6',
                             thinking: '#8b5cf6',
-                            speaking: '#10b981'
+                            speaking: '#10b981',
+                            working: '#f59e0b'
                           });
                           setStateLabels({
                             idle: 'Idle',
                             listening: 'Listening',
                             thinking: 'Thinking...',
-                            speaking: 'Speaking'
+                            speaking: 'Speaking',
+                            working: 'Working'
                           });
                         }}
                         className="text-[9px] bg-zinc-950 hover:bg-zinc-800 text-zinc-400 hover:text-white px-2 py-0.5 rounded font-mono transition-colors border border-zinc-800/60 cursor-pointer"
@@ -1030,30 +1212,95 @@ function MyAvatarComponent() {
 
             {/* Action Trigger / Button */}
             <div className="flex flex-col gap-2 shrink-0 mt-auto">
-              <button
-                onClick={isConnected ? disconnect : connect}
-                disabled={state === 'thinking'}
-                className={`
-                  w-full flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer
-                  ${isConnected 
-                    ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30' 
-                    : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-zinc-950 border border-emerald-400/20'
-                  }
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                `}
-              >
-                {isConnected ? (
-                  <>
-                    <MicOff className="w-4.5 h-4.5 stroke-[2.5]" />
-                    DISCONNECT SESSION
-                  </>
-                ) : (
-                  <>
-                    <Mic className="w-4.5 h-4.5 stroke-[2.5]" />
-                    ESTABLISH NEURAL CONNECT
-                  </>
-                )}
-              </button>
+              {/* Engine selector: realtime voice vs. text-streaming LLM */}
+              <div className="grid grid-cols-2 gap-1 bg-zinc-950/50 p-0.5 rounded-xl border border-zinc-800/60">
+                {([
+                  { id: 'voice', label: 'VOICE (LIVE)', Icon: Mic },
+                  { id: 'text', label: 'TEXT (STREAM)', Icon: MessageSquare },
+                ] as const).map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      if (engine === id) return;
+                      // Tear down the engine we're leaving.
+                      if (id === 'text' && isConnected) disconnect();
+                      if (id === 'voice') textLLM.stop();
+                      setEngine(id);
+                    }}
+                    className={`flex items-center justify-center gap-1.5 py-2 text-[10px] font-mono font-bold rounded-lg uppercase tracking-wider transition-all cursor-pointer ${
+                      engine === id ? 'bg-emerald-500 text-zinc-950 shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {!isText ? (
+                <button
+                  onClick={isConnected ? disconnect : connect}
+                  disabled={state === 'thinking'}
+                  className={`
+                    w-full flex items-center justify-center gap-3 px-5 py-4 rounded-xl font-bold text-sm transition-all duration-300 active:scale-98 cursor-pointer
+                    ${isConnected
+                      ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30'
+                      : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] text-zinc-950 border border-emerald-400/20'
+                    }
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  {isConnected ? (
+                    <>
+                      <MicOff className="w-4.5 h-4.5 stroke-[2.5]" />
+                      DISCONNECT SESSION
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-4.5 h-4.5 stroke-[2.5]" />
+                      ESTABLISH NEURAL CONNECT
+                    </>
+                  )}
+                </button>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    textLLM.send(prompt);
+                    setPrompt('');
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Ask the streaming LLM something…"
+                    disabled={textLLM.isStreaming}
+                    className="flex-1 bg-zinc-950/60 border border-zinc-800/80 rounded-xl px-4 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-emerald-500/50 disabled:opacity-50"
+                  />
+                  {textLLM.isStreaming ? (
+                    <button
+                      type="button"
+                      onClick={textLLM.stop}
+                      className="flex items-center justify-center px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 transition-all cursor-pointer"
+                      title="Stop streaming"
+                    >
+                      <Square className="w-4.5 h-4.5 stroke-[2.5]" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!prompt.trim()}
+                      className="flex items-center justify-center px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 border border-emerald-400/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Send"
+                    >
+                      <Send className="w-4.5 h-4.5 stroke-[2.5]" />
+                    </button>
+                  )}
+                </form>
+              )}
 
               {/* Session Time & Error banner */}
               {isConnected && (
@@ -1116,6 +1363,28 @@ function MyAvatarComponent() {
                 </button>
 
                 <button
+                  onClick={() => setShowThought(!showThought)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border cursor-pointer ${
+                    showThought
+                      ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                      : 'bg-zinc-900/50 text-zinc-500 border-zinc-800 hover:text-zinc-300'
+                  }`}
+                  title="Toggle Thought Bubble"
+                >
+                  {showThought ? (
+                    <>
+                      <Cloud className="w-3.5 h-3.5" />
+                      <span>THOUGHT ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <CloudOff className="w-3.5 h-3.5" />
+                      <span>THOUGHT OFF</span>
+                    </>
+                  )}
+                </button>
+
+                <button
                   onClick={() => setIsCodeModalOpen(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all border bg-zinc-900/50 text-zinc-400 border-zinc-800 hover:text-zinc-200 hover:border-zinc-700 cursor-pointer"
                   title="Get Avatar Integration Code"
@@ -1137,17 +1406,19 @@ function MyAvatarComponent() {
 
             {/* Center Avatar Core Stage */}
             <div className="flex-1 flex items-center justify-center w-full my-4 min-h-[300px] lg:min-h-[420px]">
-              <RealtimeAvatar 
-                state={state} 
-                analyser={analyser} 
-                size={avatarSize} 
-                variant={variant}
+              <RealtimeAvatar
+                state={state}
+                analyser={analyser}
+                speechActivity={speechActivity}
+                size={avatarSize}
+                variant={effectiveVariant}
                 vrmUrl={activeVrmUrl}
                 glbUrl={glbUrl}
                 dicebearCollection={dicebearCollection}
                 dicebearSeed={dicebearSeed}
                 subtitle={subtitle}
                 thought={thought}
+                tool={tool}
                 showSubtitle={showSubtitle}
                 maxMouthOpening={maxMouthOpening}
                 mouseTrackingIntensity={mouseTrackingIntensity}
@@ -1157,7 +1428,9 @@ function MyAvatarComponent() {
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-              />
+              >
+                {byosChild}
+              </RealtimeAvatar>
             </div>
 
             {/* Audio Waveform Telemetry Overlay */}
@@ -1273,11 +1546,11 @@ function MyAvatarComponent() {
                     )}
                   </button>
                   <pre className="whitespace-pre overflow-x-auto select-text pr-16 max-h-[40vh] scrollbar-thin">
-                    {activeTab === 'code' ? generateJSXCode() : `# 1. Install react-realtime-avatar${variant === 'vrm' ? ' and 3D VRM dependencies' : variant === 'glb' ? ' and the 3D GLB dependencies' : variant === 'dicebear' ? ' and the DiceBear packages (CC0 styles)' : ' and dependencies'}
+                    {activeTab === 'code' ? generateJSXCode() : `# 1. Install react-ai-avatar${variant === 'vrm' ? ' and 3D VRM dependencies' : variant === 'glb' ? ' and the 3D GLB dependencies' : variant === 'dicebear' ? ' and the DiceBear packages (CC0 styles)' : ' and dependencies'}
 ${installCommand}
 
 # 2. Add styles in your main entry file (e.g. main.tsx or App.tsx)
-import 'react-realtime-avatar/style.css';
+import 'react-ai-avatar/style.css';
 
 # 3. Mount the <RealtimeAvatar /> component inside your application
 # (See the "JSX Usage" tab for your customized code snippet)`}
@@ -1330,11 +1603,11 @@ import 'react-realtime-avatar/style.css';
               transition={{ type: 'spring', damping: 25, stiffness: 150 }}
               className="relative z-10 w-full h-full max-w-5xl max-h-[85vh] flex items-center justify-center"
             >
-              <RealtimeAvatar 
-                state={state} 
-                analyser={analyser} 
-                size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)} 
-                variant={variant}
+              <RealtimeAvatar
+                state={state}
+                analyser={analyser}
+                size={Math.min(window.innerHeight * 0.75, window.innerWidth * 0.75)}
+                variant={effectiveVariant}
                 vrmUrl={activeVrmUrl}
                 glbUrl={glbUrl}
                 dicebearCollection={dicebearCollection}
@@ -1342,6 +1615,7 @@ import 'react-realtime-avatar/style.css';
                 subtitle={subtitle}
                 thought={thought}
                 showSubtitle={showSubtitle}
+                showThought={showThought}
                 maxMouthOpening={maxMouthOpening}
                 mouseTrackingIntensity={mouseTrackingIntensity}
                 blinkIntervalMin={blinkIntervalMin}
@@ -1350,7 +1624,9 @@ import 'react-realtime-avatar/style.css';
                 stateColors={stateColors}
                 stateLabels={stateLabels}
                 customization={customization}
-              />
+              >
+                {byosChild}
+              </RealtimeAvatar>
             </motion.div>
           </div>
         )}

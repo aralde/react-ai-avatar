@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AvatarProps } from './DefaultAvatar';
-import { createMouthEngine, MouthEngine } from '../lib/mouthEngine';
+import { createMouthEngine, MouthEngine, MouthSource } from '../lib/mouthEngine';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
 export interface GlbArkitAvatarProps extends AvatarProps {
@@ -112,7 +112,7 @@ function GlbModel({
 }: {
   url: string;
   state: string;
-  analyser: AnalyserNode | null;
+  analyser: MouthSource;
   maxMouthOpening?: number;
   mouseTrackingIntensity?: number;
   blinkIntervalMin?: number;
@@ -190,7 +190,7 @@ function GlbModel({
 
   // Shared mouth engine (audio-reactive, or procedural when analyser=null).
   const mouthEngine = useRef<MouthEngine | null>(null);
-  const mouthEngineAnalyser = useRef<AnalyserNode | null>(null);
+  const mouthEngineAnalyser = useRef<MouthSource>(null);
 
   useFrame((threeState, delta) => {
     const lerp = THREE.MathUtils.lerp;
@@ -435,6 +435,7 @@ export function GlbArkitAvatar({
     listening: stateColors?.listening ?? '#3b82f6',
     thinking: stateColors?.thinking ?? '#8b5cf6',
     speaking: stateColors?.speaking ?? '#10b981',
+    working: stateColors?.working ?? '#f59e0b',
   };
 
   return (

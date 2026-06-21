@@ -1,6 +1,6 @@
 import { RefObject, useEffect, useRef } from 'react';
 import { AvatarState, StateColors } from './types';
-import { createMouthEngine, MouthEngine } from './mouthEngine';
+import { createMouthEngine, MouthEngine, MouthSource } from './mouthEngine';
 import { useReducedMotion } from './useReducedMotion';
 
 /**
@@ -28,7 +28,8 @@ import { useReducedMotion } from './useReducedMotion';
 
 export interface AvatarRuntimeOptions {
   state: AvatarState;
-  analyser: AnalyserNode | null;
+  /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
+  analyser: MouthSource;
   stateColors?: StateColors;
   /** Scales mouth opening; ~30 ≈ ellipse ry growing ~12 viewBox units. */
   maxMouthOpening?: number;
@@ -44,6 +45,7 @@ const DEFAULT_COLORS: Required<StateColors> = {
   listening: '#3b82f6',
   thinking: '#8b5cf6',
   speaking: '#10b981',
+  working: '#f59e0b',
 };
 
 export function useAvatarRuntime(
@@ -89,6 +91,13 @@ export function useAvatarRuntime(
     let baseRy = 3;
     let baseRx = 9;
     let mouthQuantize = 0;
+    // The motion constants below (mouth opening, gaze/thinking pupil offsets) are
+    // expressed in the canonical 200-unit viewBox the built-in presets use. A
+    // preset on a different grid — e.g. the 32x32 pixel-art face — would have
+    // them applied ~6x too large (mouth swallowing the face, pupils flung clear
+    // of the eye). Normalize by the SVG's own viewBox width so every preset moves
+    // proportionally to its own coordinate system.
+    let vbScale = 1;
     let pupilBases: { isRect: boolean; x: number; y: number; quantize: number }[] = [];
     let lidMaxes: number[] = [];
     let pupilCur: { x: number; y: number }[] = [];
@@ -118,6 +127,12 @@ export function useAvatarRuntime(
       });
       lidMaxes = lids.map((l) => parseFloat(l.getAttribute('data-max-height') ?? '16'));
       pupilCur = pupils.map(() => ({ x: 0, y: 0 }));
+
+      // viewBox width vs the canonical 200 → scale factor for the motion
+      // constants. Falls back to 1 (no scaling) when no viewBox is present.
+      const svg = el.querySelector('svg');
+      const vbW = parseFloat(svg?.getAttribute('viewBox')?.split(/[\s,]+/)[2] ?? '200');
+      vbScale = vbW > 0 ? vbW / 200 : 1;
     };
 
     const elementsStale = () =>
@@ -128,7 +143,7 @@ export function useAvatarRuntime(
 
     // --- Loop state -------------------------------------------------------
     let engine: MouthEngine | null = null;
-    let engineAnalyser: AnalyserNode | null = null;
+    let engineAnalyser: MouthSource = null;
     let engineActive = false;
 
     let mouthLevel = 0;
@@ -157,7 +172,7 @@ export function useAvatarRuntime(
       const opts = optsRef.current;
       const { state } = opts;
       const colors = { ...DEFAULT_COLORS, ...opts.stateColors };
-      const maxMouthOpening = opts.maxMouthOpening ?? 30;
+      const maxMouthOpening = (opts.maxMouthOpening ?? 30) * vbScale;
       const trackIntensity = reducedMotion ? 0 : (opts.mouseTrackingIntensity ?? 1);
       const blinkMin = opts.blinkIntervalMin ?? 2000;
       const blinkMax = opts.blinkIntervalMax ?? 6000;
@@ -226,17 +241,23 @@ export function useAvatarRuntime(
         lids.forEach((lid, i) => lid.setAttribute('height', String(closed * lidMaxes[i])));
       }
 
-      // 4. Pupils: gaze tracking, thinking looks up-left, listening micro-moves
+      // 4. Pupils: gaze tracking, thinking looks up-left, working looks down, listening micro-moves
       if (pupils.length > 0) {
         let targetX = pointerRef.current.x * 3 * trackIntensity;
         let targetY = pointerRef.current.y * 2.2 * trackIntensity;
         if (state === 'thinking') {
           targetX = -2.5;
           targetY = -3;
+        } else if (state === 'working') {
+          targetX = 0;
+          targetY = 3.5;
         } else if (state === 'listening' && !reducedMotion) {
           targetX += Math.sin(now * 0.0021) * 0.5;
           targetY += Math.cos(now * 0.0017) * 0.4;
         }
+        // Keep gaze travel proportional to the preset's own grid (see vbScale).
+        targetX *= vbScale;
+        targetY *= vbScale;
         pupils.forEach((p, i) => {
           const base = pupilBases[i];
           pupilCur[i].x += (targetX - pupilCur[i].x) * 0.12;
