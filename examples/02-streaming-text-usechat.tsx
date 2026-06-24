@@ -7,11 +7,20 @@
  * and the avatar diffs its growth internally to drive the mouth. No refs, no
  * reader loop.
  *
+ * This example also shows the recommended split for a *real* assistant reply,
+ * which is usually long markdown (headings, tables, lists):
+ *   - the full markdown belongs in the chat transcript;
+ *   - the avatar gets a short, clean, rolling *caption* of the same text.
+ * We turn off RealtimeAvatar's built-in subtitle overlay (`showSubtitle={false}`)
+ * and instead place `<AvatarCaption>` in our own layout slot, so it takes the
+ * width of that slot and never overflows a constrained card. AvatarCaption
+ * flattens markdown to spoken prose and rolls a trailing window internally.
+ *
  * Run: npm install react-ai-avatar motion @ai-sdk/react
  *      (and a streaming `/api/chat` route — any Vercel AI SDK backend)
  */
 import { useChat } from '@ai-sdk/react';
-import { RealtimeAvatar } from 'react-ai-avatar';
+import { RealtimeAvatar, AvatarCaption } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';
 
 export default function ChatAvatar() {
@@ -28,8 +37,26 @@ export default function ChatAvatar() {
         }
         // The whole integration: hand the avatar the accumulated text.
         streamingText={assistantText}
-        subtitle={assistantText}
+        // We render the caption ourselves below, so hide the built-in overlay.
+        showSubtitle={false}
       />
+
+      {/* Host-owned caption slot: full width of this column, no clipping. */}
+      <AvatarCaption text={assistantText} />
+
+      {/* The full markdown reply lives in the transcript, not the caption. */}
+      {assistantText && (
+        <pre
+          style={{
+            maxWidth: 640,
+            whiteSpace: 'pre-wrap',
+            opacity: 0.8,
+            fontSize: 13,
+          }}
+        >
+          {assistantText}
+        </pre>
+      )}
 
       <form
         onSubmit={(e) => {

@@ -247,16 +247,19 @@ export function DiceBearAvatar({
       if (rig) {
         // 3a. Viseme swap. Bucket the smoothed level into closed/mid/open as a
         // small state machine with hysteresis, so it doesn't flicker at the
-        // thresholds (open at >0.36, mid at >0.13; fall back at <0.30 / <0.10).
+        // thresholds. Tuned LOW (open at >0.22, mid at >0.07): unlike the
+        // continuous SVG presets, a discrete 3-frame swap only reads as talking
+        // if it actually reaches the open frame, and the text-stream level
+        // rarely climbs high — so we open readily and fall back on real pauses.
         let idx = mouthIdx;
         if (mouthIdx === 0) {
-          if (level > 0.13) idx = level > 0.36 ? 2 : 1;
+          if (level > 0.07) idx = level > 0.22 ? 2 : 1;
         } else if (mouthIdx === 1) {
-          if (level > 0.36) idx = 2;
-          else if (level < 0.09) idx = 0;
+          if (level > 0.22) idx = 2;
+          else if (level < 0.05) idx = 0;
         } else {
-          if (level < 0.1) idx = 0;
-          else if (level < 0.3) idx = 1;
+          if (level < 0.06) idx = 0;
+          else if (level < 0.18) idx = 1;
         }
         mouthIdx = speaking ? idx : 0;
 

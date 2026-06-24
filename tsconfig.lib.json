@@ -27,7 +27,6 @@
     "src/components/**/*"
   ],
   "exclude": [
-    "src/demo/**/*",
     "src/**/*.test.ts",
     "src/**/*.test.tsx"
   ]

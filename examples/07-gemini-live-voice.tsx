@@ -1,18 +1,15 @@
 /**
  * 07 · Realtime voice (Gemini Live / OpenAI Realtime) — the full pipeline.
  *
- * This is the production shape: a relay server (the repo's `server.ts`) holds
- * the model API key and proxies a WebSocket at `/live`; the browser streams mic
- * audio up and plays the model's base64 PCM back down, routing every decoded
- * chunk through one `AnalyserNode` that it hands to the avatar.
+ * This is the production shape: a relay server holds the model API key and
+ * proxies a WebSocket at `/live`; the browser streams mic audio up and plays the
+ * model's base64 PCM back down, routing every decoded chunk through one
+ * `AnalyserNode` that it hands to the avatar.
  *
  * The library is unchanged from every other example — only the *source* of the
- * `state` + `analyser` differs. The connection logic below is condensed; the
- * repo ships the battle-tested version in `src/demo/useGeminiLive.ts` +
- * `src/demo/audio.ts`, and the relay (real Gemini or a no-key mock) in
- * `server.ts`. Prefer reusing those — this file shows the moving parts.
- *
- * Run: clone the repo and `npm run dev` (MOCK_REALTIME=true needs no API key).
+ * `state` + `analyser` differs. The connection logic below is condensed to show
+ * the moving parts; a copy-pasteable reference relay (real Gemini Live + the
+ * OpenAI-compatible text proxy) lives in `examples/server/proxy.ts`.
  */
 import { useEffect, useRef, useState } from 'react';
 import { RealtimeAvatar } from 'react-ai-avatar';

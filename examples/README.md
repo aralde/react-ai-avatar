@@ -19,7 +19,7 @@ consumer would, so what you read is what you ship.
 | 04 | [`04-audio-analyser.tsx`](04-audio-analyser.tsx) | Real audio-reactive mouth: building and routing a WebAudio `AnalyserNode`. | — |
 | 05 | [`05-avatar-catalog.tsx`](05-avatar-catalog.tsx) | Switching `variant` across the flat presets + DiceBear. | `@dicebear/core` `@dicebear/collection` (only for the dicebear option) |
 | 06 | [`06-bring-your-own-svg.tsx`](06-bring-your-own-svg.tsx) | `variant="byos"`: a minimal custom SVG implementing the `#rra-*` layer contract. | — |
-| 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay (the repo's `server.ts`) |
+| 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay ([`server/proxy.ts`](server/proxy.ts)) |
 | 08 | [`08-character-avatar-squirrel.tsx`](08-character-avatar-squirrel.tsx) | `variant="byos"` taken further: a full branded character (squirrel dev) on the same `#rra-*` contract. | — |
 
 ## Shared helpers
@@ -27,13 +27,13 @@ consumer would, so what you read is what you ship.
 These back examples 03 (and the docs-site demos) so they run with **no model and
 no API key**:
 
-- [`shared/mockChatStream.ts`](shared/mockChatStream.ts) — a client-side port of
-  the demo server's `streamMockChat`: replays canned replies a few characters at
-  a time, just like a real `/chat/completions` SSE stream. Swap it for your real
-  `fetch` reader loop and the avatar code is unchanged.
+- [`shared/mockChatStream.ts`](shared/mockChatStream.ts) — a client-side mock
+  that replays canned replies a few characters at a time, just like a real
+  `/chat/completions` SSE stream. Swap it for your real `fetch` reader loop (or
+  the [`server/proxy.ts`](server/proxy.ts) relay) and the avatar code is unchanged.
 - [`shared/parseModelText.ts`](shared/parseModelText.ts) — tolerant
-  `<thought>`/`<speech>` splitter for partial streaming text (same one
-  `useGeminiLive` uses). Optional — only needed if your model uses those tags.
+  `<thought>`/`<speech>` splitter for partial streaming text. Optional — only
+  needed if your model wraps output in those tags (as the example prompts do).
 
 ## Running one
 
@@ -47,6 +47,7 @@ npm install react-ai-avatar motion
 npm run dev
 ```
 
-For the realtime-voice example (07), clone this repo instead and run
-`npm run dev` — it ships the relay server and a no-API-key mock
-(`MOCK_REALTIME=true`).
+The realtime-voice example (07) needs a relay that holds the provider API key.
+A copy-pasteable reference relay (Gemini Live `/live` + OpenAI-compatible
+`/api/chat`) lives in [`server/proxy.ts`](server/proxy.ts) — drop it into your
+own backend, set its [`.env`](server/.env.example), and point the example at it.

@@ -48,7 +48,7 @@ Use this exact template and replace the \`/* SVG_CONTENT_HERE */\` with your ani
 
 import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 
 export interface CustomAvatarProps {
   state: AvatarState;
@@ -199,7 +199,7 @@ ${svgContent}
 function generateMockOutput() {
   const code = `import React, { useEffect, useRef } from 'react';
 import { motion, useAnimation, useMotionValue, useSpring, useTransform } from 'motion/react';
-import { AvatarState } from '../hooks/useGeminiLive';
+import { AvatarState } from '../lib/types';
 
 export interface CustomAvatarProps {
   state: AvatarState;

@@ -166,8 +166,8 @@ Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `da
 - `glbUrl` (`string`) — CORS-enabled `.glb` URL with ARKit blendshapes, for `variant="glb"`.
 - `dicebearCollection` (`string`) — DiceBear style id (curated CC0 set), for `variant="dicebear"`.
 - `dicebearSeed` (`string`) — deterministic DiceBear seed, for `variant="dicebear"`.
-- `subtitle` / `thought` (`string`) — optional movie-style captions and a thought bubble.
-- `showGlow` / `showStatePill` / `showThought` / `showSubtitle` (`boolean`) — HUD satellites, each `true` by default. Set any to `false` to hide it individually: the reactive glow, the state pill, the thought bubble, and the subtitle respectively.
+- `subtitle` / `thought` (`string`) — optional movie-style caption and a thought bubble. Pass raw text or markdown: both are flattened to spoken prose and rolled to a trailing window internally, so a long streamed reply never overflows or shows raw `**`/tables. For a long assistant reply, keep the full markdown in your chat transcript and pass the same text here for the short live caption.
+- `showGlow` / `showStatePill` / `showThought` / `showSubtitle` (`boolean`) — HUD satellites, each `true` by default. Set any to `false` to hide it individually: the reactive glow, the state pill, the thought bubble, and the subtitle respectively. The built-in subtitle/thought float `absolute` around the face (needs open canvas); inside a constrained card, set `showSubtitle={false}` / `showThought={false}` and render `<AvatarCaption>` / `<AvatarThought>` in your own layout slot instead.
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
 - `stateColors`, `stateLabels` — theming; labels are announced via `aria-live`.
 - `customization` — preset colors and accessories (skin, hair, clothing, glasses, headphones…).
@@ -184,6 +184,8 @@ Everything the runtime uses is exported, so you can compose your own:
 - `useReducedMotion()` — SSR-safe `prefers-reduced-motion` hook.
 - `GeometricAvatar`, `MemojiAvatar`, `PixelArtAvatar`, `DoodleAvatar` — the raw presets.
 - `AudioVisualizer` — Siri-style waveform telemetry strip.
+- `AvatarCaption` / `AvatarThought` — host-placed caption + thought widgets. In-flow (not `absolute`), so they fit your own layout slot without overflow; both flatten markdown to spoken prose and roll a trailing window.
+- `toPlainText(md)` / `tailWindow(text, { maxChars })` — the pure text helpers behind those widgets, for building your own caption.
 
 ## Getting an `AnalyserNode`
 
@@ -280,7 +282,7 @@ function TextAvatar() {
 
 `createSpeechActivity(options?)` accepts `chargePerChar`, `decayMs` and `maxChargePerPush` to tune how wide / how fast the mouth reacts. The returned source has `push(chunk)`, `end()`, `reset()` (drop energy on an interrupted turn) and `sample()`. When `speechActivity` is provided it takes precedence over both `streamingText` and `analyser`. (`streamingText` is just this, with the diffing done for you — under the hood it's the exported `useStreamingTextActivity` hook.)
 
-> The demo dashboard ships this end-to-end: toggle **TEXT (STREAM)** to talk to an OpenAI-compatible endpoint (set `OPENAI_BASE_URL` / `OPENAI_API_KEY` / `OPENAI_MODEL`, or leave them unset / `MOCK_REALTIME=true` for a no-key mock). See `src/demo/useStreamingLLM.ts` and the `/api/chat` route in `server.ts`.
+> [`examples/03-streaming-text-imperative.tsx`](examples/03-streaming-text-imperative.tsx) shows this end-to-end against an OpenAI-compatible endpoint. The browser only ever talks to your own `/api/chat`; a tiny reference relay that proxies to the provider (so the key never reaches the client) lives in [`examples/server/proxy.ts`](examples/server/proxy.ts).
 
 ## Positioning
 
@@ -294,16 +296,20 @@ The closest reference is [TalkingHead](https://github.com/met4citizen/TalkingHea
 | Makes visible | the voice | the *thinking* |
 | Setup | avatar platform + Blender + rig | `npm i` + one component |
 
-## Demo / development
+## Development
 
-The repo ships a demo dashboard (Gemini Live + a no-API-key mock):
+This repo is the library only — no app or backend. The runnable, hosted demos
+live on the project's docs site (built separately, client-side mock, no API key).
 
 ```bash
 npm install
-npm run dev        # starts the demo at :3000 (MOCK_REALTIME=true needs no API key)
 npm test           # vitest: engine, layer contract, SSR, parsers
+npm run lint       # tsc --noEmit
 npm run build:lib  # builds the publishable package into dist/lib
 ```
+
+Copy-pasteable integration examples — including a reference relay server for
+real voice/text providers — live in [`examples/`](examples/).
 
 ## License
 

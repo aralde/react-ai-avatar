@@ -1,14 +1,14 @@
 /**
  * Split a streaming model reply into `{ thought, speech }`.
  *
- * The demo prompts the model to wrap its reasoning in `<thought>…</thought>`
- * and its spoken answer in `<speech>…</speech>`. This parser is tolerant of
- * *partial* input: call it on the accumulated text after every chunk and it
- * hides half-typed tags, so subtitles never flicker `<spe` at the user.
+ * The example prompts wrap the model's reasoning in `<thought>…</thought>` and
+ * its spoken answer in `<speech>…</speech>` (see `server/proxy.ts`). This parser
+ * is tolerant of *partial* input: call it on the accumulated text after every
+ * chunk and it hides half-typed tags, so subtitles never flicker `<spe` at the
+ * user.
  *
- * It's the same parser the repo's `useGeminiLive` hook uses, extracted here so
- * examples can reuse it. If your model doesn't use these tags, you don't need
- * this at all — just feed the raw text to your subtitle and `speech.push()`.
+ * If your model doesn't use these tags, you don't need this at all — just feed
+ * the raw text to your subtitle and `speech.push()`.
  */
 export function parseModelText(raw: string): { thought: string; speech: string } {
   let thought = '';

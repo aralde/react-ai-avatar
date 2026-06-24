@@ -1,14 +1,14 @@
 /**
  * Client-side mock of a text-streaming LLM.
  *
- * This is the no-backend, no-API-key port of the demo server's `streamMockChat`
- * (see `server.ts` in the repo root). It replays a small set of canned replies,
- * emitted a few characters at a time on a timer — exactly the cadence a real
- * `/chat/completions` SSE stream produces. Use it to drive the avatar's mouth in
- * examples and docs without wiring up any model.
+ * This is the no-backend, no-API-key mock of a `/chat/completions` SSE stream:
+ * it replays a small set of canned replies, emitted a few characters at a time
+ * on a timer — exactly the cadence a real stream produces. Use it to drive the
+ * avatar's mouth in examples and docs without wiring up any model. For the real
+ * thing, swap it for a `fetch` against the `server/proxy.ts` relay.
  *
  * The replies follow the same `<thought>…</thought><speech>…</speech>` convention
- * the demo uses, so `parseModelText()` (in this folder) can split them.
+ * the example prompts use, so `parseModelText()` (in this folder) can split them.
  */
 
 const MOCK_RESPONSES = [

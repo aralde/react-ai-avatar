@@ -6,6 +6,7 @@ import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
+import { AvatarCaption, AvatarThought } from './AvatarCaption';
 import { AvatarState } from '../lib/types';
 import type { SpeechActivitySource } from '../lib/speechActivity';
 import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
@@ -297,27 +298,19 @@ export function RealtimeAvatar({
         {AvatarComponent}
       </div>
 
-      {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar) */}
+      {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar).
+          Content shaping (markdown -> plain prose, rolling window) lives in
+          AvatarThought; here we only position it and add the trail circles. */}
       {showThought && thought && (
-        <motion.div 
-          initial={{ opacity: 0, y: 15, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="absolute bottom-[108%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[340px] md:max-w-[420px] text-left pointer-events-none z-40"
-        >
-          <div className="relative bg-zinc-900/90 backdrop-blur-xl text-zinc-100 px-5 py-4 rounded-3xl shadow-[0_10px_30px_rgba(139,92,246,0.15)] border border-purple-500/25 text-sm italic break-words">
-            <div className="text-purple-400 text-[10px] uppercase tracking-widest font-mono font-bold mb-1 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-              Thought process
-            </div>
-            <p className="leading-relaxed text-zinc-200">{thought}</p>
-            
+        <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[340px] md:max-w-[420px] z-40">
+          <div className="relative">
+            <AvatarThought text={thought} className="max-w-none" />
             {/* Elegant thought trail bubble circles pointing down toward avatar center */}
             <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-zinc-900/90 rounded-full border border-purple-500/20 shadow-md backdrop-blur-md"></div>
             <div className="absolute -bottom-6 left-[48%] -translate-x-1/2 w-2.5 h-2.5 bg-zinc-900/90 rounded-full border border-purple-500/15 shadow-sm backdrop-blur-md"></div>
             <div className="absolute -bottom-8 left-[47%] -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900/90 rounded-full border border-purple-500/10 backdrop-blur-md"></div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Unified State Indicator Pill (Positioned right under the avatar, consistent for all) */}
@@ -339,27 +332,13 @@ export function RealtimeAvatar({
         </motion.div>
       )}
 
-      {/* Movie-style Subtitles Overlay (Floats Centered BELOW the indicator, responsive & generous padding) */}
+      {/* Movie-style Subtitles Overlay (Floats Centered BELOW the indicator).
+          Content shaping (markdown -> plain prose, rolling window) lives in
+          AvatarCaption; here we only position it. */}
       {showSubtitle && subtitle && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.2 }}
-          className="absolute top-[115%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[500px] md:max-w-[640px] text-center pointer-events-none z-50 pb-8"
-        >
-          <span 
-            className="inline-block px-6 py-4 text-base md:text-lg font-medium text-zinc-100 break-words leading-relaxed shadow-2xl border"
-            style={{
-              textShadow: '0px 1px 3px rgba(0,0,0,0.5)',
-              background: 'rgba(9, 9, 11, 0.8)', // zinc-950 at 0.8
-              backdropFilter: 'blur(12px)',
-              borderColor: 'rgba(63, 63, 70, 0.4)',
-              borderRadius: '20px',
-            }}
-          >
-            {subtitle}
-          </span>
-        </motion.div>
+        <div className="absolute top-[115%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[500px] md:max-w-[640px] z-50 pb-8">
+          <AvatarCaption text={subtitle} />
+        </div>
       )}
     </div>
   );
