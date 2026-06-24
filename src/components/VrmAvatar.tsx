@@ -1,7 +1,7 @@
-import React, { Suspense, useEffect, useRef, useState } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { VRM, VRMLoaderPlugin } from '@pixiv/three-vrm';
+import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AvatarProps } from './DefaultAvatar';
@@ -96,6 +96,7 @@ function VrmModel({
   blinkDuration = 100,
   reducedMotion = false,
   onLoaded,
+  onError,
 }: {
   url: string;
   state: string;
@@ -107,33 +108,68 @@ function VrmModel({
   blinkDuration?: number;
   reducedMotion?: boolean;
   onLoaded: (loaded: boolean) => void;
+  onError: (err: string) => void;
 }) {
-  const gltf = useLoader(GLTFLoader, url, (loader) => {
-    loader.register((parser) => new VRMLoaderPlugin(parser));
-  });
-
-  const vrm = gltf.userData.vrm as VRM | undefined;
+  // Unlike GLB (where we can clone the cached scene), a VRM's animation reads
+  // through `vrm.update()`, `vrm.humanoid` and `vrm.expressionManager`, all of
+  // which point at the originally-parsed nodes. Sharing one cached VRM across
+  // two avatars would make them mount the same scene (one goes blank) AND fight
+  // over the same expression/bone state. So we deliberately bypass the
+  // `useLoader` cache and parse a fresh, independent VRM per instance.
+  const [vrm, setVrm] = useState<VRM | null>(null);
 
   useEffect(() => {
-    if (vrm) {
-      onLoaded(true);
-      
-      console.log(
-        "[VRM] Model loaded successfully. Available expressions:", 
-        Object.keys((vrm.expressionManager as any)?.expressionMap || {})
-      );
+    let cancelled = false;
+    let loaded: VRM | null = null;
 
-      // Disable frustum culling to prevent avatar flickering when camera angles get close
-      vrm.scene.traverse((obj) => {
-        obj.frustumCulled = false;
-      });
+    const loader = new GLTFLoader();
+    loader.register((parser) => new VRMLoaderPlugin(parser));
+    loader.load(
+      url,
+      (gltf) => {
+        if (cancelled) {
+          // Mounted-then-unmounted before load finished: free the GPU resources.
+          const v = gltf.userData.vrm as VRM | undefined;
+          if (v) VRMUtils.deepDispose(v.scene);
+          return;
+        }
+        const v = gltf.userData.vrm as VRM | undefined;
+        if (!v) {
+          onError(`No VRM found at ${url}.`);
+          return;
+        }
 
-      // Rotate the model so it faces the camera directly
-      // VRM 0.x starts facing -Z (needs 180 deg rotation), VRM 1.0 starts facing +Z
-      const isVRM0 = (vrm.meta as any)?.metaVersion === '0';
-      vrm.scene.rotation.y = isVRM0 ? Math.PI : 0;
-    }
-  }, [vrm, onLoaded]);
+        console.log(
+          '[VRM] Model loaded successfully. Available expressions:',
+          Object.keys((v.expressionManager as any)?.expressionMap || {}),
+        );
+
+        // Disable frustum culling to prevent avatar flickering when camera angles get close
+        v.scene.traverse((obj) => {
+          obj.frustumCulled = false;
+        });
+
+        // Rotate the model so it faces the camera directly
+        // VRM 0.x starts facing -Z (needs 180 deg rotation), VRM 1.0 starts facing +Z
+        const isVRM0 = (v.meta as any)?.metaVersion === '0';
+        v.scene.rotation.y = isVRM0 ? Math.PI : 0;
+
+        loaded = v;
+        setVrm(v);
+        onLoaded(true);
+      },
+      undefined,
+      (err) => {
+        if (!cancelled) onError((err as any)?.message || String(err));
+      },
+    );
+
+    return () => {
+      cancelled = true;
+      // Release this instance's own GPU resources (geometries/textures/skeleton).
+      if (loaded) VRMUtils.deepDispose(loaded.scene);
+    };
+  }, [url, onLoaded, onError]);
 
   // Smoothed mouth shape tracking refs
   const currentAa = useRef(0);
@@ -322,6 +358,11 @@ export function VrmAvatar({
     setLoadError(null);
   }, [vrmUrl]);
 
+  // Stable callbacks: VrmModel's loader effect depends on these, so recreating
+  // them each render would re-trigger the (expensive) VRM parse every render.
+  const handleLoaded = useCallback((status: boolean) => setLoaded(status), []);
+  const handleError = useCallback((err: string) => setLoadError(err), []);
+
   const resolvedStateColors = {
     idle: stateColors?.idle ?? '#4b5563',
     listening: stateColors?.listening ?? '#3b82f6',
@@ -372,7 +413,8 @@ export function VrmAvatar({
                 blinkIntervalMax={blinkIntervalMax}
                 blinkDuration={blinkDuration}
                 reducedMotion={reducedMotion}
-                onLoaded={(status) => setLoaded(status)}
+                onLoaded={handleLoaded}
+                onError={handleError}
               />
             </Suspense>
           )}

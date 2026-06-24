@@ -1,6 +1,7 @@
-import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { AvatarProps } from './DefaultAvatar';
@@ -124,7 +125,13 @@ function GlbModel({
   const gltf = useLoader(GLTFLoader, url);
   const { camera, controls } = useThree();
 
-  const scene = gltf.scene;
+  // `useLoader` caches the GLTF by URL, so every avatar pointing at the same
+  // `.glb` gets the SAME `gltf.scene` object. A THREE.Object3D can only live
+  // under one parent, so mounting that shared scene in two <primitive>s lets the
+  // second steal it from the first — one avatar renders, the other goes blank.
+  // Clone per instance (SkeletonUtils preserves skinned-mesh bones + gives each
+  // copy its own morphTargetInfluences) so the same model can appear N times.
+  const scene = useMemo(() => cloneSkeleton(gltf.scene), [gltf.scene]);
   const blend = useMemo<BlendIndex>(() => buildBlendIndex(scene), [scene]);
 
   useEffect(() => {
@@ -138,6 +145,10 @@ function GlbModel({
 
     // Frame the camera on the head: Rocketbox/RPM are full-body (~1.8m),
     // not a VRM bust, so derive the look-at height from the bounding box.
+    // Force world matrices first: a freshly-cloned scene has identity matrices
+    // until R3F's first render, and this effect can run before that — so without
+    // this the bounding box comes back wrong and the camera frames the feet.
+    scene.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(scene);
     const size = new THREE.Vector3();
     const center = new THREE.Vector3();
@@ -342,7 +353,12 @@ function GlbModel({
       }
       const frame = mouthEngine.current.read();
       const scaleLimit = maxMouthOpening / 30.0;
-      const lvl = frame.level * scaleLimit;
+      // Boost: ARKit blendshapes are 0–1 and the mouth engine's typical level
+      // (especially the text-stream token engine) rarely approaches 1, so a raw
+      // jaw=level*0.9 reads as a barely-moving mouth. Lift the level (clamped)
+      // so ordinary speech opens the jaw decisively, matching the continuous
+      // SVG presets. maxMouthOpening still scales the whole thing.
+      const lvl = Math.min(1, frame.level * scaleLimit * 1.7);
 
       if (frame.shape === 'o') {
         targetFunnel = lvl * 0.85;
@@ -404,6 +420,10 @@ export function GlbArkitAvatar({
   // up front and surface a clean error instead.
   const [srcReady, setSrcReady] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  // Stable so GlbModel's camera-framing effect runs deterministically (once per
+  // clone) instead of re-firing on every parent re-render.
+  const handleLoaded = useCallback((status: boolean) => setLoaded(status), []);
 
   useEffect(() => {
     setLoaded(false);
@@ -474,7 +494,7 @@ export function GlbArkitAvatar({
                 blinkIntervalMax={blinkIntervalMax}
                 blinkDuration={blinkDuration}
                 reducedMotion={reducedMotion}
-                onLoaded={(status) => setLoaded(status)}
+                onLoaded={handleLoaded}
               />
             </Suspense>
           )}
