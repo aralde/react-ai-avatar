@@ -26,7 +26,15 @@ import 'react-ai-avatar/style.css';
 export default function ChatAvatar() {
   const { messages, status, sendMessage } = useChat();
   const last = messages.at(-1);
-  const assistantText = last?.role === 'assistant' ? last.text : '';
+  // AI SDK v5 UIMessages carry content in `parts`, not a flat `.text` — join
+  // the text parts to get the accumulated assistant reply.
+  const assistantText =
+    last?.role === 'assistant'
+      ? last.parts
+          .filter((p) => p.type === 'text')
+          .map((p) => p.text)
+          .join('')
+      : '';
 
   return (
     <div style={{ display: 'grid', gap: 16, justifyItems: 'center' }}>
