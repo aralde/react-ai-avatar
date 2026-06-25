@@ -1,6 +1,6 @@
 {
   "name": "react-ai-avatar",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A presentational React avatar for realtime LLM voice UIs — you bring the connection, it brings the face.",
   "license": "MIT",
   "author": "Ariel A. <ariel.a.deibe@gmail.com>",
