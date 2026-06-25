@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="./assets/banner.png" alt="react-ai-avatar — A face for your AI" width="100%" />
+</p>
+
 # react-ai-avatar
 
 > A presentational React avatar for realtime LLM voice UIs — **you bring the connection, it brings the face.**
@@ -24,6 +28,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - 🦺 **Graceful degradation** — `analyser={null}` while `state="speaking"`? The mouth animates with a synthetic speech-like pattern instead of freezing. Perfect for demos and non-WebRTC apps.
 - ⌨️ **Text-streaming LLMs too** — no audio? Drive the mouth from *token cadence* with `createSpeechActivity()`. A text-only assistant (OpenAI-style `/chat/completions` or `/responses` with `stream: true`) gets a face that visibly tracks the stream — busy while tokens arrive, settling on pauses.
 - 🧠 **A visible `thinking` state** — pulsing thought bubble + upward gaze. Your users *see* the LLM thinking, not just a color change.
+- 🛠️ **A `working` state for tool use** — the fifth state, for agentic UIs. While the LLM runs a tool, the face goes amber and the state pill reads `Working: {tool}` (pass the tool name via the `tool` prop). Your users see *which* tool is running, not just a spinner.
 - 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
 - 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
@@ -52,7 +57,7 @@ import 'react-ai-avatar/style.css';
 
 export default function App() {
   // You resolve this in your app (Gemini, OpenAI Realtime, WebRTC, anything)
-  const aiState = 'speaking'; // 'idle' | 'listening' | 'thinking' | 'speaking'
+  const aiState = 'speaking'; // 'idle' | 'listening' | 'thinking' | 'speaking' | 'working'
 
   return <RealtimeAvatar state={aiState} />;
 }
@@ -71,7 +76,7 @@ Every default is overridable. Opt into as much as you need:
   size={300}                          // default 280
   variant="geometric"                 // 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'dicebear' | 'vrm' | 'glb' | 'byos'
   customization={{ skinColor: '#f5c7a9', hairColor: '#2c2c2c', glasses: true, headphones: true }}
-  stateColors={{ idle: '#4b5563', listening: '#3b82f6', thinking: '#8b5cf6', speaking: '#10b981' }}
+  stateColors={{ idle: '#4b5563', listening: '#3b82f6', thinking: '#8b5cf6', speaking: '#10b981', working: '#f59e0b' }}
 />
 ```
 
@@ -155,7 +160,8 @@ Optional data attributes: `data-base-x`/`data-base-y` (pupil rest position), `da
 
 ### `<RealtimeAvatar />`
 
-- `state` (`'idle' | 'listening' | 'thinking' | 'speaking'`) — required. You resolve it; it is never inferred.
+- `state` (`'idle' | 'listening' | 'thinking' | 'speaking' | 'working'`) — required. You resolve it; it is never inferred. `working` is the tool-use state for agentic UIs (amber).
+- `tool` (`string`) — optional. The name of the tool currently running. While `state="working"`, the state pill reads `Working: {tool}` instead of the generic label.
 - `analyser` (`AnalyserNode | null`) — optional. Drives the mouth from audio. Omitted or `null`, speaking falls back to the synthetic pattern.
 - `streamingText` (`string`) — optional. Declarative mouth driver: pass the accumulated assistant text (e.g. from `useChat`) and the avatar diffs its growth to drive the mouth. Takes precedence over `analyser`. See [Text-streaming LLMs](#text-streaming-llms-no-audio).
 - `speechActivity` (`SpeechActivitySource`) — optional. Imperative token-rate mouth driver, from `createSpeechActivity()`. Takes precedence over both `streamingText` and `analyser` when set.
@@ -183,6 +189,7 @@ Everything the runtime uses is exported, so you can compose your own:
 - `useStreamingTextActivity(text)` — declarative wrapper: diffs accumulated streaming text into a `SpeechActivitySource` for you (what the `streamingText` prop uses).
 - `useReducedMotion()` — SSR-safe `prefers-reduced-motion` hook.
 - `GeometricAvatar`, `MemojiAvatar`, `PixelArtAvatar`, `DoodleAvatar` — the raw presets.
+- `SquirrelAvatar` — a full branded character (red-squirrel dev face) built on the `#rra-*` contract; the worked `byos` example, shipped so the demos render it from one source. See [`examples/08-character-avatar-squirrel.tsx`](examples/08-character-avatar-squirrel.tsx).
 - `AudioVisualizer` — Siri-style waveform telemetry strip.
 - `AvatarCaption` / `AvatarThought` — host-placed caption + thought widgets. In-flow (not `absolute`), so they fit your own layout slot without overflow; both flatten markdown to spoken prose and roll a trailing window.
 - `toPlainText(md)` / `tailWindow(text, { maxChars })` — the pure text helpers behind those widgets, for building your own caption.
