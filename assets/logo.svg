@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="react-ai-avatar logo">
+  <title>react-ai-avatar</title>
+  <desc>A face on a teal coin, ringed by the four conversation-state colours: blue listening, purple thinking, green speaking, amber working.</desc>
+  <path d="M110.2 73.5 A52 52 0 0 1 73.5 110.2" stroke="#10b981" stroke-width="7" stroke-linecap="round"/>
+  <path d="M46.5 110.2 A52 52 0 0 1 9.8 73.5" stroke="#3b82f6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M9.8 46.5 A52 52 0 0 1 46.5 9.8" stroke="#8b5cf6" stroke-width="7" stroke-linecap="round"/>
+  <path d="M73.5 9.8 A52 52 0 0 1 110.2 46.5" stroke="#f59e0b" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="60" cy="60" r="44" fill="#0d9488"/>
+  <circle cx="49" cy="54" r="6" fill="#ffffff"/>
+  <circle cx="71" cy="54" r="6" fill="#ffffff"/>
+  <path d="M47 72 Q60 86 73 72" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+</svg>
