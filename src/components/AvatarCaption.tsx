@@ -161,13 +161,16 @@ export function ThoughtEmojiBubble({
         className="relative flex items-center justify-center rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
         style={{ width: size, height: size }}
       >
-        <AnimatePresence mode="popLayout" initial={false}>
+        {/* `mode="wait"` keeps exactly one glyph mounted: the outgoing one fully
+            exits before the next enters. (An earlier `popLayout` version leaked —
+            exited spans stacked up to the reel length instead of unmounting.) */}
+        <AnimatePresence mode="wait" initial={false}>
           <motion.span
-            key={current + index}
-            initial={reduced ? false : { opacity: 0, scale: 0.5, rotate: -20 }}
+            key={index}
+            initial={reduced ? false : { opacity: 0, scale: 0.6, rotate: -15 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={reduced ? undefined : { opacity: 0, scale: 0.5, rotate: 20 }}
-            transition={{ duration: 0.25 }}
+            exit={reduced ? undefined : { opacity: 0, scale: 0.6, rotate: 15 }}
+            transition={{ duration: 0.18 }}
             className="absolute leading-none select-none"
             style={{ fontSize: Math.round(size * 0.5) }}
           >
