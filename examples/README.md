@@ -21,6 +21,7 @@ consumer would, so what you read is what you ship.
 | 06 | [`06-bring-your-own-svg.tsx`](06-bring-your-own-svg.tsx) | `variant="byos"`: a minimal custom SVG implementing the `#rra-*` layer contract. | — |
 | 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay ([`server/proxy.ts`](server/proxy.ts)) |
 | 08 | [`08-character-avatar-squirrel.tsx`](08-character-avatar-squirrel.tsx) | `variant="byos"` taken further: a full branded character (squirrel dev) on the same `#rra-*` contract. | — |
+| 09 | [`09-thinking-emoji-reel.tsx`](09-thinking-emoji-reel.tsx) | Emulated "thinking" via `thinkingEmojis`: an emoji reel on the face, reasoning text rendered separately in the chat. Runs against the local mock — no backend. | — |
 
 ## Shared helpers
 

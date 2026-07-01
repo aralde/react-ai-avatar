@@ -6,7 +6,7 @@ import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
 import { DiceBearAvatar } from './DiceBearAvatar';
-import { AvatarCaption, AvatarThought } from './AvatarCaption';
+import { AvatarCaption, AvatarThought, ThoughtEmojiBubble, DEFAULT_THINKING_EMOJIS } from './AvatarCaption';
 import { AvatarState } from '../lib/types';
 import type { SpeechActivitySource } from '../lib/speechActivity';
 import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
@@ -71,6 +71,17 @@ export interface RealtimeAvatarProps {
   subtitle?: string;
   thought?: string;
   tool?: string;
+  /**
+   * Emulated "thinking" reel: a comic bubble that cross-fades through emojis
+   * while `state === 'thinking'`, instead of surfacing the raw reasoning on the
+   * avatar. Pass `true` for the default reasoning/study/web set, or your own
+   * emoji array. When active, it takes the bubble slot above the face and the
+   * text `thought` overlay is suppressed (show the real reasoning elsewhere,
+   * e.g. a Claude-Code-style panel in your chat).
+   */
+  thinkingEmojis?: boolean | string[];
+  /** Milliseconds each emoji stays before the next. Default 900. */
+  thinkingEmojiInterval?: number;
   /** HUD satellites — all on by default; set false to hide individually. */
   showGlow?: boolean;
   showStatePill?: boolean;
@@ -117,6 +128,8 @@ export function RealtimeAvatar({
   subtitle,
   thought,
   tool,
+  thinkingEmojis,
+  thinkingEmojiInterval = 900,
   showGlow = true,
   showStatePill = true,
   showThought = true,
@@ -273,6 +286,16 @@ export function RealtimeAvatar({
     };
   }, [analyser, activitySource, state, glowScaleValue, glowOpacityValue]);
 
+  // Emoji reel is only meaningful while thinking. `true` -> default set; an
+  // array -> that set (empty array disables). When it wins the bubble slot, the
+  // text `thought` overlay stands down so the two never stack.
+  const emojiReel = Array.isArray(thinkingEmojis)
+    ? thinkingEmojis
+    : thinkingEmojis
+      ? DEFAULT_THINKING_EMOJIS
+      : null;
+  const showThinkingEmojis = state === 'thinking' && !!emojiReel && emojiReel.length > 0;
+
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
       
@@ -301,7 +324,17 @@ export function RealtimeAvatar({
       {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar).
           Content shaping (markdown -> plain prose, rolling window) lives in
           AvatarThought; here we only position it and add the trail circles. */}
-      {showThought && thought && (
+      {showThinkingEmojis ? (
+        <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 z-40">
+          <div className="relative">
+            <ThoughtEmojiBubble emojis={emojiReel!} interval={thinkingEmojiInterval} />
+            {/* Same trail circles as the text bubble, pointing down at the avatar */}
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-zinc-900/90 rounded-full border border-purple-500/20 shadow-md backdrop-blur-md"></div>
+            <div className="absolute -bottom-6 left-[48%] -translate-x-1/2 w-2.5 h-2.5 bg-zinc-900/90 rounded-full border border-purple-500/15 shadow-sm backdrop-blur-md"></div>
+            <div className="absolute -bottom-8 left-[47%] -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900/90 rounded-full border border-purple-500/10 backdrop-blur-md"></div>
+          </div>
+        </div>
+      ) : showThought && thought && (
         <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[340px] md:max-w-[420px] z-40">
           <div className="relative">
             <AvatarThought text={thought} className="max-w-none" />

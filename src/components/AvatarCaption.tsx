@@ -1,6 +1,7 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { toPlainText, tailWindow } from '../lib/captionText';
+import { useReducedMotion } from '../lib/useReducedMotion';
 
 /**
  * Host-placed caption + thought widgets.
@@ -91,6 +92,81 @@ export function AvatarThought({
           {label}
         </div>
         <p className="leading-relaxed text-zinc-200">{clean}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Default emoji reel for the thinking bubble: a loose "reasoning / study / web"
+ * vocabulary. Purely decorative — it emulates "the avatar is mulling something
+ * over" without exposing the real chain of thought (which the host renders
+ * elsewhere, e.g. a Claude-Code-style reasoning panel in the chat).
+ */
+export const DEFAULT_THINKING_EMOJIS = [
+  '🤔', '💭', '📚', '🔍', '🌐', '💡', '🧠', '📝', '⚙️',
+];
+
+export interface ThoughtEmojiBubbleProps {
+  /** Emoji reel to cycle through. Defaults to `DEFAULT_THINKING_EMOJIS`. */
+  emojis?: string[];
+  /** Milliseconds each emoji stays on screen before the next. Default 900. */
+  interval?: number;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+/**
+ * Comic thought bubble that cross-fades through a reel of emojis. Meant to sit
+ * where the reasoning-text bubble would (above the face) during `thinking`, as
+ * a lightweight "emulation" of pondering when you don't want to surface the raw
+ * reasoning on the avatar itself. Honors `prefers-reduced-motion` by holding a
+ * single emoji instead of animating the reel.
+ */
+export function ThoughtEmojiBubble({
+  emojis = DEFAULT_THINKING_EMOJIS,
+  interval = 900,
+  className = '',
+  style,
+}: ThoughtEmojiBubbleProps) {
+  const reduced = useReducedMotion();
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (reduced || emojis.length <= 1) return;
+    const id = setInterval(() => {
+      setIndex((i) => (i + 1) % emojis.length);
+    }, Math.max(200, interval));
+    return () => clearInterval(id);
+  }, [reduced, emojis.length, interval]);
+
+  if (emojis.length === 0) return null;
+  const current = emojis[index % emojis.length];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className={`rra-thought-emoji flex justify-center pointer-events-none ${className}`}
+      style={style}
+      role="status"
+      aria-live="off"
+      aria-label="Thinking"
+    >
+      <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.15)]">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={current + index}
+            initial={reduced ? false : { opacity: 0, scale: 0.5, rotate: -20 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={reduced ? undefined : { opacity: 0, scale: 0.5, rotate: 20 }}
+            transition={{ duration: 0.25 }}
+            className="absolute text-3xl leading-none select-none"
+          >
+            {current}
+          </motion.span>
+        </AnimatePresence>
       </div>
     </motion.div>
   );

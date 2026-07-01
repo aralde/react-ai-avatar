@@ -312,6 +312,7 @@ npm install @dicebear/core @dicebear/collection
 - `dicebearCollection` (`string`) — DiceBear style id (curated CC0 set), for `variant="dicebear"`.
 - `dicebearSeed` (`string`) — deterministic DiceBear seed, for `variant="dicebear"`.
 - `subtitle` / `thought` (`string`) — optional movie-style caption and a thought bubble. Pass raw text or markdown: both are flattened to spoken prose and rolled to a trailing window internally, so a long streamed reply never overflows or shows raw `**`/tables. For a long assistant reply, keep the full markdown in your chat transcript and pass the same text here for the short live caption.
+- `thinkingEmojis` (`boolean | string[]`) — optional emulated "thinking" reel. While `state="thinking"`, the bubble above the face cross-fades through a set of emojis instead of showing raw reasoning: pass `true` for the default reasoning/study/web set (`🤔 💭 📚 🔍 🌐 💡 🧠 📝 ⚙️`) or your own array. When active it takes the bubble slot, so the text `thought` overlay stands down — surface the real reasoning elsewhere (e.g. a Claude-Code-style panel in your chat). `thinkingEmojiInterval` (`number`, ms, default `900`) tunes the cadence. Honors `prefers-reduced-motion` (holds one emoji). See [`examples/09-thinking-emoji-reel.tsx`](examples/09-thinking-emoji-reel.tsx).
 - `showGlow` / `showStatePill` / `showThought` / `showSubtitle` (`boolean`) — HUD satellites, each `true` by default. Set any to `false` to hide it individually: the reactive glow, the state pill, the thought bubble, and the subtitle respectively. The built-in subtitle/thought float `absolute` around the face (needs open canvas); inside a constrained card, set `showSubtitle={false}` / `showThought={false}` and render `<AvatarCaption>` / `<AvatarThought>` in your own layout slot instead.
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
 - `stateColors`, `stateLabels` — theming; labels are announced via `aria-live`. Both cover all five states including `working`.
@@ -331,6 +332,7 @@ Everything the runtime uses is exported, so you can compose your own:
 - `SquirrelAvatar` — a full branded character (red-squirrel dev face) built on the `#rra-*` contract; the worked `byos` example, shipped so the demos render it from one source. See [`examples/08-character-avatar-squirrel.tsx`](examples/08-character-avatar-squirrel.tsx).
 - `AudioVisualizer` — Siri-style waveform telemetry strip.
 - `AvatarCaption` / `AvatarThought` — host-placed caption + thought widgets. In-flow (not `absolute`), so they fit your own layout slot without overflow; both flatten markdown to spoken prose and roll a trailing window.
+- `ThoughtEmojiBubble` — the standalone emoji reel behind `thinkingEmojis` (cross-fades through `emojis`, honors reduced motion). Drop it into your own slot to run it independent of `state`. `DEFAULT_THINKING_EMOJIS` is the exported default set.
 - `toPlainText(md)` / `tailWindow(text, { maxChars })` — the pure text helpers behind those widgets, for building your own caption.
 
 ## Positioning

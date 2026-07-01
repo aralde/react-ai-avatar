@@ -60,8 +60,8 @@ export type { AudioVisualizerProps } from '../components/AudioVisualizer';
 // Host-placed caption + thought widgets. Drop them into your own layout slot
 // instead of relying on RealtimeAvatar's floating overlays (handy inside a
 // constrained card). Both flatten markdown to spoken prose and roll a window.
-export { AvatarCaption, AvatarThought } from '../components/AvatarCaption';
-export type { AvatarCaptionProps, AvatarThoughtProps } from '../components/AvatarCaption';
+export { AvatarCaption, AvatarThought, ThoughtEmojiBubble, DEFAULT_THINKING_EMOJIS } from '../components/AvatarCaption';
+export type { AvatarCaptionProps, AvatarThoughtProps, ThoughtEmojiBubbleProps } from '../components/AvatarCaption';
 // Pure text helpers behind the widgets, exported for custom captions.
 export { toPlainText, tailWindow } from './captionText';
 export type { TailWindowOptions } from './captionText';
