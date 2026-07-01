@@ -26,6 +26,13 @@ export interface SquirrelAvatarProps {
   size?: number | string;
   customization?: Partial<AvatarCustomization>;
   state?: AvatarState;
+  /**
+   * Opt in to the character's per-state poses: head tilt + hand-on-chin while
+   * `thinking`, and a randomly-picked "reading a book" / "soldering with goggles"
+   * scene while `working`. Off by default, so the squirrel matches the other
+   * presets (just face / blink / mouth / gaze) unless you ask for the show.
+   */
+  poses?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -34,6 +41,7 @@ export function SquirrelAvatar({
   size = '100%',
   customization,
   state,
+  poses = false,
   className,
   style,
 }: SquirrelAvatarProps) {
@@ -87,7 +95,7 @@ export function SquirrelAvatar({
         </g>
         <path d="M96 150 L94 170 M104 150 L106 170" stroke="#e9eef2" strokeWidth="1.6" strokeLinecap="round" fill="none" />
 
-        <g id="rra-squirrel-head" transform={state === 'thinking' ? 'rotate(6 100 120)' : undefined}>
+        <g id="rra-squirrel-head" transform={poses && state === 'thinking' ? 'rotate(6 100 120)' : undefined}>
           {/* tufted squirrel ears */}
           <path d="M66 80 L58 42 Q74 50 86 72 Z" fill={fur} />
           <path d="M134 80 L142 42 Q126 50 114 72 Z" fill={fur} />
@@ -125,7 +133,7 @@ export function SquirrelAvatar({
           {/* LEFT EYE: ball -> pupil(.rra-pupil, data-base-*) -> lid(.rra-lid, fur-colored, on top) */}
           <g>
             <ellipse cx="82" cy="93" rx="8" ry="8.5" fill="#ffffff" />
-            <g transform={state === 'thinking' ? 'translate(5, 0)' : undefined}>
+            <g transform={poses && state === 'thinking' ? 'translate(5, 0)' : undefined}>
               <circle className="rra-pupil" data-base-x={82} data-base-y={93} cx="82" cy="93" r="4.6" fill="#2b1b12" />
             </g>
             <circle cx="84" cy="90" r="1.5" fill="#ffffff" />
@@ -134,14 +142,14 @@ export function SquirrelAvatar({
           {/* RIGHT EYE */}
           <g>
             <ellipse cx="118" cy="93" rx="8" ry="8.5" fill="#ffffff" />
-            <g transform={state === 'thinking' ? 'translate(5, 0)' : undefined}>
+            <g transform={poses && state === 'thinking' ? 'translate(5, 0)' : undefined}>
               <circle className="rra-pupil" data-base-x={118} data-base-y={93} cx="118" cy="93" r="4.6" fill="#2b1b12" />
             </g>
             <circle cx="120" cy="90" r="1.5" fill="#ffffff" />
             <rect className="rra-lid" data-max-height="18" x="109" y="83" width="18" height="0" fill={fur} />
           </g>
 
-          {state === 'working' && workingVariant === 'wires' && (
+          {poses && state === 'working' && workingVariant === 'wires' && (
             <g id="rra-safety-goggles">
               {/* Strap/elastic band on the sides */}
               <path d="M 52 92 C 45 92, 45 96, 40 96 M 148 92 C 155 92, 155 96, 160 96" fill="none" stroke="#2d3748" strokeWidth="4" strokeLinecap="round" />
@@ -168,7 +176,7 @@ export function SquirrelAvatar({
           </g>
 
           {/* hand touching the chin, rendered only when thinking */}
-          {state === 'thinking' && (
+          {poses && state === 'thinking' && (
             <g id="rra-thinking-hand">
               {/* Sleeve coming up from the bottom right to the chin */}
               <path
@@ -190,7 +198,7 @@ export function SquirrelAvatar({
           )}
         </g>
 
-        {state === 'working' && workingVariant === 'wires' && (
+        {poses && state === 'working' && workingVariant === 'wires' && (
           <g id="rra-working-workspace-wires">
             {/* Light bulb radial glow (flickering) */}
             <circle cx="100" cy="162" r="22" fill="#fef08a" fillOpacity="0.25">
@@ -250,7 +258,7 @@ export function SquirrelAvatar({
           </g>
         )}
 
-        {state === 'working' && workingVariant === 'paper' && (
+        {poses && state === 'working' && workingVariant === 'paper' && (
           <g id="rra-working-workspace-paper">
             {/* Whole open book + hands gently breathe while reading */}
             <animateTransform
