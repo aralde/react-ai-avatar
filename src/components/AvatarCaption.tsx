@@ -112,20 +112,23 @@ export interface ThoughtEmojiBubbleProps {
   emojis?: string[];
   /** Milliseconds each emoji stays on screen before the next. Default 900. */
   interval?: number;
+  /** Bubble diameter in px. The emoji glyph scales from it. Default 64. */
+  size?: number;
   className?: string;
   style?: React.CSSProperties;
 }
 
 /**
  * Comic thought bubble that cross-fades through a reel of emojis. Meant to sit
- * where the reasoning-text bubble would (above the face) during `thinking`, as
- * a lightweight "emulation" of pondering when you don't want to surface the raw
- * reasoning on the avatar itself. Honors `prefers-reduced-motion` by holding a
- * single emoji instead of animating the reel.
+ * near the face during `thinking`, as a lightweight "emulation" of pondering
+ * when you don't want to surface the raw reasoning on the avatar itself. Honors
+ * `prefers-reduced-motion` by holding a single emoji instead of animating the
+ * reel. The glyph is sized off `size`, so one prop scales the whole bubble.
  */
 export function ThoughtEmojiBubble({
   emojis = DEFAULT_THINKING_EMOJIS,
   interval = 900,
+  size = 64,
   className = '',
   style,
 }: ThoughtEmojiBubbleProps) {
@@ -145,7 +148,7 @@ export function ThoughtEmojiBubble({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
+      initial={{ opacity: 0, y: 8, scale: 0.9 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.3 }}
       className={`rra-thought-emoji flex justify-center pointer-events-none ${className}`}
@@ -154,7 +157,10 @@ export function ThoughtEmojiBubble({
       aria-live="off"
       aria-label="Thinking"
     >
-      <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.15)]">
+      <div
+        className="relative flex items-center justify-center rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
+        style={{ width: size, height: size }}
+      >
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={current + index}
@@ -162,7 +168,8 @@ export function ThoughtEmojiBubble({
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             exit={reduced ? undefined : { opacity: 0, scale: 0.5, rotate: 20 }}
             transition={{ duration: 0.25 }}
-            className="absolute text-3xl leading-none select-none"
+            className="absolute leading-none select-none"
+            style={{ fontSize: Math.round(size * 0.5) }}
           >
             {current}
           </motion.span>

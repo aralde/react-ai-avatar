@@ -82,6 +82,12 @@ export interface RealtimeAvatarProps {
   thinkingEmojis?: boolean | string[];
   /** Milliseconds each emoji stays before the next. Default 900. */
   thinkingEmojiInterval?: number;
+  /**
+   * Emoji bubble diameter in px. Defaults to ~28% of `size`, so it scales with
+   * the avatar. The bubble is anchored inside the avatar's own box (top-right
+   * corner), so it never enlarges the component's footprint.
+   */
+  thinkingEmojiSize?: number;
   /** HUD satellites — all on by default; set false to hide individually. */
   showGlow?: boolean;
   showStatePill?: boolean;
@@ -130,6 +136,7 @@ export function RealtimeAvatar({
   tool,
   thinkingEmojis,
   thinkingEmojiInterval = 900,
+  thinkingEmojiSize,
   showGlow = true,
   showStatePill = true,
   showThought = true,
@@ -295,6 +302,10 @@ export function RealtimeAvatar({
       ? DEFAULT_THINKING_EMOJIS
       : null;
   const showThinkingEmojis = state === 'thinking' && !!emojiReel && emojiReel.length > 0;
+  // Bubble scales with the avatar and lives INSIDE the size×size box (top-right
+  // corner, where a circular avatar leaves empty canvas), so the component's
+  // declared footprint stays exactly `size` — no overflow for the host layout.
+  const emojiBubbleSize = thinkingEmojiSize ?? Math.round(size * 0.28);
 
   return (
     <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
@@ -321,17 +332,41 @@ export function RealtimeAvatar({
         {AvatarComponent}
       </div>
 
-      {/* Comic-style Thought Bubble (Floats Center ABOVE the Avatar).
-          Content shaping (markdown -> plain prose, rolling window) lives in
-          AvatarThought; here we only position it and add the trail circles. */}
+      {/* Emulated-thinking emoji bubble. Unlike the text thought overlay it does
+          NOT float outside the box: it's anchored in the avatar's own top-right
+          corner (empty canvas on a circular avatar) so the component keeps its
+          `size × size` footprint and never collides with the host layout. Trail
+          dots lead down-left from the bubble toward the face. */}
       {showThinkingEmojis ? (
-        <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 z-40">
+        <div
+          className="absolute z-40"
+          style={{ top: Math.round(size * 0.02), right: Math.round(size * 0.02) }}
+        >
           <div className="relative">
-            <ThoughtEmojiBubble emojis={emojiReel!} interval={thinkingEmojiInterval} />
-            {/* Same trail circles as the text bubble, pointing down at the avatar */}
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-zinc-900/90 rounded-full border border-purple-500/20 shadow-md backdrop-blur-md"></div>
-            <div className="absolute -bottom-6 left-[48%] -translate-x-1/2 w-2.5 h-2.5 bg-zinc-900/90 rounded-full border border-purple-500/15 shadow-sm backdrop-blur-md"></div>
-            <div className="absolute -bottom-8 left-[47%] -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900/90 rounded-full border border-purple-500/10 backdrop-blur-md"></div>
+            <ThoughtEmojiBubble
+              emojis={emojiReel!}
+              interval={thinkingEmojiInterval}
+              size={emojiBubbleSize}
+            />
+            {/* Trail circles leading down-left from the bubble toward the face */}
+            <div
+              className="absolute rounded-full bg-zinc-900/90 border border-purple-500/25 shadow-md backdrop-blur-md"
+              style={{
+                width: emojiBubbleSize * 0.22,
+                height: emojiBubbleSize * 0.22,
+                bottom: -emojiBubbleSize * 0.14,
+                left: -emojiBubbleSize * 0.02,
+              }}
+            />
+            <div
+              className="absolute rounded-full bg-zinc-900/90 border border-purple-500/20 shadow-sm backdrop-blur-md"
+              style={{
+                width: emojiBubbleSize * 0.14,
+                height: emojiBubbleSize * 0.14,
+                bottom: -emojiBubbleSize * 0.3,
+                left: -emojiBubbleSize * 0.18,
+              }}
+            />
           </div>
         </div>
       ) : showThought && thought && (
