@@ -7,6 +7,9 @@ coverage/
 .DS_Store
 *.log
 
+# Internal triage scratchpad — feedback gets promoted to GitHub Issues, not committed
+FEEDBACK.md
+
 # npm pack artifacts (regenerable; never commit the tarball)
 *.tgz
 .env*
