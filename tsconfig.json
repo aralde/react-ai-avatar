@@ -24,6 +24,7 @@
     "noEmit": true
   },
   "exclude": [
-    "examples"
+    "examples",
+    "scripts"
   ]
 }
