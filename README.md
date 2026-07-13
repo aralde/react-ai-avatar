@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/aralde/react-ai-avatar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aralde/react-ai-avatar/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://www.npmjs.com/package/react-ai-avatar"><img alt="npm version" src="https://img.shields.io/npm/v/react-ai-avatar?color=0d9488"></a>
   <a href="https://www.npmjs.com/package/react-ai-avatar"><img alt="npm downloads" src="https://img.shields.io/npm/dm/react-ai-avatar?color=0d9488"></a>
   <img alt="minzipped size" src="https://img.shields.io/bundlephobia/minzip/react-ai-avatar?color=0d9488">
