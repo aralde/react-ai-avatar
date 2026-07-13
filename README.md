@@ -39,6 +39,14 @@ import 'react-ai-avatar/style.css';
 ```
 
 <p align="center">
+  <a href="https://react-ai-avatar-site.vercel.app/">
+    <img src="./assets/react-avatar-animate.gif" alt="An avatar built on the layer contract, animating live — blinking, thinking and speaking" width="213" />
+  </a>
+  <br/>
+  <sub>Live, not a mockup — every preset blinks, tracks the cursor, thinks and talks. <a href="https://react-ai-avatar-site.vercel.app/">Try the demos →</a></sub>
+</p>
+
+<p align="center">
   <img src="./assets/banner.png" alt="The react-ai-avatar catalog reacting to conversation state" width="100%" />
 </p>
 
