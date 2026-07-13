@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="./assets/logo.svg" alt="react-ai-avatar" width="116" height="116" />
+  <a href="https://react-ai-avatar-site.vercel.app/">
+    <img src="./assets/react-avatar-animate.gif" alt="react-ai-avatar — an avatar built on the layer contract, animating live: blinking, thinking and speaking" width="180" />
+  </a>
 </p>
 
 <h1 align="center">react-ai-avatar</h1>
@@ -14,7 +16,7 @@
   <a href="https://github.com/aralde/react-ai-avatar/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/aralde/react-ai-avatar/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://www.npmjs.com/package/react-ai-avatar"><img alt="npm version" src="https://img.shields.io/npm/v/react-ai-avatar?color=0d9488"></a>
   <a href="https://www.npmjs.com/package/react-ai-avatar"><img alt="npm downloads" src="https://img.shields.io/npm/dm/react-ai-avatar?color=0d9488"></a>
-  <img alt="minzipped size" src="https://img.shields.io/bundlephobia/minzip/react-ai-avatar?color=0d9488">
+  <img alt="unpacked size" src="https://img.shields.io/npm/unpacked-size/react-ai-avatar?color=0d9488">
   <img alt="types included" src="https://img.shields.io/npm/types/react-ai-avatar?color=0d9488">
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/npm/l/react-ai-avatar?color=0d9488"></a>
 </p>
@@ -37,14 +39,6 @@ import 'react-ai-avatar/style.css';
 // The whole thing, minimally. Everything but `state` has a sensible default.
 <RealtimeAvatar state="speaking" />
 ```
-
-<p align="center">
-  <a href="https://react-ai-avatar-site.vercel.app/">
-    <img src="./assets/react-avatar-animate.gif" alt="An avatar built on the layer contract, animating live — blinking, thinking and speaking" width="213" />
-  </a>
-  <br/>
-  <sub>Live, not a mockup — every preset blinks, tracks the cursor, thinks and talks. <a href="https://react-ai-avatar-site.vercel.app/">Try the demos →</a></sub>
-</p>
 
 <p align="center">
   <img src="./assets/banner.png" alt="The react-ai-avatar catalog reacting to conversation state" width="100%" />
