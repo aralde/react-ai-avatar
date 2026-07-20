@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://react-ai-avatar-site.vercel.app/">
+  <a href="https://react-ai-avatar.vercel.app/">
     <img src="./assets/react-avatar-animate.gif" alt="react-ai-avatar — an avatar built on the layer contract, animating live: blinking, thinking and speaking" width="180" />
   </a>
 </p>
@@ -23,8 +23,8 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/react-ai-avatar"><b>npm</b></a> &nbsp;·&nbsp;
-  <a href="https://react-ai-avatar-site.vercel.app/#/docs"><b>Documentation</b></a> &nbsp;·&nbsp;
-  <a href="https://react-ai-avatar-site.vercel.app/"><b>Live demos</b></a> &nbsp;·&nbsp;
+  <a href="https://react-ai-avatar.vercel.app/#/docs"><b>Documentation</b></a> &nbsp;·&nbsp;
+  <a href="https://react-ai-avatar.vercel.app/"><b>Live demos</b></a> &nbsp;·&nbsp;
   <a href="#quickstart"><b>Quickstart</b></a>
 </p>
 
@@ -78,6 +78,8 @@ With no `analyser`, `speaking` falls back to a synthetic speech-like mouth — g
 ```
 
 For the optional 3D (VRM) variant, also install `three @react-three/fiber @react-three/drei @pixiv/three-vrm`; for `glb`, the same minus `@pixiv/three-vrm`; for `dicebear`, `@dicebear/core @dicebear/collection`. All are **optional** peer dependencies, lazy-loaded only if you use that variant.
+
+> It works? ⭐ [**Star the repo**](https://github.com/aralde/react-ai-avatar) — takes 2 seconds and helps other React devs find it.
 
 ## Table of contents
 
@@ -352,7 +354,7 @@ The closest reference is [TalkingHead](https://github.com/met4citizen/TalkingHea
 
 ## Examples
 
-Copy-pasteable, single-file integration examples — including a reference relay server for real voice/text providers — live in [`examples/`](examples/). One file per integration pattern (quickstart, `useChat`, imperative streaming, audio analyser, the avatar catalog, `byos`, Gemini Live voice, a branded character). The runnable, hosted versions (client-side mock, no API key) live on the [docs site](https://react-ai-avatar-site.vercel.app/).
+Copy-pasteable, single-file integration examples — including a reference relay server for real voice/text providers — live in [`examples/`](examples/). One file per integration pattern (quickstart, `useChat`, imperative streaming, audio analyser, the avatar catalog, `byos`, Gemini Live voice, a branded character). The runnable, hosted versions (client-side mock, no API key) live on the [docs site](https://react-ai-avatar.vercel.app/).
 
 ## Contributing
 
