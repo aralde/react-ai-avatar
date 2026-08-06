@@ -22,6 +22,7 @@ consumer would, so what you read is what you ship.
 | 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay ([`server/proxy.ts`](server/proxy.ts)) |
 | 08 | [`08-character-avatar-squirrel.tsx`](08-character-avatar-squirrel.tsx) | `variant="byos"` taken further: a full branded character (squirrel dev) on the same `#rra-*` contract. | — |
 | 09 | [`09-thinking-emoji-reel.tsx`](09-thinking-emoji-reel.tsx) | Emulated "thinking" via `thinkingEmojis`: an emoji reel on the face, reasoning text rendered separately in the chat. Runs against the local mock — no backend. | — |
+| 10 | [`10-character-avatar-developer.tsx`](10-character-avatar-developer.tsx) | A second branded character on the same contract (young dev: beanie, headphones, glasses) — proof the hooks don't care what you draw around them. | — |
 
 ## Shared helpers
 

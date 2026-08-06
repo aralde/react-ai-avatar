@@ -4,6 +4,12 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-08-06
+
+### Added
+- **`CoderAvatar`** — a second branded character on the `#rra-*` contract: a young developer (slouchy knit beanie, over-ear headphones, round glasses, hoodie + circuit tee). Same API as `SquirrelAvatar`, including the opt-in `poses` prop (hand-on-chin while thinking; a typing-on-a-laptop / reading-a-book scene while working). New worked example: `examples/10-character-avatar-developer.tsx`.
+- Layer-contract tests now cover the branded characters (`SquirrelAvatar`, `CoderAvatar`), asserting the hooks the runtime queries plus a closed resting mouth and open resting lids.
+
 ## [0.2.0] — 2026-07-01
 
 ### Added
@@ -50,6 +56,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[0.3.0]: https://github.com/aralde/react-ai-avatar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aralde/react-ai-avatar/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/aralde/react-ai-avatar/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/aralde/react-ai-avatar/compare/v0.1.1...v0.1.2
