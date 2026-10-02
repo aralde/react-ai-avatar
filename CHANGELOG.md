@@ -4,6 +4,14 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-10-02
+
+### Added
+- **`PortraitAvatar`** — a third character, built with the "puppet" technique: a fixed illustration (the author's portrait) embedded untouched, with only the moving parts drawn on top as colour-matched vector layers on the `#rra-*` contract. The talking mouth patches over the picture's grin, closes in pauses and shows teeth/tongue as it opens (a/e/o shapes); thinking narrows the eyes toward the bubble with a sideways "hmm"; the monitors behind always run scrolling terminal output, masked so it passes behind the head. Opt-in `poses`: a coffee break every 20 s while idle, and a back view facing the monitors while working. Honors `prefers-reduced-motion`. Internal ids are scoped per instance, so several can share a page. New example: `examples/11-portrait-avatar.tsx`.
+
+### Changed
+- Layer-contract tests: the resting-mouth check now accepts any thin closed mouth (`ry` ≤ 3) instead of exactly `2.3`, and cover `PortraitAvatar`'s per-instance ids and `poses` gating.
+
 ## [0.3.0] — 2026-08-06
 
 ### Added
@@ -56,6 +64,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[0.4.0]: https://github.com/aralde/react-ai-avatar/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aralde/react-ai-avatar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aralde/react-ai-avatar/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/aralde/react-ai-avatar/compare/v0.1.2...v0.1.3
