@@ -25,6 +25,9 @@ export { SquirrelAvatar } from '../components/SquirrelAvatar';
 export type { SquirrelAvatarProps } from '../components/SquirrelAvatar';
 export { CoderAvatar } from '../components/CoderAvatar';
 export type { CoderAvatarProps } from '../components/CoderAvatar';
+// The "puppet" technique: a fixed illustration with vector layers animated on top.
+export { PortraitAvatar } from '../components/PortraitAvatar';
+export type { PortraitAvatarProps } from '../components/PortraitAvatar';
 
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';

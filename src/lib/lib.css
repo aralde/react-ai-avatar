@@ -10,3 +10,5 @@
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components";
+/* inlined base64 images: nothing to scan, and random runs could match utilities */
+@source not "../components/portraitAssets.ts";
