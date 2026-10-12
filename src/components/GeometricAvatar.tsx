@@ -9,7 +9,7 @@ import { AvatarState } from '../lib/types';
  * layer contract (see useAvatarRuntime). Purely presentational: it does not
  * animate by itself — it exposes stable ids/classes the runtime drives.
  *
- * License: MIT. Own design (no third-party assets, no attribution needed).
+ * License: Apache 2.0. Own design (no third-party assets).
  */
 
 export interface GeometricAvatarProps {

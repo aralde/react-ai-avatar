@@ -2,7 +2,7 @@
   "name": "react-ai-avatar",
   "version": "0.4.0",
   "description": "A presentational React avatar for realtime LLM voice UIs — you bring the connection, it brings the face.",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Ariel A. <ariel.a.deibe@gmail.com>",
   "repository": {
     "type": "git",
@@ -48,7 +48,8 @@
     "./style.css": "./dist/lib/react-ai-avatar.css"
   },
   "files": [
-    "dist/lib"
+    "dist/lib",
+    "NOTICE"
   ],
   "scripts": {
     "build:lib": "vite build --config vite.config.lib.ts && tsc --project tsconfig.lib.json",

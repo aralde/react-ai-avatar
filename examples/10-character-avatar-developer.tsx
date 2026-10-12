@@ -6,7 +6,7 @@
  * temples, hoodie + circuit tee, and a neck bridging head and body. Two characters
  * built the same way is the point: the `#rra-*` hooks don't care what you draw
  * around them, so the runtime gives both blink, gaze, audio/text mouth and the
- * thinking bubble for free. Your design, your license (this one is MIT, own art).
+ * thinking bubble for free. Your design, your license (this one is Apache 2.0, own art).
  *
  * The eyes show the canonical three-layer build, in paint order: eyeball →
  * `.rra-pupil` (with data-base-*) → `.rra-lid` (a skin-colored rect, height 0 =

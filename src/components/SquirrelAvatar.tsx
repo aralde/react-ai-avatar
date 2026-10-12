@@ -4,7 +4,7 @@ import type { AvatarCustomization } from './DefaultAvatar';
 /**
  * SquirrelAvatar — a full branded character (red-squirrel developer) drawn as a
  * flat-vector face: tufted ears, bushy tail, round glasses, brown quiff, hoodie +
- * circuit tee, and a neck bridging head and body. Own design (MIT, no third-party
+ * circuit tee, and a neck bridging head and body. Own design (Apache 2.0, no third-party
  * assets).
  *
  * It implements the layer contract (see useAvatarRuntime) exactly like the built-in

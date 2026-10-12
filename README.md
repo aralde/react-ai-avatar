@@ -18,7 +18,7 @@
   <a href="https://www.npmjs.com/package/react-ai-avatar"><img alt="npm downloads" src="https://img.shields.io/npm/dm/react-ai-avatar?color=0d9488"></a>
   <img alt="unpacked size" src="https://img.shields.io/npm/unpacked-size/react-ai-avatar?color=0d9488">
   <img alt="types included" src="https://img.shields.io/npm/types/react-ai-avatar?color=0d9488">
-  <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/npm/l/react-ai-avatar?color=0d9488"></a>
+  <a href="./LICENSE"><img alt="Apache 2.0 license" src="https://img.shields.io/npm/l/react-ai-avatar?color=0d9488"></a>
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 
 ---
 
-**react-ai-avatar** handles exactly one step of your voice/chat pipeline: turning audio amplitude and conversation-state changes into a face that visibly reacts. It is **completely LLM-agnostic** — it doesn't know about Gemini, OpenAI or ElevenLabs. You pass two live things — a `state` and (optionally) a WebAudio `AnalyserNode` — and it does the rest. Your host app keeps the microphone, the WebSocket and the AI provider; **none of those dependencies enter your bundle**. One thing, done well, embeddable in a few lines, no backend, MIT.
+**react-ai-avatar** handles exactly one step of your voice/chat pipeline: turning audio amplitude and conversation-state changes into a face that visibly reacts. It is **completely LLM-agnostic** — it doesn't know about Gemini, OpenAI or ElevenLabs. You pass two live things — a `state` and (optionally) a WebAudio `AnalyserNode` — and it does the rest. Your host app keeps the microphone, the WebSocket and the AI provider; **none of those dependencies enter your bundle**. One thing, done well, embeddable in a few lines, no backend, Apache 2.0.
 
 ```tsx
 import { RealtimeAvatar } from 'react-ai-avatar';
@@ -101,7 +101,7 @@ For the optional 3D (VRM) variant, also install `three @react-three/fiber @react
 
 ## Philosophy
 
-One thing, done well, embeddable in a few lines, no backend, MIT. The library handles exactly one step of your voice pipeline: turning audio amplitude + state changes into a face that visibly **listens, thinks and speaks**. Your host app keeps the microphone, the WebSocket and the AI provider — none of those dependencies enter your bundle.
+One thing, done well, embeddable in a few lines, no backend, Apache 2.0. The library handles exactly one step of your voice pipeline: turning audio amplitude + state changes into a face that visibly **listens, thinks and speaks**. Your host app keeps the microphone, the WebSocket and the AI provider — none of those dependencies enter your bundle.
 
 ## Features
 
@@ -110,7 +110,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - ⌨️ **Text-streaming LLMs too** — no audio? Drive the mouth from *token cadence* with `createSpeechActivity()`. A text-only assistant (OpenAI-style `/chat/completions` or `/responses` with `stream: true`) gets a face that visibly tracks the stream — busy while tokens arrive, settling on pauses.
 - 🧠 **A visible `thinking` state** — pulsing thought bubble + upward gaze. Your users *see* the LLM thinking, not just a color change.
 - 🛠️ **A `working` state for tool use** — the fifth state, for agentic UIs. While the LLM runs a tool, the face goes amber and the state pill reads `Working: {tool}` (pass the tool name via the `tool` prop). Your users see *which* tool is running, not just a spinner.
-- 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
+- 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four original Apache 2.0 SVG presets. No third-party assets.
 - 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
 - ♿ **Production quality** — SSR-safe (Next.js friendly), honors `prefers-reduced-motion`, announces state changes via `aria-live`.
@@ -129,7 +129,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 | `glb` | 3D glTF + ARKit blendshapes | optional, lazy-loaded; pass `glbUrl`. Works with [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (MIT), Ready Player Me, or any `.glb` exposing the 52 ARKit morph targets |
 | `byos` | **your** SVG | pass it as children; see the layer contract |
 
-All built-in presets are original designs licensed MIT — nothing inside this package requires attribution.
+All built-in presets are original designs licensed Apache 2.0, like the rest of the package. Keep the LICENSE and NOTICE files when you redistribute them.
 
 ## Driving the mouth
 
@@ -373,4 +373,4 @@ Issues and pull requests are welcome — bug fixes, new presets that follow the 
 
 ## License
 
-MIT — for the library, the runtime and all built-in presets. Use it commercially, fork it, reskin it. SVGs you bring via `byos` keep whatever license they had.
+Apache License 2.0 — for the library, the runtime and all built-in presets. Use it commercially, fork it, reskin it; keep the [LICENSE](LICENSE) and [NOTICE](NOTICE) files when you redistribute. SVGs you bring via `byos` keep whatever license they had.
