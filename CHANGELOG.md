@@ -4,7 +4,7 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — planned as 0.5.0
+## [0.5.0] — 2026-10-20
 
 ### Added
 - **`VideoAvatar`** — the "clip" technique: a photoreal avatar from your own footage. One short looping video per state, crossfaded on state changes; every clip starts and ends on a shared "hub" frame so loops and cuts don't jump. Missing states fall back (`working` → `thinking` → `idle`). With `speechActivity` or `analyser`, the speaking clip is gated on speech energy and yields to idle in real pauses. `idleVariations` interleave one-shot clips while idle, each with `afterIdleMs` / `cooldownMs` (e.g. a coffee only after a long wait). `minHoldMs` / `busySettleMs` keep an agent's `thinking ↔ working` tool-call bursts from flickering the face. Honors `prefers-reduced-motion`. The package ships no footage. New types: `VideoClips`, `VideoClipSource`, `IdleVariation`. New example: `examples/12-video-avatar.tsx`.
@@ -71,6 +71,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[0.5.0]: https://github.com/aralde/react-ai-avatar/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aralde/react-ai-avatar/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aralde/react-ai-avatar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/aralde/react-ai-avatar/compare/v0.1.3...v0.2.0
