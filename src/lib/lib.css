@@ -55,6 +55,11 @@
   .rra-state-pill {
     color: var(--rra-pill-fg, #fff);
   }
+  /* While the emoji reel or the text thought bubble shows, the face's own
+     thought bubble steps aside, so the two never stack up. */
+  .rra-avatar[data-overlay-bubble] #rra-think {
+    visibility: hidden;
+  }
   .rra-enter {
     animation: rra-enter var(--rra-enter-duration, 180ms) ease-out both;
   }

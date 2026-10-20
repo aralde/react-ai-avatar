@@ -230,12 +230,15 @@ export function AvatarFrame({
   const emojiReel = Array.isArray(thinkingEmojis) ? thinkingEmojis : thinkingEmojis ? DEFAULT_THINKING_EMOJIS : null;
   const emojiSize = thinkingEmojiSize ?? Math.round(width * 0.28);
   const showEmojis = state === 'thinking' && !!emojiReel && emojiReel.length > 0 && emojiSize > 0;
+  const showThoughtBubble = !showEmojis && showThought && !!thought;
 
   return (
     <AvatarStateContext.Provider value={state}>
       <div
         ref={rootRef}
         data-state={state}
+        // An overlay bubble replaces the face's own (#rra-think): one bubble at most (see lib.css).
+        data-overlay-bubble={showEmojis || showThoughtBubble ? '' : undefined}
         className={`rra-avatar rra:relative rra:flex rra:flex-col rra:items-center rra:justify-center ${className}`}
         style={{ width: resolvedSize, height: typeof resolvedSize === 'number' ? resolvedSize : undefined, aspectRatio: '1 / 1', ...style }}
       >
@@ -254,7 +257,7 @@ export function AvatarFrame({
         {showEmojis ? (
           <EmojiBubble emojis={emojiReel} interval={thinkingEmojiInterval} size={emojiSize} />
         ) : (
-          showThought && thought && <ThoughtBubble text={thought} />
+          showThoughtBubble && <ThoughtBubble text={thought} />
         )}
 
         {showStatePill && (

@@ -167,6 +167,13 @@ test.describe('overlays', () => {
     await expect(page.locator('.rra-thought-emoji > div')).toHaveCSS('width', '84px');
   });
 
+  test("hides the face's own thought bubble while the emoji reel shows", async ({ page }) => {
+    await open(page, 'realtime', { state: 'thinking', thinkingEmojis: true });
+    await expect(page.locator('#rra-think')).toHaveCSS('visibility', 'hidden');
+    await setProps(page, { thinkingEmojis: false });
+    await expect(page.locator('#rra-think')).toHaveCSS('visibility', 'visible');
+  });
+
   test('cycles the thinking emojis', async ({ page }) => {
     await open(page, 'realtime', { state: 'thinking', thinkingEmojis: true, thinkingEmojiInterval: 200 });
     const glyph = page.locator('.rra-thought-emoji span').last();
