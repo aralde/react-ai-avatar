@@ -96,9 +96,9 @@ What each import costs your bundle, tree-shaken, minified and gzipped, with Reac
 <!-- size:start -->
 | Import | gzip | budget |
 |---|---:|---:|
-| `RealtimeAvatar` (core) | 16.9 kB | 18 kB |
+| `RealtimeAvatar` (core) | 17.0 kB | 18 kB |
 | `OrbAvatar` | 1.9 kB | 3 kB |
-| `VideoAvatar` | 5.8 kB | 7 kB |
+| `VideoAvatar` | 5.9 kB | 7 kB |
 | `createSpeechActivity` only | 0.4 kB | 1 kB |
 | `react-ai-avatar/characters` (Squirrel) | 2.9 kB | 4 kB |
 | `react-ai-avatar/characters` (Portrait) | 39.8 kB | 42 kB |
@@ -127,6 +127,7 @@ What each import costs your bundle, tree-shaken, minified and gzipped, with Reac
 - [API reference](#api-reference)
 - [Building blocks](#building-blocks)
 - [Positioning](#positioning)
+- [Migrating from 0.6](#migrating-from-06)
 - [Migrating from 0.5](#migrating-from-05)
 - [Examples](#examples)
 - [Contributing](#contributing)
@@ -536,6 +537,23 @@ The closest reference is [TalkingHead](https://github.com/met4citizen/TalkingHea
 | Setup | avatar platform + Blender + rig | `npm i` + one component |
 
 For a photoreal face, `VideoAvatar` sits between a drawn face and the neural talking-head services (HeyGen, D-ID, Tavus, Simli). Those render real lip-sync server-side per conversation, are paid per minute, and add a streaming backend; `VideoAvatar` plays pre-made clips entirely in the browser, free and backend-less, at the cost of gated rather than synced lips.
+
+## Migrating from 0.6
+
+0.7 changes nothing at runtime; it makes mistakes visible. What changes for you:
+
+- **Props are typed per `variant`.** TypeScript now rejects a prop the variant ignores. The usual fixes: drop `maxMouthOpening` / `mouseTrackingIntensity` / blink timings from `variant="orb"`; drop `variant="byos"` or a preset `variant` when you pass children (children imply `byos`); keep `customization` on the flat presets only; always pass `vrmUrl` / `glbUrl` with `vrm` / `glb`. If you switch variants at runtime, give the variant with extra props its own branch:
+
+  ```tsx
+  {variant === 'dicebear' ? (
+    <RealtimeAvatar state={state} variant="dicebear" dicebearSeed={seed} />
+  ) : (
+    <RealtimeAvatar state={state} variant={variant} />
+  )}
+  ```
+
+- **The stylesheet is prefixed.** If your CSS targeted the library's internal utility classes (say `.rra-avatar .absolute`), target the `rra-*` hooks instead. Nothing to do otherwise.
+- **`customization` can be partial**: pass only the colors you change.
 
 ## Migrating from 0.5
 
