@@ -140,6 +140,9 @@ function Glow({ state, color, source }: { state: AvatarState; color: string; sou
   );
 }
 
+/** The bubble trail fades out: each dot mixes less of the border color in. */
+const trailMix = (percent: number) => ({ '--rra-bubble-border-mix': `${percent}%` }) as React.CSSProperties;
+
 /** "Thinking" emoji bubble, anchored in the avatar's own top-right corner. */
 function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: number; size: number }) {
   return (
@@ -148,12 +151,12 @@ function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: n
         <ThoughtEmojiBubble emojis={emojis} interval={interval} size={size} />
         {/* Trail circles leading down-left from the bubble toward the face */}
         <div
-          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/25 rra:shadow-md rra:backdrop-blur-md"
+          className="rra-bubble rra:absolute rra:rounded-full rra:shadow-md rra:backdrop-blur-md"
           style={{ width: size * 0.22, height: size * 0.22, bottom: -size * 0.14, left: -size * 0.02 }}
         />
         <div
-          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/20 rra:shadow-sm rra:backdrop-blur-md"
-          style={{ width: size * 0.14, height: size * 0.14, bottom: -size * 0.3, left: -size * 0.18 }}
+          className="rra-bubble rra:absolute rra:rounded-full rra:shadow-sm rra:backdrop-blur-md"
+          style={{ width: size * 0.14, height: size * 0.14, bottom: -size * 0.3, left: -size * 0.18, ...trailMix(20) }}
         />
       </div>
     </div>
@@ -167,9 +170,9 @@ function ThoughtBubble({ text }: { text: string }) {
       <div className="rra:relative">
         <AvatarThought text={text} className="rra:max-w-none" />
         {/* Thought trail circles pointing down toward the face */}
-        <div className="rra:absolute rra:-bottom-3 rra:left-1/2 rra:-translate-x-1/2 rra:w-4 rra:h-4 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/20 rra:shadow-md rra:backdrop-blur-md" />
-        <div className="rra:absolute rra:-bottom-6 rra:left-[48%] rra:-translate-x-1/2 rra:w-2.5 rra:h-2.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/15 rra:shadow-sm rra:backdrop-blur-md" />
-        <div className="rra:absolute rra:-bottom-8 rra:left-[47%] rra:-translate-x-1/2 rra:w-1.5 rra:h-1.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/10 rra:backdrop-blur-md" />
+        <div className="rra-bubble rra:absolute rra:-bottom-3 rra:left-1/2 rra:-translate-x-1/2 rra:w-4 rra:h-4 rra:rounded-full rra:shadow-md rra:backdrop-blur-md" style={trailMix(20)} />
+        <div className="rra-bubble rra:absolute rra:-bottom-6 rra:left-[48%] rra:-translate-x-1/2 rra:w-2.5 rra:h-2.5 rra:rounded-full rra:shadow-sm rra:backdrop-blur-md" style={trailMix(15)} />
+        <div className="rra-bubble rra:absolute rra:-bottom-8 rra:left-[47%] rra:-translate-x-1/2 rra:w-1.5 rra:h-1.5 rra:rounded-full rra:backdrop-blur-md" style={trailMix(10)} />
       </div>
     </div>
   );
@@ -180,11 +183,11 @@ function StatePill({ text, color, halo, ping }: { text: string; color: string; h
     <div
       role="status"
       aria-live="polite"
-      className="rra-state-pill rra:absolute rra:-bottom-6 rra:px-4 rra:py-1.5 rra:rounded-full rra:text-xs rra:font-bold rra:text-white rra:uppercase rra:tracking-widest rra:shadow-lg rra:z-30 rra:cursor-default rra:select-none rra:border rra:border-white/10"
+      className="rra-state-pill rra:absolute rra:-bottom-6 rra:px-4 rra:py-1.5 rra:rounded-full rra:text-xs rra:font-bold rra:uppercase rra:tracking-widest rra:shadow-lg rra:z-30 rra:cursor-default rra:select-none rra:border rra:border-white/10"
       style={{ backgroundColor: color, boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${hexToRgba(color, halo)}` }}
     >
       <span className="rra:flex rra:items-center rra:gap-1.5">
-        <span className={`rra:w-2 rra:h-2 rra:rounded-full rra:bg-white ${ping ? 'rra:animate-ping' : ''}`} />
+        <span className={`rra:w-2 rra:h-2 rra:rounded-full rra:bg-current ${ping ? 'rra:animate-ping' : ''}`} />
         {text}
       </span>
     </div>

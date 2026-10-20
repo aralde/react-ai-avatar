@@ -148,6 +148,11 @@ test.describe('overlays', () => {
     await expect(pill).toHaveText('Working: search_web');
   });
 
+  test('restyles the overlays through the theme variables', async ({ page }) => {
+    await open(page, 'realtime', { style: { '--rra-pill-fg': '#ff0000' } });
+    await expect(page.locator('.rra-state-pill')).toHaveCSS('color', 'rgb(255, 0, 0)');
+  });
+
   test('names the avatar for assistive tech', async ({ page }) => {
     await open(page, 'realtime', { label: 'Asistente', state: 'speaking' });
     await expect(page.getByRole('img', { name: 'Asistente (Speaking)' })).toBeVisible();
