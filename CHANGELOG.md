@@ -23,6 +23,7 @@ Hardening release: the type checker catches props that do nothing, the styleshee
 - The library build type-checks with `strict`, `noUnusedLocals` and `noUnusedParameters`.
 
 ### Fixed
+- One thought bubble at a time: while the emoji reel or the text thought bubble shows, the face's own `#rra-think` bubble steps aside instead of stacking under it.
 - `VideoAvatar` clips the footage to the frame's `border-radius` again: `style={{ borderRadius: '50%' }}` rounds the video, as in 0.5. (0.6 let the overlays overflow the frame and stopped clipping the clips.)
 - An unused `React` import in `VideoAvatar` broke consumers that type-check the source with `noUnusedLocals`.
 
