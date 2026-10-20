@@ -105,14 +105,14 @@ export function OrbAvatar({
     <div
       data-orb=""
       data-state={state}
-      className={`relative flex items-center justify-center ${className}`}
+      className={`rra:relative rra:flex rra:items-center rra:justify-center ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {state === 'working' && (
         <div
           data-orb-ring=""
           aria-hidden="true"
-          className={`absolute rounded-full ${reducedMotion ? '' : 'animate-spin'}`}
+          className={`rra:absolute rra:rounded-full ${reducedMotion ? '' : 'rra:animate-spin'}`}
           style={{
             inset: '3%',
             background: `conic-gradient(from 0deg, transparent 0 65%, ${color} 100%)`,
@@ -125,7 +125,7 @@ export function OrbAvatar({
       <div
         ref={bodyRef}
         data-orb-body=""
-        className="rra-glow relative rounded-full overflow-hidden"
+        className="rra-glow rra:relative rra:rounded-full rra:overflow-hidden"
         style={{
           width: '80%',
           height: '80%',
@@ -136,10 +136,10 @@ export function OrbAvatar({
         <div
           ref={swirlRef}
           aria-hidden="true"
-          className="absolute rounded-full"
+          className="rra:absolute rra:rounded-full"
           style={{ inset: '-15%', background: SWIRL, filter: 'blur(6px)' }}
         />
-        <div aria-hidden="true" className="absolute inset-0 rounded-full" style={{ background: SHINE }} />
+        <div aria-hidden="true" className="rra:absolute rra:inset-0 rra:rounded-full" style={{ background: SHINE }} />
       </div>
     </div>
   );

@@ -13,7 +13,17 @@ import './lib.css';
  */
 
 export { RealtimeAvatar } from '../components/RealtimeAvatar';
-export type { RealtimeAvatarProps, RealtimeAvatarVariant } from '../components/RealtimeAvatar';
+export type {
+  RealtimeAvatarProps,
+  RealtimeAvatarVariant,
+  FaceTuningProps,
+  PresetAvatarProps,
+  ByosAvatarProps,
+  OrbVariantProps,
+  DiceBearVariantProps,
+  VrmVariantProps,
+  GlbVariantProps,
+} from '../components/RealtimeAvatar';
 
 // The "clip" technique: a looping video per state, crossfaded. Bring your own footage.
 export { VideoAvatar } from '../components/VideoAvatar';

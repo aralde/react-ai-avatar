@@ -23,12 +23,13 @@ export default function AvatarCatalog() {
     <div style={{ display: 'grid', gap: 16, justifyItems: 'center' }}>
       {/* `speaking` with no analyser uses the synthetic mouth, so every preset
           visibly talks here without any audio wiring. */}
-      <RealtimeAvatar
-        state="speaking"
-        variant={variant}
-        dicebearCollection="open-peeps"
-        dicebearSeed="ada-lovelace"
-      />
+      {/* Each variant takes its own props (a type error otherwise), so the
+          one with extra props gets its own branch. */}
+      {variant === 'dicebear' ? (
+        <RealtimeAvatar state="speaking" variant="dicebear" dicebearCollection="open-peeps" dicebearSeed="ada-lovelace" />
+      ) : (
+        <RealtimeAvatar state="speaking" variant={variant} />
+      )}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
         {[...FLAT, 'dicebear' as const].map((v) => (

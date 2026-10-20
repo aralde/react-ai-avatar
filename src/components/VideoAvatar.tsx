@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { AvatarState } from '../lib/types';
 import { createMouthEngine, type MouthSource } from '../lib/mouthEngine';
 import { useMouthSource, type MouthDriverProps } from '../lib/useMouthSource';
@@ -214,7 +214,9 @@ export function VideoAvatar({
 
   return (
     <AvatarFrame {...chrome} defaultSize="100%" mouthSource={mouthSource}>
-      <div data-clips="" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+      {/* The frame lets the overlays overflow, so the clip layer does the
+          clipping, with the radius the host gave the frame (`style`/`className`). */}
+      <div data-clips="" style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 'inherit' }}>
         {entries.map(({ id, clip, loop }) => (
           <video
             key={id}

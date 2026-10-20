@@ -4,6 +4,26 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] — 2026-10-20
+
+Hardening release: the type checker catches props that do nothing, the stylesheet can't clash with yours, and a rounded `VideoAvatar` is round again. See "Migrating from 0.6" in the README.
+
+### Breaking
+- **`RealtimeAvatarProps` is one shape per `variant`.** A prop that doesn't apply is now a type error instead of being ignored: `vrmUrl` on the orb, `children` on a preset, `maxMouthOpening` on the orb, `customization` outside the flat presets, `dicebearSeed` outside `dicebear`. `variant="vrm"` and `"glb"` require `vrmUrl` / `glbUrl`. A variant chosen at runtime still type-checks when the props you pass fit every variant it can be. Runtime behavior is unchanged.
+- **The stylesheet is prefixed.** Every utility the library ships is `rra:`-prefixed and its theme variables are `--rra-*`, so it can't override or reorder an app's own Tailwind classes (`.flex`, `.absolute`, …) or `--color-*` variables. The `rra-*` hook classes (`rra-avatar`, `rra-state-pill`, `rra-glow`, …) keep their names; only CSS that targeted the library's internal utility classes needs updating.
+
+### Added
+- Per-variant prop types: `PresetAvatarProps`, `ByosAvatarProps`, `OrbVariantProps`, `DiceBearVariantProps`, `VrmVariantProps`, `GlbVariantProps` and `FaceTuningProps`.
+- Type tests (`src/lib/variantProps.test.tsx`): `npm run lint` fails if a prop that doesn't apply stops being rejected.
+
+### Changed
+- `RealtimeAvatar`'s `customization` takes a partial object (only the keys you change), like the presets themselves.
+- The library build type-checks with `strict`, `noUnusedLocals` and `noUnusedParameters`.
+
+### Fixed
+- `VideoAvatar` clips the footage to the frame's `border-radius` again: `style={{ borderRadius: '50%' }}` rounds the video, as in 0.5. (0.6 let the overlays overflow the frame and stopped clipping the clips.)
+- An unused `React` import in `VideoAvatar` broke consumers that type-check the source with `noUnusedLocals`.
+
 ## [0.6.0] — 2026-10-20
 
 Focus release: a smaller core, one API for both avatar components, and the runtime tested in a real browser. See "Migrating from 0.5" in the README.
@@ -98,6 +118,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[0.7.0]: https://github.com/aralde/react-ai-avatar/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/aralde/react-ai-avatar/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aralde/react-ai-avatar/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aralde/react-ai-avatar/compare/v0.3.0...v0.4.0

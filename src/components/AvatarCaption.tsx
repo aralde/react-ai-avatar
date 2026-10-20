@@ -40,14 +40,14 @@ export function AvatarCaption({ text, maxChars = 160, className = '', style }: A
 
   return (
     <div
-      className={`rra-caption w-full flex justify-center pointer-events-none ${className}`}
+      className={`rra-caption rra:w-full rra:flex rra:justify-center rra:pointer-events-none ${className}`}
       style={style}
     >
       <span
         key={clean}
         role="status"
         aria-live="polite"
-        className="rra-enter inline-block max-w-[640px] text-center text-base md:text-lg font-medium text-zinc-100 leading-relaxed px-5 py-3 rounded-2xl border border-zinc-700/40 break-words"
+        className="rra-enter rra:inline-block rra:max-w-[640px] rra:text-center rra:text-base rra:md:text-lg rra:font-medium rra:text-zinc-100 rra:leading-relaxed rra:px-5 rra:py-3 rra:rounded-2xl rra:border rra:border-zinc-700/40 rra:break-words"
         style={{
           textShadow: '0px 1px 3px rgba(0,0,0,0.5)',
           background: 'rgba(9, 9, 11, 0.8)',
@@ -84,15 +84,15 @@ export function AvatarThought({
 
   return (
     <div
-      className={`rra-thought rra-enter w-full max-w-[420px] text-left pointer-events-none ${className}`}
+      className={`rra-thought rra-enter rra:w-full rra:max-w-[420px] rra:text-left rra:pointer-events-none ${className}`}
       style={{ ...ENTER_SOFT, ...style }}
     >
-      <div className="bg-zinc-900/90 backdrop-blur-xl text-zinc-100 px-5 py-4 rounded-3xl shadow-[0_10px_30px_rgba(139,92,246,0.15)] border border-purple-500/25 text-sm italic break-words">
-        <div className="text-purple-400 text-[10px] uppercase tracking-widest font-mono font-bold mb-1 flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
+      <div className="rra:bg-zinc-900/90 rra:backdrop-blur-xl rra:text-zinc-100 rra:px-5 rra:py-4 rra:rounded-3xl rra:shadow-[0_10px_30px_rgba(139,92,246,0.15)] rra:border rra:border-purple-500/25 rra:text-sm rra:italic rra:break-words">
+        <div className="rra:text-purple-400 rra:text-[10px] rra:uppercase rra:tracking-widest rra:font-mono rra:font-bold rra:mb-1 rra:flex rra:items-center rra:gap-1.5">
+          <span className="rra:w-1.5 rra:h-1.5 rra:rounded-full rra:bg-purple-400 rra:animate-pulse" />
           {label}
         </div>
-        <p className="leading-relaxed text-zinc-200">{clean}</p>
+        <p className="rra:leading-relaxed rra:text-zinc-200">{clean}</p>
       </div>
     </div>
   );
@@ -149,21 +149,21 @@ export function ThoughtEmojiBubble({
 
   return (
     <div
-      className={`rra-thought-emoji rra-enter flex justify-center pointer-events-none ${className}`}
+      className={`rra-thought-emoji rra-enter rra:flex rra:justify-center rra:pointer-events-none ${className}`}
       style={{ ...ENTER_BUBBLE, ...style }}
       role="status"
       aria-live="off"
       aria-label="Thinking"
     >
       <div
-        className="relative flex items-center justify-center rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
+        className="rra:relative rra:flex rra:items-center rra:justify-center rra:rounded-full rra:bg-zinc-900/90 rra:backdrop-blur-xl rra:border rra:border-purple-500/25 rra:shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
         style={{ width: size, height: size }}
       >
         {/* Keyed by index: exactly one glyph is ever mounted, and each new one
             pops in. (An earlier exit-animation version leaked stacked spans.) */}
         <span
           key={index}
-          className={`${index === 0 ? '' : 'rra-enter-pop '}absolute leading-none select-none`}
+          className={`${index === 0 ? '' : 'rra-enter-pop '}rra:absolute rra:leading-none rra:select-none`}
           style={{ fontSize: Math.round(size * 0.5) }}
         >
           {current}

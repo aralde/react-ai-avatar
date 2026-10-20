@@ -220,25 +220,25 @@ export function AudioVisualizer({
   }, [analyser, state, stateColors]);
 
   return (
-    <div className={`w-full bg-zinc-950/80 border border-zinc-800/40 rounded-xl overflow-hidden p-2 ${className}`} style={style}>
-      <div className="flex justify-between items-center px-2 mb-1">
-        <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-mono font-bold">
+    <div className={`rra:w-full rra:bg-zinc-950/80 rra:border rra:border-zinc-800/40 rra:rounded-xl rra:overflow-hidden rra:p-2 ${className}`} style={style}>
+      <div className="rra:flex rra:justify-between rra:items-center rra:px-2 rra:mb-1">
+        <span className="rra:text-[10px] rra:text-zinc-500 rra:uppercase rra:tracking-widest rra:font-mono rra:font-bold">
           Audio Waveform Telemetry
         </span>
-        <span className="flex h-2 w-2 relative">
+        <span className="rra:flex rra:h-2 rra:w-2 rra:relative">
           <span 
-            className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+            className="rra:animate-ping rra:absolute rra:inline-flex rra:h-full rra:w-full rra:rounded-full rra:opacity-75"
             style={{ backgroundColor: resolvedStateColors[state] }}
           />
           <span 
-            className="relative inline-flex rounded-full h-2 w-2"
+            className="rra:relative rra:inline-flex rra:rounded-full rra:h-2 rra:w-2"
             style={{ backgroundColor: resolvedStateColors[state] }}
           />
         </span>
       </div>
       <canvas
         ref={canvasRef}
-        className="w-full block"
+        className="rra:w-full rra:block"
         style={{ height }}
       />
     </div>

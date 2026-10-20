@@ -56,7 +56,7 @@ export function ContractAvatar({
   return (
     <div
       ref={containerRef}
-      className={`relative flex items-center justify-center ${className}`}
+      className={`rra:relative rra:flex rra:items-center rra:justify-center ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {children}
