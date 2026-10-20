@@ -4,7 +4,7 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] — Unreleased
+## [0.6.0] — 2026-10-20
 
 Focus release: a smaller core, one API for both avatar components, and the runtime tested in a real browser. See "Migrating from 0.5" in the README.
 
@@ -98,7 +98,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
-[0.6.0]: https://github.com/aralde/react-ai-avatar/compare/v0.5.0...HEAD
+[0.6.0]: https://github.com/aralde/react-ai-avatar/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aralde/react-ai-avatar/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aralde/react-ai-avatar/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aralde/react-ai-avatar/compare/v0.2.0...v0.3.0
