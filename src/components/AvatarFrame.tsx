@@ -143,10 +143,11 @@ function Glow({ state, color, source }: { state: AvatarState; color: string; sou
 /** The bubble trail fades out: each dot mixes less of the border color in. */
 const trailMix = (percent: number) => ({ '--rra-bubble-border-mix': `${percent}%` }) as React.CSSProperties;
 
-/** "Thinking" emoji bubble, anchored in the avatar's own top-right corner. */
+/** "Thinking" emoji bubble at the avatar's top-right corner, raised above the
+ *  head so it doesn't cover the face. It overflows the box visually only. */
 function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: number; size: number }) {
   return (
-    <div className="rra:absolute rra:z-40" style={{ top: '2%', right: '2%' }}>
+    <div className="rra:absolute rra:z-40" style={{ top: -size * 0.45, right: '-2%' }}>
       <div className="rra:relative">
         <ThoughtEmojiBubble emojis={emojis} interval={interval} size={size} />
         {/* Trail circles leading down-left from the bubble toward the face */}
@@ -167,13 +168,7 @@ function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: n
 function ThoughtBubble({ text }: { text: string }) {
   return (
     <div className="rra:absolute rra:bottom-[108%] rra:left-1/2 rra:-translate-x-1/2 rra:w-[90vw] rra:max-w-[340px] rra:md:max-w-[420px] rra:z-40">
-      <div className="rra:relative">
-        <AvatarThought text={text} className="rra:max-w-none" />
-        {/* Thought trail circles pointing down toward the face */}
-        <div className="rra-bubble rra:absolute rra:-bottom-3 rra:left-1/2 rra:-translate-x-1/2 rra:w-4 rra:h-4 rra:rounded-full rra:shadow-md rra:backdrop-blur-md" style={trailMix(20)} />
-        <div className="rra-bubble rra:absolute rra:-bottom-6 rra:left-[48%] rra:-translate-x-1/2 rra:w-2.5 rra:h-2.5 rra:rounded-full rra:shadow-sm rra:backdrop-blur-md" style={trailMix(15)} />
-        <div className="rra-bubble rra:absolute rra:-bottom-8 rra:left-[47%] rra:-translate-x-1/2 rra:w-1.5 rra:h-1.5 rra:rounded-full rra:backdrop-blur-md" style={trailMix(10)} />
-      </div>
+      <AvatarThought text={text} className="rra:max-w-none" />
     </div>
   );
 }
