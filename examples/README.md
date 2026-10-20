@@ -24,6 +24,7 @@ consumer would, so what you read is what you ship.
 | 09 | [`09-thinking-emoji-reel.tsx`](09-thinking-emoji-reel.tsx) | Emulated "thinking" via `thinkingEmojis`: an emoji reel on the face, reasoning text rendered separately in the chat. Runs against the local mock — no backend. | — |
 | 10 | [`10-character-avatar-developer.tsx`](10-character-avatar-developer.tsx) | A second branded character on the same contract (young dev: beanie, headphones, glasses) — proof the hooks don't care what you draw around them. | — |
 | 11 | [`11-portrait-avatar.tsx`](11-portrait-avatar.tsx) | The "puppet" technique: a fixed illustration with only the moving parts drawn on top as vector layers (`PortraitAvatar`), plus opt-in `poses` (coffee break, back view while working). | — |
+| 12 | [`12-video-avatar.tsx`](12-video-avatar.tsx) | The "clip" technique: a looping video per state, crossfaded (`VideoAvatar`), with gated speaking, idle variations and flicker-free tool bursts. Bring your own footage — see [`scripts/prepare-video-clips.ts`](../scripts/prepare-video-clips.ts). | — |
 
 ## Shared helpers
 

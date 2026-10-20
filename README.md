@@ -92,6 +92,7 @@ For the optional 3D (VRM) variant, also install `three @react-three/fiber @react
 - [Bring your own SVG (`byos`)](#bring-your-own-svg-byos)
 - [3D avatars (VRM and GLB)](#3d-avatars-vrm-and-glb)
 - [DiceBear avatars (`dicebear`)](#dicebear-avatars-dicebear)
+- [Video avatars (`VideoAvatar`)](#video-avatars-videoavatar)
 - [API reference](#api-reference)
 - [Building blocks](#building-blocks)
 - [Positioning](#positioning)
@@ -114,6 +115,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
 - ♿ **Production quality** — SSR-safe (Next.js friendly), honors `prefers-reduced-motion`, announces state changes via `aria-live`.
+- 🎬 **Video avatars (`VideoAvatar`)** — bring your own footage: one short looping clip per state (generated with a text-to-video model or recorded), crossfaded on state changes, with speech-gated talking, idle variations and flicker-free tool bursts. Photoreal, still 100% client-side.
 - 🧊 **Optional 3D (VRM/GLB)** — `variant="vrm"` / `variant="glb"` render VRoid/VRM and ARKit-rigged glTF models with visemes and gaze tracking. The three.js stack is an *optional* peer dependency, lazy-loaded only if you use it.
 
 ## The avatar catalog
@@ -130,6 +132,8 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 | `byos` | **your** SVG | pass it as children; see the layer contract |
 
 All built-in presets are original designs licensed MIT — nothing inside this package requires attribution.
+
+Want a photoreal face instead of a drawn one? That's not a `variant` but its own component: see [Video avatars](#video-avatars-videoavatar).
 
 ## Driving the mouth
 
@@ -300,6 +304,70 @@ npm install @dicebear/core @dicebear/collection
 
 **Animation:** DiceBear SVGs have no `#rra-*` hooks, but their *option API* lets us pick which mouth/eyes variant to render. So every curated style actually **talks**: it pre-generates a few frames of the same avatar (same seed ⇒ identical hair/skin/etc.) with closed / mid / open mouths — plus a blink frame where the style allows — and swaps which frame is shown per audio frame, with a subtle bounce on top. Real articulation via the supported API, no fragile path hacks. The per-style variant choices live in the exported `DICEBEAR_RIGS` map. (A non-rigged style id you pass yourself — e.g. a faceless abstract DiceBear style — falls back to a pure audio-reactive bounce.) State color and the thinking bubble still come from the surrounding `<RealtimeAvatar />` chrome.
 
+## Video avatars (`VideoAvatar`)
+
+Instead of drawing a face, play footage: one short looping clip per state, crossfaded when `state` changes. The package ships **no** footage — you pass the URLs.
+
+```tsx
+import { VideoAvatar, type VideoClips, type IdleVariation } from 'react-ai-avatar';
+
+const clip = (name: string) => ({ webm: `/clips/${name}.webm`, mp4: `/clips/${name}.mp4` });
+
+// Module constants (or useMemo): a new array identity restarts the idle timer.
+const CLIPS: VideoClips = {
+  idle: clip('idle'),           // required
+  listening: clip('listening'), // every other state is optional:
+  thinking: clip('thinking'),   //   working → thinking → idle, the rest → idle
+  working: clip('working'),
+  speaking: clip('speaking'),
+};
+const IDLE_VARIATIONS: IdleVariation[] = [
+  { clip: clip('idle-stretch'), cooldownMs: 60_000 },
+  { clip: clip('idle-coffee'), afterIdleMs: 90_000, cooldownMs: 300_000 },
+];
+
+<VideoAvatar
+  clips={CLIPS}
+  state={aiState}
+  speechActivity={speech}       // or analyser={analyser}
+  idleVariations={IDLE_VARIATIONS}
+  poster="/clips/poster.jpg"
+  size={320}
+  style={{ borderRadius: '50%' }}
+/>
+```
+
+What it does for you:
+
+- **Speech-gated talking.** With `speechActivity` or `analyser`, the speaking clip shows only while there's speech energy; after ~0.7 s of silence it falls back to idle and resumes when speech does. Commas and word gaps don't trigger it, only real pauses.
+- **Idle variations.** One-shot clips played now and then while idle (every `idleVariationIntervalMs`, default 15–30 s), each with its own `afterIdleMs` (e.g. the coffee only after a long wait) and `cooldownMs`. Any state change cancels them.
+- **No flicker on tool bursts.** An agent loop flips `thinking ↔ working` on every tool call. A clip stays on screen at least `minHoldMs` (default 1.2 s), and swaps between those two wait until the new state has held for `busySettleMs` (default 1 s) — a burst of short tools keeps the face still; only a long-running one shows `working`.
+- **Seamless cuts.** Clips crossfade (`crossfadeMs`, default 350) and resume where they paused instead of restarting.
+- `prefers-reduced-motion` holds a still frame and skips idle variations.
+
+### Making the clips
+
+The whole technique hinges on a **hub frame**: one neutral pose (relaxed face, mouth closed, looking into the camera) that every clip starts *and* ends on, so loops close and cuts don't jump.
+
+1. **Make the hub frame** — a still of your character (generate one, or grab the first frame of a clip).
+2. **Generate each clip from it.** In tools that support first- and last-frame conditioning (e.g. Google Veo's "Frames to video" in Flow), pass the hub frame as **both** — the clip then returns exactly to where it started. Keep the camera locked and the framing identical across clips.
+3. **Prepare it** with [`scripts/prepare-video-clips.ts`](scripts/prepare-video-clips.ts) (needs `ffmpeg`): square crop, scale, strip audio, encode WebM + MP4. `--mode loop` (default) makes a *boomerang* — the range forward then reversed — so even a clip that drifts loops without a jump; `--mode once` is for idle variations. Use `--from`/`--to` to keep only the usable part.
+
+```bash
+node --experimental-strip-types scripts/prepare-video-clips.ts raw/idle.mp4 --name idle --from 4.2 --to 8 --out public/clips --poster
+node --experimental-strip-types scripts/prepare-video-clips.ts raw/coffee.mp4 --name idle-coffee --mode once --out public/clips
+```
+
+**Prompting tip:** video models love to make a person facing the camera start *talking* — and negations ("does not speak", "no dialogue") tend to backfire by putting speech in the prompt. Describe what the face *does* instead, frame it as a still scene, and give the audio track something else to be about:
+
+```
+Cinematic living portrait, like a photograph that gently comes alive. [character + setting, same as the hub frame]. Static tripod camera, no camera movement, no cuts. He sits peacefully: relaxed closed lips with a faint calm smile, slow steady breathing, two slow blinks, a barely perceptible head sway. Starts and ends in exactly the pose of the reference frame. Audio: soft birdsong outside the window and a quiet room ambience. No text, no music.
+```
+
+If a clip still talks for part of it, keep it anyway and trim to the silent stretch with `--from`/`--to`.
+
+**Limits, honestly:** the mouth isn't synced to the words — speaking is gated on/off by speech energy, not phoneme-accurate. Speech detection runs on `requestAnimationFrame`, so it pauses in background tabs. Clips must be muted to autoplay (they are). Seven 512 px clips run about 3 MB as WebM; they're loaded up front (`preload="auto"`) so switches are instant. See [`examples/12-video-avatar.tsx`](examples/12-video-avatar.tsx).
+
 ## API reference
 
 ### `<RealtimeAvatar />`
@@ -322,6 +390,16 @@ npm install @dicebear/core @dicebear/collection
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
 - `stateColors`, `stateLabels` — theming; labels are announced via `aria-live`. Both cover all five states including `working`.
 - `customization` — preset colors and accessories (skin, hair, clothing, glasses, headphones…).
+
+### `<VideoAvatar />`
+
+- `clips` (`VideoClips`) — required. A clip per state; `idle` is required, the rest fall back (`working` → `thinking` → `idle`, others → `idle`). Each clip is a URL or `{ webm, mp4 }` (WebM is offered first).
+- `state` — same five states as `RealtimeAvatar`. Default `'idle'`.
+- `speechActivity` (`SpeechActivitySource`) / `analyser` (`AnalyserNode | null`) — optional speech drivers that gate the speaking clip; `speechActivity` takes precedence. Without either, `speaking` simply plays its clip.
+- `idleVariations` (`IdleVariation[]`) — one-shot clips `{ clip, afterIdleMs?, cooldownMs? }` played now and then while idle. Keep the array stable.
+- `idleVariationIntervalMs` (`[min, max]`, default `[15000, 30000]`) — random wait between variations.
+- `minHoldMs` (default `1200`) / `busySettleMs` (default `1000`) — anti-flicker: minimum time on screen, and how long `thinking`/`working` must hold before swapping between them.
+- `crossfadeMs` (default `350`), `poster`, `size` (default `'100%'`), `label` (accessible name, default `'Avatar'`; announced as `"{label} ({state})"`), `className`, `style`.
 
 ### Building blocks
 
@@ -354,9 +432,11 @@ The closest reference is [TalkingHead](https://github.com/met4citizen/TalkingHea
 | Makes visible | the voice | the *thinking* |
 | Setup | avatar platform + Blender + rig | `npm i` + one component |
 
+For a photoreal face, `VideoAvatar` sits between a drawn face and the neural talking-head services (HeyGen, D-ID, Tavus, Simli). Those render real lip-sync server-side per conversation, are paid per minute, and add a streaming backend; `VideoAvatar` plays pre-made clips entirely in the browser, free and backend-less, at the cost of gated rather than synced lips.
+
 ## Examples
 
-Copy-pasteable, single-file integration examples — including a reference relay server for real voice/text providers — live in [`examples/`](examples/). One file per integration pattern (quickstart, `useChat`, imperative streaming, audio analyser, the avatar catalog, `byos`, Gemini Live voice, a branded character). The runnable, hosted versions (client-side mock, no API key) live on the [docs site](https://react-ai-avatar.vercel.app/).
+Copy-pasteable, single-file integration examples — including a reference relay server for real voice/text providers — live in [`examples/`](examples/). One file per integration pattern (quickstart, `useChat`, imperative streaming, audio analyser, the avatar catalog, `byos`, Gemini Live voice, branded characters, a video avatar). The runnable, hosted versions (client-side mock, no API key) live on the [docs site](https://react-ai-avatar.vercel.app/).
 
 ## Contributing
 

@@ -29,6 +29,11 @@ export type { CoderAvatarProps } from '../components/CoderAvatar';
 export { PortraitAvatar } from '../components/PortraitAvatar';
 export type { PortraitAvatarProps } from '../components/PortraitAvatar';
 
+// The "clip" technique: a looping video per state, crossfaded. Bring your own footage.
+export { VideoAvatar } from '../components/VideoAvatar';
+export type { VideoAvatarProps } from '../components/VideoAvatar';
+export type { VideoClips, VideoClipSource, IdleVariation } from './videoClips';
+
 export { DiceBearAvatar } from '../components/DiceBearAvatar';
 export type { DiceBearAvatarProps } from '../components/DiceBearAvatar';
 export { DiceBearThumb } from '../components/DiceBearThumb';
