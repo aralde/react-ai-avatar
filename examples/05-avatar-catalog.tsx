@@ -3,17 +3,18 @@
  *
  * Every built-in flat preset is original, MIT, CC0-safe (no attribution).
  * They all share the same animation runtime, so the only thing that changes is
- * `variant`. `dicebear` is included here too — it's generated client-side from a
- * curated CC0 style set and needs its optional peers installed.
+ * `variant`. `orb` swaps the face for a voice-assistant sphere. `dicebear` is
+ * included here too — it's generated client-side from a curated CC0 style set
+ * and needs its optional peers installed.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  *      # for the dicebear option: npm install @dicebear/core @dicebear/collection
  */
 import { useState } from 'react';
 import { RealtimeAvatar } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';
 
-const FLAT = ['geometric', 'memoji', 'pixelart', 'doodle'] as const;
+const FLAT = ['geometric', 'memoji', 'pixelart', 'doodle', 'orb'] as const;
 
 export default function AvatarCatalog() {
   const [variant, setVariant] = useState<(typeof FLAT)[number] | 'dicebear'>('geometric');

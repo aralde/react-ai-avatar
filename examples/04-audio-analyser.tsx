@@ -10,7 +10,7 @@
  * Here we synthesize a short tone instead of a real model so the example runs
  * standalone — the analyser plumbing is exactly what you'd use in production.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { useRef, useState } from 'react';
 import { RealtimeAvatar } from 'react-ai-avatar';
