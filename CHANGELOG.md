@@ -4,6 +4,33 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] — 2026-10-20
+
+Focus release: a smaller core, one API for both avatar components, and the runtime tested in a real browser. See "Migrating from 0.5" in the README.
+
+### Breaking
+- **`motion` is no longer a dependency.** The overlays (pill, glow, captions, thought and emoji bubbles) animate with CSS and `requestAnimationFrame`; `prefers-reduced-motion` turns the CSS animations off in one place. `react` and `react-dom` are the only required peers.
+- **Characters moved to `react-ai-avatar/characters`** (`SquirrelAvatar`, `CoderAvatar`, `PortraitAvatar`) and **DiceBear to `react-ai-avatar/dicebear`** (`DiceBearAvatar`, `DiceBearThumb`, `DICEBEAR_*`, `loadDiceBear`, `renderDiceBearSvg`, …). `variant="dicebear"` keeps working and now lazy-loads its renderer.
+- **`VideoAvatar` renders the same overlays as `RealtimeAvatar`** (pill, glow, bubbles, subtitles), on by default. Pass `showStatePill={false} showGlow={false}` for the 0.5 look.
+- The accessible name reads `"{label} ({state label})"`, so `stateLabels` localizes it (was the raw state id).
+
+### Added
+- **`variant="orb"` and `OrbAvatar`** — the voice-assistant sphere: breathes while idle, swirls while thinking, spins a ring while working, swells with the voice while speaking; tinted by `stateColors`, still under reduced motion.
+- **`react-ai-avatar/3d`** — `VrmAvatar` and `GlbArkitAvatar` (`react-ai-avatar/vrm` stays as an alias; it now also exports `GlbArkitAvatar`).
+- **`state` is passed once.** Faces rendered as children inherit it through `AvatarStateContext`; the characters read it with the new `useAvatarState()` hook, and your own faces can too. Passing children now implies `variant="byos"`.
+- Shared props for both components: `AvatarChromeProps` (overlays) and `MouthDriverProps` (`analyser` / `speechActivity` / `streamingText`). `VideoAvatar` gains `streamingText`, `tool`, `subtitle`, `thought`, `thinkingEmojis`, `stateColors`, `stateLabels` and the `show*` toggles; `RealtimeAvatar` gains `label`.
+- `size` takes a number or any CSS length on every component (the box stays square). `RealtimeAvatar`'s `state` defaults to `'idle'`.
+- `DEFAULT_STATE_COLORS`, `DEFAULT_STATE_LABELS` and the `RealtimeAvatarVariant` type are exported.
+- `scripts/size.mjs` (`npm run size`) — what each import costs a consumer, tree-shaken and gzipped; `--check` enforces per-entry budgets in CI and `--readme` updates the table in the README.
+- Browser tests with Playwright (`npm run test:e2e`, new CI job): blink, mouth opening and closing, gaze tracking, thought bubble, ring color, reduced motion, the pill, emoji reel, `byos` state inheritance, the orb and `VideoAvatar` crossfades.
+
+### Changed
+- The build keeps one file per module (`preserveModules`), so bundlers tree-shake the package properly. What a consumer ships for `RealtimeAvatar` dropped from ~59 kB to ~17 kB gzip (motion included in the before), and `createSpeechActivity` alone from ~7 kB to 0.4 kB.
+- `package-lock.json` resynced with `package.json` (it still listed packages from the old demo app).
+
+### Removed
+- The unused internal `DefaultAvatar` component. `AvatarCustomization` and `AvatarProps` are still exported, now from `types`.
+
 ## [0.5.0] — 2026-10-20
 
 ### Added
@@ -71,6 +98,7 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[0.6.0]: https://github.com/aralde/react-ai-avatar/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aralde/react-ai-avatar/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/aralde/react-ai-avatar/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/aralde/react-ai-avatar/compare/v0.2.0...v0.3.0

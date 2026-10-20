@@ -6,7 +6,7 @@
  * screen before any audio or model pipeline exists.
  *
  * Run: drop this into any Vite + React app, then
- *   npm install react-ai-avatar motion
+ *   npm install react-ai-avatar
  */
 import { useEffect, useState } from 'react';
 import { RealtimeAvatar } from 'react-ai-avatar';

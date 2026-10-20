@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { AvatarState } from '../lib/types';
 import { createMouthEngine, type MouthSource } from '../lib/mouthEngine';
-import type { SpeechActivitySource } from '../lib/speechActivity';
+import { useMouthSource, type MouthDriverProps } from '../lib/useMouthSource';
 import { useReducedMotion } from '../lib/useReducedMotion';
 import {
   clipSources,
@@ -13,6 +13,7 @@ import {
   type IdleVariation,
   type VideoClips,
 } from '../lib/videoClips';
+import { AvatarFrame, type AvatarChromeProps } from './AvatarFrame';
 
 /**
  * VideoAvatar — the "clip" technique: instead of drawing a face, it plays a
@@ -28,16 +29,14 @@ import {
  * - `minHoldMs` / `busySettleMs` keep an agent that flips thinking ↔ working on
  *   every tool call from making the face flicker.
  *
+ * It shares `RealtimeAvatar`'s props for the overlays (pill, bubbles,
+ * subtitles, glow) and for the mouth drivers.
+ *
  * The library ships no footage: the host passes the clip URLs.
  */
 
-export interface VideoAvatarProps {
+export interface VideoAvatarProps extends AvatarChromeProps, MouthDriverProps {
   clips: VideoClips;
-  state?: AvatarState;
-  /** Token-rate speech driver for text-streaming LLMs. Takes precedence over `analyser`. */
-  speechActivity?: SpeechActivitySource;
-  /** WebAudio analyser of the assistant's voice. Gates the `speaking` clip on speech energy. */
-  analyser?: AnalyserNode | null;
   /** One-shot clips interleaved with the idle loop. Keep the array stable
    *  (module constant or `useMemo`): a new array restarts the idle timer. */
   idleVariations?: IdleVariation[];
@@ -49,14 +48,8 @@ export interface VideoAvatarProps {
   busySettleMs?: number;
   /** Image shown before the first clip can play (ideally the hub frame). */
   poster?: string;
-  /** Width/height. Defaults to `'100%'`. */
-  size?: number | string;
   /** Crossfade duration between clips, in ms. */
   crossfadeMs?: number;
-  /** Accessible name for the avatar. */
-  label?: string;
-  className?: string;
-  style?: React.CSSProperties;
 }
 
 /** Mouth level above which the speaker counts as talking. */
@@ -173,22 +166,21 @@ function useHeld(desired: string, holdMs: number, busySettleMs: number): string 
 
 export function VideoAvatar({
   clips,
-  state = 'idle',
   speechActivity,
-  analyser = null,
+  analyser,
+  streamingText,
   idleVariations = [],
   idleVariationIntervalMs = [15000, 30000],
   minHoldMs = 1200,
   busySettleMs = 1000,
   poster,
-  size = '100%',
   crossfadeMs = 350,
-  label = 'Avatar',
-  className,
-  style,
+  ...chrome
 }: VideoAvatarProps) {
+  const state = chrome.state ?? 'idle';
   const reducedMotion = useReducedMotion();
-  const talking = useIsTalking(speechActivity ?? analyser, state === 'speaking');
+  const mouthSource = useMouthSource({ analyser, speechActivity, streamingText });
+  const talking = useIsTalking(mouthSource, state === 'speaking');
   const [variation, variationDone] = useIdleVariation(
     idleVariations,
     state === 'idle' && !reducedMotion,
@@ -221,41 +213,38 @@ export function VideoAvatar({
   }, [active, reducedMotion, crossfadeMs]);
 
   return (
-    <div
-      role="img"
-      aria-label={`${label} (${state})`}
-      className={className}
-      style={{ position: 'relative', width: size, aspectRatio: '1 / 1', overflow: 'hidden', ...style }}
-    >
-      {entries.map(({ id, clip, loop }) => (
-        <video
-          key={id}
-          ref={(el) => {
-            refs.current[id] = el;
-          }}
-          data-clip={id}
-          muted
-          loop={loop}
-          playsInline
-          preload="auto"
-          poster={poster}
-          aria-hidden="true"
-          onEnded={loop ? undefined : variationDone}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            opacity: id === active ? 1 : 0,
-            transition: reducedMotion ? 'none' : `opacity ${crossfadeMs}ms ease`,
-          }}
-        >
-          {clipSources(clip).map((s) => (
-            <source key={s.src} src={s.src} type={s.type} />
-          ))}
-        </video>
-      ))}
-    </div>
+    <AvatarFrame {...chrome} defaultSize="100%" mouthSource={mouthSource}>
+      <div data-clips="" style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        {entries.map(({ id, clip, loop }) => (
+          <video
+            key={id}
+            ref={(el) => {
+              refs.current[id] = el;
+            }}
+            data-clip={id}
+            muted
+            loop={loop}
+            playsInline
+            preload="auto"
+            poster={poster}
+            aria-hidden="true"
+            onEnded={loop ? undefined : variationDone}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: id === active ? 1 : 0,
+              transition: reducedMotion ? 'none' : `opacity ${crossfadeMs}ms ease`,
+            }}
+          >
+            {clipSources(clip).map((s) => (
+              <source key={s.src} src={s.src} type={s.type} />
+            ))}
+          </video>
+        ))}
+      </div>
+    </AvatarFrame>
   );
 }

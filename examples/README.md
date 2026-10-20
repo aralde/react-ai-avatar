@@ -17,13 +17,13 @@ consumer would, so what you read is what you ship.
 | 02 | [`02-streaming-text-usechat.tsx`](02-streaming-text-usechat.tsx) | **Declarative** text streaming via the `streamingText` prop + Vercel AI SDK `useChat`. | `@ai-sdk/react` |
 | 03 | [`03-streaming-text-imperative.tsx`](03-streaming-text-imperative.tsx) | **Imperative** text streaming: own the reader loop, feed `createSpeechActivity()`. Runs against the local mock — no backend. | — |
 | 04 | [`04-audio-analyser.tsx`](04-audio-analyser.tsx) | Real audio-reactive mouth: building and routing a WebAudio `AnalyserNode`. | — |
-| 05 | [`05-avatar-catalog.tsx`](05-avatar-catalog.tsx) | Switching `variant` across the flat presets + DiceBear. | `@dicebear/core` `@dicebear/collection` (only for the dicebear option) |
+| 05 | [`05-avatar-catalog.tsx`](05-avatar-catalog.tsx) | Switching `variant` across the flat presets, the orb and DiceBear. | `@dicebear/core` `@dicebear/collection` (only for the dicebear option) |
 | 06 | [`06-bring-your-own-svg.tsx`](06-bring-your-own-svg.tsx) | `variant="byos"`: a minimal custom SVG implementing the `#rra-*` layer contract. | — |
 | 07 | [`07-gemini-live-voice.tsx`](07-gemini-live-voice.tsx) | Full realtime-voice pipeline: relay WebSocket → decode PCM → analyser. | a relay ([`server/proxy.ts`](server/proxy.ts)) |
 | 08 | [`08-character-avatar-squirrel.tsx`](08-character-avatar-squirrel.tsx) | `variant="byos"` taken further: a full branded character (squirrel dev) on the same `#rra-*` contract. | — |
 | 09 | [`09-thinking-emoji-reel.tsx`](09-thinking-emoji-reel.tsx) | Emulated "thinking" via `thinkingEmojis`: an emoji reel on the face, reasoning text rendered separately in the chat. Runs against the local mock — no backend. | — |
 | 10 | [`10-character-avatar-developer.tsx`](10-character-avatar-developer.tsx) | A second branded character on the same contract (young dev: beanie, headphones, glasses) — proof the hooks don't care what you draw around them. | — |
-| 11 | [`11-portrait-avatar.tsx`](11-portrait-avatar.tsx) | The "puppet" technique: a fixed illustration with only the moving parts drawn on top as vector layers (`PortraitAvatar`), plus opt-in `poses` (coffee break, back view while working). | — |
+| 11 | [`11-portrait-avatar.tsx`](11-portrait-avatar.tsx) | The "puppet" technique: a fixed illustration with only the moving parts drawn on top as vector layers (`PortraitAvatar`), plus opt-in `poses` (coffee break, back view while working). Imported from `react-ai-avatar/characters`; it inherits `state` from `RealtimeAvatar`. | — |
 | 12 | [`12-video-avatar.tsx`](12-video-avatar.tsx) | The "clip" technique: a looping video per state, crossfaded (`VideoAvatar`), with gated speaking, idle variations and flicker-free tool bursts. Bring your own footage — see [`scripts/prepare-video-clips.ts`](../scripts/prepare-video-clips.ts). | — |
 
 ## Shared helpers
@@ -46,7 +46,7 @@ Spin up a throwaway app and paste an example into it:
 ```bash
 npm create vite@latest my-avatar-test -- --template react-ts
 cd my-avatar-test
-npm install react-ai-avatar motion
+npm install react-ai-avatar
 # copy examples/01-quickstart.tsx over src/App.tsx (default export is the component)
 npm run dev
 ```

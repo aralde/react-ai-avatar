@@ -42,7 +42,7 @@ export interface DiceBearAvatarProps {
   state: AvatarState;
   /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
   analyser: MouthSource;
-  size?: number;
+  size?: number | string;
   /** Curated CC0 style; any DiceBear style id also works at your own licensing discretion. */
   collection?: DiceBearCollection | string;
   /** Deterministic seed — same seed + style => same face. */

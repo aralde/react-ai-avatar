@@ -1,5 +1,6 @@
 import React from 'react';
-import { darkenColor, type AvatarCustomization } from './DefaultAvatar';
+import type { AvatarCustomization } from '../lib/types';
+import { darkenColor } from '../lib/color';
 
 /**
  * CoderAvatar — a full branded character (young developer) drawn as a flat-vector
@@ -21,6 +22,7 @@ import { darkenColor, type AvatarCustomization } from './DefaultAvatar';
  */
 
 import type { AvatarState } from '../lib/types';
+import { useAvatarState } from '../lib/avatarState';
 
 export interface CoderAvatarProps {
   /** SVG width/height. Defaults to `'100%'` so the character fills its (sized)
@@ -28,6 +30,7 @@ export interface CoderAvatarProps {
    *  Pass a number for a fixed pixel size. */
   size?: number | string;
   customization?: Partial<AvatarCustomization>;
+  /** Defaults to the enclosing avatar's state (inside `RealtimeAvatar`), else `'idle'`. */
   state?: AvatarState;
   /**
    * Opt in to the character's per-state poses: head tilt + hand-on-chin while
@@ -49,11 +52,12 @@ const HEADPHONE_PAD = '#3c424b';
 export function CoderAvatar({
   size = '100%',
   customization,
-  state,
+  state: ownState,
   poses = false,
   className,
   style,
 }: CoderAvatarProps) {
+  const state = useAvatarState(ownState);
   const {
     skinColor: skin = '#e8b083', // skin — also used for the eyelids and hands
     hairColor: hair = '#3a2820',

@@ -56,7 +56,12 @@ describe('VideoAvatar markup', () => {
   it('names the avatar and its state for assistive tech', () => {
     const { html } = render({ state: 'thinking', label: 'Ariel' });
     expect(html).toContain('role="img"');
-    expect(html).toContain('aria-label="Ariel (thinking)"');
+    expect(html).toContain('aria-label="Ariel (Thinking...)"');
     expect(html.match(/<video[^>]*aria-hidden="true"/g)).toHaveLength(3);
+  });
+
+  it('names the state with the localized label', () => {
+    const { html } = render({ state: 'thinking', label: 'Ariel', stateLabels: { thinking: 'Pensando' } });
+    expect(html).toContain('aria-label="Ariel (Pensando)"');
   });
 });

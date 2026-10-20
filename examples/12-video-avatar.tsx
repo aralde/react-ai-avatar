@@ -18,7 +18,7 @@
  * docs site; swap them for your own. To turn a raw video into a clip (square crop,
  * silent, seamless loop, WebM + MP4), see `scripts/prepare-video-clips.ts`.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { useRef, useState } from 'react';
 import { VideoAvatar, createSpeechActivity } from 'react-ai-avatar';

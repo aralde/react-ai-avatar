@@ -12,3 +12,46 @@
 @source "../components";
 /* inlined base64 images: nothing to scan, and random runs could match utilities */
 @source not "../components/portraitAssets.ts";
+
+/*
+ * Entrance animations for the overlays (caption, thought, emoji bubble, glow).
+ * Plain CSS instead of an animation library: they are one-shot fades, and
+ * `prefers-reduced-motion` turns them off here instead of in every component.
+ */
+@layer components {
+  .rra-enter {
+    animation: rra-enter var(--rra-enter-duration, 180ms) ease-out both;
+  }
+  .rra-enter-pop {
+    animation: rra-enter-pop 180ms ease-out both;
+  }
+  .rra-state-pill,
+  .rra-glow {
+    transition-property: background-color, box-shadow;
+    transition-duration: 300ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rra-enter,
+    .rra-enter-pop {
+      animation: none;
+    }
+    .rra-state-pill,
+    .rra-glow {
+      transition: none;
+    }
+  }
+}
+
+@keyframes rra-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rra-enter-y, 4px)) scale(var(--rra-enter-scale, 1));
+  }
+}
+
+@keyframes rra-enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-15deg);
+  }
+}

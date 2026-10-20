@@ -10,7 +10,7 @@
  * `./shared/mockChatStream`. Swap `mockChatStream()` for your real `fetch`
  * reader loop and the avatar code stays identical.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { useRef, useState } from 'react';
 import { RealtimeAvatar, createSpeechActivity } from 'react-ai-avatar';

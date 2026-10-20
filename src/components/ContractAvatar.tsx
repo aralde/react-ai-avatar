@@ -14,7 +14,7 @@ export interface ContractAvatarProps {
   state: AvatarState;
   /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
   analyser: MouthSource;
-  size?: number;
+  size?: number | string;
   className?: string;
   style?: React.CSSProperties;
   maxMouthOpening?: number;

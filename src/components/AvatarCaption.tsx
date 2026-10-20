@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import { toPlainText, tailWindow } from '../lib/captionText';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
@@ -26,6 +25,14 @@ export interface AvatarCaptionProps {
   style?: React.CSSProperties;
 }
 
+/** Entrance tuning for the `rra-enter` keyframes (see lib.css). */
+const ENTER_SOFT = {
+  '--rra-enter-y': '8px',
+  '--rra-enter-scale': '0.98',
+  '--rra-enter-duration': '300ms',
+} as React.CSSProperties;
+const ENTER_BUBBLE = { ...ENTER_SOFT, '--rra-enter-scale': '0.9' } as React.CSSProperties;
+
 /** Movie-style live caption: a clean, rolling trailing window of the speech. */
 export function AvatarCaption({ text, maxChars = 160, className = '', style }: AvatarCaptionProps) {
   const clean = tailWindow(toPlainText(text ?? ''), { maxChars });
@@ -36,14 +43,11 @@ export function AvatarCaption({ text, maxChars = 160, className = '', style }: A
       className={`rra-caption w-full flex justify-center pointer-events-none ${className}`}
       style={style}
     >
-      <motion.span
+      <span
         key={clean}
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18 }}
         role="status"
         aria-live="polite"
-        className="inline-block max-w-[640px] text-center text-base md:text-lg font-medium text-zinc-100 leading-relaxed px-5 py-3 rounded-2xl border border-zinc-700/40 break-words"
+        className="rra-enter inline-block max-w-[640px] text-center text-base md:text-lg font-medium text-zinc-100 leading-relaxed px-5 py-3 rounded-2xl border border-zinc-700/40 break-words"
         style={{
           textShadow: '0px 1px 3px rgba(0,0,0,0.5)',
           background: 'rgba(9, 9, 11, 0.8)',
@@ -51,7 +55,7 @@ export function AvatarCaption({ text, maxChars = 160, className = '', style }: A
         }}
       >
         {clean}
-      </motion.span>
+      </span>
     </div>
   );
 }
@@ -79,12 +83,9 @@ export function AvatarThought({
   if (!clean) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`rra-thought w-full max-w-[420px] text-left pointer-events-none ${className}`}
-      style={style}
+    <div
+      className={`rra-thought rra-enter w-full max-w-[420px] text-left pointer-events-none ${className}`}
+      style={{ ...ENTER_SOFT, ...style }}
     >
       <div className="bg-zinc-900/90 backdrop-blur-xl text-zinc-100 px-5 py-4 rounded-3xl shadow-[0_10px_30px_rgba(139,92,246,0.15)] border border-purple-500/25 text-sm italic break-words">
         <div className="text-purple-400 text-[10px] uppercase tracking-widest font-mono font-bold mb-1 flex items-center gap-1.5">
@@ -93,7 +94,7 @@ export function AvatarThought({
         </div>
         <p className="leading-relaxed text-zinc-200">{clean}</p>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -147,12 +148,9 @@ export function ThoughtEmojiBubble({
   const current = emojis[index % emojis.length];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className={`rra-thought-emoji flex justify-center pointer-events-none ${className}`}
-      style={style}
+    <div
+      className={`rra-thought-emoji rra-enter flex justify-center pointer-events-none ${className}`}
+      style={{ ...ENTER_BUBBLE, ...style }}
       role="status"
       aria-live="off"
       aria-label="Thinking"
@@ -161,23 +159,16 @@ export function ThoughtEmojiBubble({
         className="relative flex items-center justify-center rounded-full bg-zinc-900/90 backdrop-blur-xl border border-purple-500/25 shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
         style={{ width: size, height: size }}
       >
-        {/* `mode="wait"` keeps exactly one glyph mounted: the outgoing one fully
-            exits before the next enters. (An earlier `popLayout` version leaked —
-            exited spans stacked up to the reel length instead of unmounting.) */}
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.span
-            key={index}
-            initial={reduced ? false : { opacity: 0, scale: 0.6, rotate: -15 }}
-            animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            exit={reduced ? undefined : { opacity: 0, scale: 0.6, rotate: 15 }}
-            transition={{ duration: 0.18 }}
-            className="absolute leading-none select-none"
-            style={{ fontSize: Math.round(size * 0.5) }}
-          >
-            {current}
-          </motion.span>
-        </AnimatePresence>
+        {/* Keyed by index: exactly one glyph is ever mounted, and each new one
+            pops in. (An earlier exit-animation version leaked stacked spans.) */}
+        <span
+          key={index}
+          className={`${index === 0 ? '' : 'rra-enter-pop '}absolute leading-none select-none`}
+          style={{ fontSize: Math.round(size * 0.5) }}
+        >
+          {current}
+        </span>
       </div>
-    </motion.div>
+    </div>
   );
 }

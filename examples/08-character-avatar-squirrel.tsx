@@ -19,7 +19,7 @@
  *   .rra-lid     eyelids (x2)  -> height (blink; 0 = open), data-max-height to close
  *   #rra-think   thought bubble-> opacity + dots pulse while `thinking`
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { RealtimeAvatar } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';

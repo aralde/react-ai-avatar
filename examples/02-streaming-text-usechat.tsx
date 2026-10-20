@@ -16,7 +16,7 @@
  * width of that slot and never overflows a constrained card. AvatarCaption
  * flattens markdown to spoken prose and rolls a trailing window internally.
  *
- * Run: npm install react-ai-avatar motion @ai-sdk/react
+ * Run: npm install react-ai-avatar @ai-sdk/react
  *      (and a streaming `/api/chat` route — any Vercel AI SDK backend)
  */
 import { useChat } from '@ai-sdk/react';
