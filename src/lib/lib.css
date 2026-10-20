@@ -4,9 +4,11 @@
  * Deliberately NOT the demo's stylesheet:
  * - no preflight (we must not reset the consumer's app styles)
  * - utilities are generated only from the library's components
+ * - everything is prefixed (`rra:flex`, `--rra-color-*`), so it can't collide
+ *   with the consumer's own Tailwind classes or theme variables
  */
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) prefix(rra);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components";

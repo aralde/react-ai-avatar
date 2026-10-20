@@ -134,7 +134,7 @@ function Glow({ state, color, source }: { state: AvatarState; color: string; sou
     <div
       ref={ref}
       aria-hidden="true"
-      className="rra-glow absolute w-[90%] h-[90%] rounded-[1.75rem] pointer-events-none filter blur-2xl"
+      className="rra-glow rra:absolute rra:w-[90%] rra:h-[90%] rra:rounded-[1.75rem] rra:pointer-events-none rra:filter rra:blur-2xl"
       style={{ backgroundColor: color, opacity: 0.15 }}
     />
   );
@@ -143,16 +143,16 @@ function Glow({ state, color, source }: { state: AvatarState; color: string; sou
 /** "Thinking" emoji bubble, anchored in the avatar's own top-right corner. */
 function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: number; size: number }) {
   return (
-    <div className="absolute z-40" style={{ top: '2%', right: '2%' }}>
-      <div className="relative">
+    <div className="rra:absolute rra:z-40" style={{ top: '2%', right: '2%' }}>
+      <div className="rra:relative">
         <ThoughtEmojiBubble emojis={emojis} interval={interval} size={size} />
         {/* Trail circles leading down-left from the bubble toward the face */}
         <div
-          className="absolute rounded-full bg-zinc-900/90 border border-purple-500/25 shadow-md backdrop-blur-md"
+          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/25 rra:shadow-md rra:backdrop-blur-md"
           style={{ width: size * 0.22, height: size * 0.22, bottom: -size * 0.14, left: -size * 0.02 }}
         />
         <div
-          className="absolute rounded-full bg-zinc-900/90 border border-purple-500/20 shadow-sm backdrop-blur-md"
+          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/20 rra:shadow-sm rra:backdrop-blur-md"
           style={{ width: size * 0.14, height: size * 0.14, bottom: -size * 0.3, left: -size * 0.18 }}
         />
       </div>
@@ -163,13 +163,13 @@ function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: n
 /** Text thought bubble floating above the avatar. */
 function ThoughtBubble({ text }: { text: string }) {
   return (
-    <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[340px] md:max-w-[420px] z-40">
-      <div className="relative">
-        <AvatarThought text={text} className="max-w-none" />
+    <div className="rra:absolute rra:bottom-[108%] rra:left-1/2 rra:-translate-x-1/2 rra:w-[90vw] rra:max-w-[340px] rra:md:max-w-[420px] rra:z-40">
+      <div className="rra:relative">
+        <AvatarThought text={text} className="rra:max-w-none" />
         {/* Thought trail circles pointing down toward the face */}
-        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-zinc-900/90 rounded-full border border-purple-500/20 shadow-md backdrop-blur-md" />
-        <div className="absolute -bottom-6 left-[48%] -translate-x-1/2 w-2.5 h-2.5 bg-zinc-900/90 rounded-full border border-purple-500/15 shadow-sm backdrop-blur-md" />
-        <div className="absolute -bottom-8 left-[47%] -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900/90 rounded-full border border-purple-500/10 backdrop-blur-md" />
+        <div className="rra:absolute rra:-bottom-3 rra:left-1/2 rra:-translate-x-1/2 rra:w-4 rra:h-4 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/20 rra:shadow-md rra:backdrop-blur-md" />
+        <div className="rra:absolute rra:-bottom-6 rra:left-[48%] rra:-translate-x-1/2 rra:w-2.5 rra:h-2.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/15 rra:shadow-sm rra:backdrop-blur-md" />
+        <div className="rra:absolute rra:-bottom-8 rra:left-[47%] rra:-translate-x-1/2 rra:w-1.5 rra:h-1.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/10 rra:backdrop-blur-md" />
       </div>
     </div>
   );
@@ -180,11 +180,11 @@ function StatePill({ text, color, halo, ping }: { text: string; color: string; h
     <div
       role="status"
       aria-live="polite"
-      className="rra-state-pill absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
+      className="rra-state-pill rra:absolute rra:-bottom-6 rra:px-4 rra:py-1.5 rra:rounded-full rra:text-xs rra:font-bold rra:text-white rra:uppercase rra:tracking-widest rra:shadow-lg rra:z-30 rra:cursor-default rra:select-none rra:border rra:border-white/10"
       style={{ backgroundColor: color, boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${hexToRgba(color, halo)}` }}
     >
-      <span className="flex items-center gap-1.5">
-        <span className={`w-2 h-2 rounded-full bg-white ${ping ? 'animate-ping' : ''}`} />
+      <span className="rra:flex rra:items-center rra:gap-1.5">
+        <span className={`rra:w-2 rra:h-2 rra:rounded-full rra:bg-white ${ping ? 'rra:animate-ping' : ''}`} />
         {text}
       </span>
     </div>
@@ -233,7 +233,7 @@ export function AvatarFrame({
       <div
         ref={rootRef}
         data-state={state}
-        className={`rra-avatar relative flex flex-col items-center justify-center ${className}`}
+        className={`rra-avatar rra:relative rra:flex rra:flex-col rra:items-center rra:justify-center ${className}`}
         style={{ width: resolvedSize, height: typeof resolvedSize === 'number' ? resolvedSize : undefined, aspectRatio: '1 / 1', ...style }}
       >
         {showGlow && <Glow state={state} color={color} source={mouthSource} />}
@@ -241,7 +241,7 @@ export function AvatarFrame({
         <div
           role="img"
           aria-label={`${label} (${stateLabel})`}
-          className="w-full h-full relative flex items-center justify-center z-10"
+          className="rra:w-full rra:h-full rra:relative rra:flex rra:items-center rra:justify-center rra:z-10"
           // Passes the frame's border-radius down, so a face can clip to it.
           style={{ borderRadius: 'inherit' }}
         >
@@ -264,7 +264,7 @@ export function AvatarFrame({
         )}
 
         {showSubtitle && subtitle && (
-          <div className="absolute top-[115%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[500px] md:max-w-[640px] z-50 pb-8">
+          <div className="rra:absolute rra:top-[115%] rra:left-1/2 rra:-translate-x-1/2 rra:w-[90vw] rra:max-w-[500px] rra:md:max-w-[640px] rra:z-50 rra:pb-8">
             <AvatarCaption text={subtitle} />
           </div>
         )}
