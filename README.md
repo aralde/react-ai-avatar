@@ -345,26 +345,53 @@ What it does for you:
 - **Seamless cuts.** Clips crossfade (`crossfadeMs`, default 350) and resume where they paused instead of restarting.
 - `prefers-reduced-motion` holds a still frame and skips idle variations.
 
-### Making the clips
+### Making the clips (step by step, with Google Flow)
 
-The whole technique hinges on a **hub frame**: one neutral pose (relaxed face, mouth closed, looking into the camera) that every clip starts *and* ends on, so loops close and cuts don't jump.
+The whole technique hinges on a **hub frame**: one neutral still of your character (relaxed face, mouth closed, looking into the camera) that every clip starts *and* ends on, so loops close and cuts don't jump. Any text-to-video tool with first/last-frame conditioning works; this walkthrough uses [Google Flow](https://labs.google/flow) (Veo), which has a small free daily allowance.
 
-1. **Make the hub frame** — a still of your character (generate one, or grab the first frame of a clip).
-2. **Generate each clip from it.** In tools that support first- and last-frame conditioning (e.g. Google Veo's "Frames to video" in Flow), pass the hub frame as **both** — the clip then returns exactly to where it started. Keep the camera locked and the framing identical across clips.
-3. **Prepare it** with [`scripts/prepare-video-clips.ts`](scripts/prepare-video-clips.ts) (needs `ffmpeg`): square crop, scale, strip audio, encode WebM + MP4. `--mode loop` (default) makes a *boomerang* — the range forward then reversed — so even a clip that drifts loops without a jump; `--mode once` is for idle variations. Use `--from`/`--to` to keep only the usable part.
+1. **Make the hub frame.** In Flow, pick **Image** and generate a portrait — e.g. *"Photorealistic head-and-shoulders portrait of [your character], centered, looking into the camera, relaxed face, mouth closed, [setting], soft natural light"* — and download it. Or use a photo you have the rights to (and, if it's a real person, their consent).
+2. **Set up a clip.** Pick **Video → Frames**, aspect **16:9**, model **Veo 3.1 Lite** (the cheapest; plenty for 512 px), **x1**. Put the hub frame in **both** slots — first *and* last frame. That's what makes every clip return to the same pose.
+3. **Generate the five state clips**, one prompt each (below). Download each MP4.
+4. **Prepare them** with [`scripts/prepare-video-clips.ts`](scripts/prepare-video-clips.ts) (needs `ffmpeg`): square crop, scale, strip audio, encode WebM + MP4. `--mode loop` (default) makes a *boomerang* — the range forward then reversed — so even a clip that drifts loops without a jump; `--mode once` is for idle variations. `--from`/`--to` keep only the usable part.
 
 ```bash
-node --experimental-strip-types scripts/prepare-video-clips.ts raw/idle.mp4 --name idle --from 4.2 --to 8 --out public/clips --poster
+node --experimental-strip-types scripts/prepare-video-clips.ts raw/idle.mp4 --name idle --out public/clips --poster
 node --experimental-strip-types scripts/prepare-video-clips.ts raw/coffee.mp4 --name idle-coffee --mode once --out public/clips
 ```
 
-**Prompting tip:** video models love to make a person facing the camera start *talking* — and negations ("does not speak", "no dialogue") tend to backfire by putting speech in the prompt. Describe what the face *does* instead, frame it as a still scene, and give the audio track something else to be about:
+<details>
+<summary><strong>The five prompts</strong> (one per state — the hub frame carries the character, so they stay short)</summary>
 
+**idle**
 ```
-Cinematic living portrait, like a photograph that gently comes alive. [character + setting, same as the hub frame]. Static tripod camera, no camera movement, no cuts. He sits peacefully: relaxed closed lips with a faint calm smile, slow steady breathing, two slow blinks, a barely perceptible head sway. Starts and ends in exactly the pose of the reference frame. Audio: soft birdsong outside the window and a quiet room ambience. No text, no music.
+Cinematic living portrait of the person in the reference frame, like a photograph that gently comes alive. Same framing and lighting, static tripod camera, no cuts. They sit peacefully: relaxed closed lips, a faint calm smile, slow steady breathing, two slow blinks, a barely perceptible head sway. Ends in exactly the starting pose. Audio: quiet room ambience and soft birdsong. No text, no music.
 ```
 
-If a clip still talks for part of it, keep it anyway and trim to the silent stretch with `--from`/`--to`.
+**listening**
+```
+Cinematic living portrait of the person in the reference frame. Same framing and lighting, static tripod camera, no cuts. They are absorbed in what someone off-screen is telling them: relaxed closed lips, eyebrows slowly rising with curiosity, a slight lean forward, one slow nod in the middle, natural blinks, then they settle back. Ends in exactly the starting pose. Audio: quiet room ambience. No text, no music.
+```
+
+**thinking**
+```
+Cinematic living portrait of the person in the reference frame. Same framing and lighting, static tripod camera, no cuts. They are thinking something over: the eyes drift up and to the side, a slight squint, the head tilts a little, lips pressed into a thoughtful "hmm", then the gaze returns to the camera. Ends in exactly the starting pose. Audio: quiet room ambience. No text, no music.
+```
+
+**working**
+```
+Cinematic living portrait of the person in the reference frame. Same framing and lighting, static tripod camera, no cuts. They are focused on a laptop just below the camera: gaze lowered, eyes moving in small reading motions across the screen, brows lightly concentrated, a soft screen glow on the face. In the last second they look back up. Ends in exactly the starting pose. Audio: quiet keyboard taps. No text, no music.
+```
+
+**speaking**
+```
+The person in the reference frame talks warmly to the camera, explaining something in a friendly way. Same framing and lighting, static tripod camera, no cuts. Clear, natural mouth movement, small head movements and eyebrow emphasis, natural blinks. Starts and ends with closed lips in the starting pose. No text, no music.
+```
+
+**Optional idle variations** (generate the same way, prepare with `--mode once`): *"…they bring a coffee cup up, take a slow sip with eyes half-closed, and put it down"*; *"…they rest their chin on one hand for a moment, glancing out of the window"*.
+
+</details>
+
+**Why the prompts read like that:** video models love to make a person facing the camera start *talking*, and negations ("does not speak", "no dialogue") tend to backfire by putting speech in the prompt. So the silent ones describe what the face *does*, frame it as a still scene ("living portrait"), and give the audio track something else to be about. If a clip still talks for part of it, keep it and trim to the silent stretch with `--from`/`--to`.
 
 **Limits, honestly:** the mouth isn't synced to the words — speaking is gated on/off by speech energy, not phoneme-accurate. Speech detection runs on `requestAnimationFrame`, so it pauses in background tabs. Clips must be muted to autoplay (they are). Seven 512 px clips run about 3 MB as WebM; they're loaded up front (`preload="auto"`) so switches are instant. See [`examples/12-video-avatar.tsx`](examples/12-video-avatar.tsx).
 

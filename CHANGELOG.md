@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **`VideoAvatar`** — the "clip" technique: a photoreal avatar from your own footage. One short looping video per state, crossfaded on state changes; every clip starts and ends on a shared "hub" frame so loops and cuts don't jump. Missing states fall back (`working` → `thinking` → `idle`). With `speechActivity` or `analyser`, the speaking clip is gated on speech energy and yields to idle in real pauses. `idleVariations` interleave one-shot clips while idle, each with `afterIdleMs` / `cooldownMs` (e.g. a coffee only after a long wait). `minHoldMs` / `busySettleMs` keep an agent's `thinking ↔ working` tool-call bursts from flickering the face. Honors `prefers-reduced-motion`. The package ships no footage. New types: `VideoClips`, `VideoClipSource`, `IdleVariation`. New example: `examples/12-video-avatar.tsx`.
 - `scripts/prepare-video-clips.ts` (repo only, not published) — turns a raw video into a clip with ffmpeg: square crop, scale, no audio, WebM + MP4, boomerang loop or one-shot, optional poster.
-- README: "Video avatars" section, including how to generate clips around a hub frame and prompting tips for text-to-video models.
+- README: "Video avatars" section, with a step-by-step Google Flow (Veo) guide: hub frame as first and last frame, five copy-paste prompts (one per state), and why they avoid making the character talk.
 
 ## [0.4.0] — 2026-10-02
 
