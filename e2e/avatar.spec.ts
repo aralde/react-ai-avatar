@@ -242,6 +242,12 @@ test.describe('VideoAvatar', () => {
     await expect.poll(() => visible(page), { timeout: 3000 }).toEqual(['idle']);
   });
 
+  test('clips the footage to the radius given to the frame', async ({ page }) => {
+    await open(page, 'video', { style: { borderRadius: '50%' } });
+    await expect(page.locator('[data-clips]')).toHaveCSS('border-radius', '50%');
+    await expect(page.locator('[data-clips]')).toHaveCSS('overflow', 'hidden');
+  });
+
   test('has the same overlays as RealtimeAvatar', async ({ page }) => {
     await open(page, 'video', { state: 'working', tool: 'deploy', subtitle: 'Listo **ya**' });
     await expect(page.getByRole('status').filter({ hasText: 'Working: deploy' })).toBeVisible();

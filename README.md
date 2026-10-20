@@ -73,7 +73,7 @@ With no `analyser`, `speaking` falls back to a synthetic speech-like mouth — g
   analyser={analyser}                 // AnalyserNode | null — real audio-reactive mouth
   size={300}                          // px or any CSS length ('100%'); default 280
   variant="geometric"                 // 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'orb' | 'dicebear' | 'vrm' | 'glb' | 'byos'
-  customization={{ skinColor: '#f5c7a9', hairColor: '#2c2c2c', glasses: true, headphones: true }}
+  customization={{ skinColor: '#f5c7a9', glasses: true }}  // flat presets only; just the keys you change
   stateColors={{ idle: '#4b5563', listening: '#3b82f6', thinking: '#8b5cf6', speaking: '#10b981', working: '#f59e0b' }}
 />
 ```

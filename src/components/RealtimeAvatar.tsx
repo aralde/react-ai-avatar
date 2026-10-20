@@ -34,37 +34,95 @@ export type RealtimeAvatarVariant =
   | 'dicebear'
   | 'byos';
 
-export interface RealtimeAvatarProps extends AvatarChromeProps, MouthDriverProps {
-  /**
-   * Which face to draw. Defaults to `'byos'` when you pass `children`, else
-   * `'geometric'`.
-   */
-  variant?: RealtimeAvatarVariant;
-  /**
-   * Your own face for `variant="byos"`: an SVG on the `#rra-*` contract, or a
-   * component like `SquirrelAvatar`. It inherits `state` from the avatar, so
-   * there is no need to pass it twice.
-   */
-  children?: React.ReactNode;
-  /** VRM model URL, for variant="vrm". */
-  vrmUrl?: string;
-  /** CORS-enabled .glb URL with ARKit blendshapes, for variant="glb". */
-  glbUrl?: string;
-  /** DiceBear style id (curated CC0 set), for variant="dicebear". */
-  dicebearCollection?: DiceBearCollection | string;
-  /** Deterministic DiceBear seed, for variant="dicebear". */
-  dicebearSeed?: string;
-
-  // Animation tuning
+/** Animation tuning for the faces with eyes and a mouth (presets, byos, 3D). */
+export interface FaceTuningProps {
   maxMouthOpening?: number;
   blinkIntervalMin?: number;
   blinkIntervalMax?: number;
   blinkDuration?: number;
   mouseTrackingIntensity?: number;
-
-  /** Colors and accessories for the flat presets. */
-  customization?: AvatarCustomization;
 }
+
+/** Every variant-specific prop. Each variant allows its own and forbids the rest. */
+interface VariantOnlyProps extends FaceTuningProps {
+  children?: React.ReactNode;
+  customization?: Partial<AvatarCustomization>;
+  vrmUrl?: string;
+  glbUrl?: string;
+  dicebearCollection?: DiceBearCollection | string;
+  dicebearSeed?: string;
+}
+
+/** Marks the variant-specific props a variant doesn't take, so passing one is a type error. */
+type Without<K extends keyof VariantOnlyProps> = { [P in K]?: never };
+
+type CommonProps = AvatarChromeProps & MouthDriverProps;
+
+/** A flat preset. `variant` defaults to `'geometric'` when there are no children. */
+export type PresetAvatarProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'vrmUrl' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle';
+    /** Colors and accessories; only the ones you pass change. */
+    customization?: Partial<AvatarCustomization>;
+  };
+
+/** Your own face: children imply `variant="byos"`, and they inherit `state`. */
+export type ByosAvatarProps = CommonProps &
+  FaceTuningProps &
+  Without<'customization' | 'vrmUrl' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant?: 'byos';
+    /**
+     * An SVG on the `#rra-*` contract, or a component like `SquirrelAvatar`.
+     * It inherits `state` from the avatar, so there is no need to pass it twice.
+     */
+    children: React.ReactNode;
+  };
+
+/** The voice-assistant sphere: no eyes or mouth, so no face tuning. */
+export type OrbVariantProps = CommonProps &
+  Without<keyof VariantOnlyProps> & {
+    variant: 'orb';
+  };
+
+export type DiceBearVariantProps = CommonProps &
+  Without<Exclude<keyof VariantOnlyProps, 'maxMouthOpening' | 'dicebearCollection' | 'dicebearSeed'>> & {
+    variant: 'dicebear';
+    maxMouthOpening?: number;
+    /** DiceBear style id (curated CC0 set). */
+    dicebearCollection?: DiceBearCollection | string;
+    /** Deterministic seed: same seed and style, same face. */
+    dicebearSeed?: string;
+  };
+
+export type VrmVariantProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'customization' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant: 'vrm';
+    /** VRM model URL. */
+    vrmUrl: string;
+  };
+
+export type GlbVariantProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'customization' | 'vrmUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant: 'glb';
+    /** CORS-enabled .glb URL with ARKit blendshapes. */
+    glbUrl: string;
+  };
+
+/**
+ * One shape per `variant`: each takes the shared overlay and mouth-driver
+ * props plus its own, and a prop that doesn't apply (say `vrmUrl` on the orb)
+ * is a type error instead of being ignored.
+ */
+export type RealtimeAvatarProps =
+  | PresetAvatarProps
+  | ByosAvatarProps
+  | OrbVariantProps
+  | DiceBearVariantProps
+  | VrmVariantProps
+  | GlbVariantProps;
 
 const PRESETS = {
   geometric: GeometricAvatar,
@@ -109,7 +167,6 @@ export function RealtimeAvatar({
     blinkDuration,
     mouseTrackingIntensity,
     stateColors,
-    customization,
   };
 
   let face: React.ReactNode;

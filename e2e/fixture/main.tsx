@@ -8,15 +8,18 @@ import {
   RealtimeAvatar,
   VideoAvatar,
   createSpeechActivity,
-  type RealtimeAvatarProps,
+  type AvatarChromeProps,
 } from '../../src/lib/index';
 import { SquirrelAvatar } from '../../src/lib/characters';
 import '../../src/lib/lib.css';
 
 type Scene = 'realtime' | 'video' | 'squirrel' | 'byos';
 
+/** What a test can set: the shared props, plus the variant on the realtime scene. */
+type FixtureProps = AvatarChromeProps & { variant?: 'geometric' | 'orb' };
+
 interface Controls {
-  set(props: Partial<RealtimeAvatarProps>): void;
+  set(props: FixtureProps): void;
   push(chunk: string): void;
   end(): void;
 }
@@ -29,7 +32,7 @@ declare global {
 
 const params = new URLSearchParams(location.search);
 const scene = (params.get('scene') ?? 'realtime') as Scene;
-const initial = JSON.parse(params.get('props') ?? '{}') as Partial<RealtimeAvatarProps>;
+const initial = JSON.parse(params.get('props') ?? '{}') as FixtureProps;
 
 /** The smallest face on the `#rra-*` contract, like a host's own SVG. */
 function ContractFace() {
@@ -53,7 +56,7 @@ function ContractFace() {
 const BLINKY = { blinkIntervalMin: 150, blinkIntervalMax: 250, blinkDuration: 80 };
 
 function App() {
-  const [props, setProps] = useState<Partial<RealtimeAvatarProps>>(initial);
+  const [{ variant, ...props }, setProps] = useState<FixtureProps>(initial);
   const activity = useMemo(() => createSpeechActivity(), []);
 
   useEffect(() => {
@@ -90,6 +93,7 @@ function App() {
       </RealtimeAvatar>
     );
   }
+  if (variant === 'orb') return <RealtimeAvatar variant="orb" speechActivity={activity} {...props} />;
   return <RealtimeAvatar {...BLINKY} speechActivity={activity} {...props} />;
 }
 

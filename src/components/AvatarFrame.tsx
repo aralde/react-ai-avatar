@@ -242,6 +242,8 @@ export function AvatarFrame({
           role="img"
           aria-label={`${label} (${stateLabel})`}
           className="w-full h-full relative flex items-center justify-center z-10"
+          // Passes the frame's border-radius down, so a face can clip to it.
+          style={{ borderRadius: 'inherit' }}
         >
           {children}
         </div>
