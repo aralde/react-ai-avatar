@@ -13,6 +13,8 @@ Hardening release: the type checker catches props that do nothing, the styleshee
 - **The stylesheet is prefixed.** Every utility the library ships is `rra:`-prefixed and its theme variables are `--rra-*`, so it can't override or reorder an app's own Tailwind classes (`.flex`, `.absolute`, …) or `--color-*` variables. The `rra-*` hook classes (`rra-avatar`, `rra-state-pill`, `rra-glow`, …) keep their names; only CSS that targeted the library's internal utility classes needs updating.
 
 ### Added
+- **Themable overlays.** The state pill, thought and emoji bubbles and subtitles read CSS variables (`--rra-bubble-bg`, `--rra-bubble-fg`, `--rra-bubble-border`, `--rra-bubble-accent`, `--rra-caption-bg`, `--rra-caption-fg`, `--rra-caption-border`, `--rra-caption-shadow`, `--rra-pill-fg`) set on any ancestor. The defaults are the previous colors, so nothing changes unless you set one. New hook classes `rra-bubble` and `rra-caption-box`. See "Theming" in the README.
+- README: a "Pick a face" overview of every kind of face up front, a "Theming" section, and a "Responsible use" section (labeling AI, likeness rights).
 - Per-variant prop types: `PresetAvatarProps`, `ByosAvatarProps`, `OrbVariantProps`, `DiceBearVariantProps`, `VrmVariantProps`, `GlbVariantProps` and `FaceTuningProps`.
 - Type tests (`src/lib/variantProps.test.tsx`): `npm run lint` fails if a prop that doesn't apply stops being rejected.
 
@@ -21,6 +23,7 @@ Hardening release: the type checker catches props that do nothing, the styleshee
 - The library build type-checks with `strict`, `noUnusedLocals` and `noUnusedParameters`.
 
 ### Fixed
+- One thought bubble at a time: while the emoji reel or the text thought bubble shows, the face's own `#rra-think` bubble steps aside instead of stacking under it. The text bubble drops its trail of dots, and the emoji bubble sits higher, above the head instead of over it.
 - `VideoAvatar` clips the footage to the frame's `border-radius` again: `style={{ borderRadius: '50%' }}` rounds the video, as in 0.5. (0.6 let the overlays overflow the frame and stopped clipping the clips.)
 - An unused `React` import in `VideoAvatar` broke consumers that type-check the source with `noUnusedLocals`.
 

@@ -47,12 +47,8 @@ export function AvatarCaption({ text, maxChars = 160, className = '', style }: A
         key={clean}
         role="status"
         aria-live="polite"
-        className="rra-enter rra:inline-block rra:max-w-[640px] rra:text-center rra:text-base rra:md:text-lg rra:font-medium rra:text-zinc-100 rra:leading-relaxed rra:px-5 rra:py-3 rra:rounded-2xl rra:border rra:border-zinc-700/40 rra:break-words"
-        style={{
-          textShadow: '0px 1px 3px rgba(0,0,0,0.5)',
-          background: 'rgba(9, 9, 11, 0.8)',
-          backdropFilter: 'blur(12px)',
-        }}
+        className="rra-enter rra-caption-box rra:inline-block rra:max-w-[640px] rra:text-center rra:text-base rra:md:text-lg rra:font-medium rra:leading-relaxed rra:px-5 rra:py-3 rra:rounded-2xl rra:break-words"
+        style={{ backdropFilter: 'blur(12px)' }}
       >
         {clean}
       </span>
@@ -87,12 +83,12 @@ export function AvatarThought({
       className={`rra-thought rra-enter rra:w-full rra:max-w-[420px] rra:text-left rra:pointer-events-none ${className}`}
       style={{ ...ENTER_SOFT, ...style }}
     >
-      <div className="rra:bg-zinc-900/90 rra:backdrop-blur-xl rra:text-zinc-100 rra:px-5 rra:py-4 rra:rounded-3xl rra:shadow-[0_10px_30px_rgba(139,92,246,0.15)] rra:border rra:border-purple-500/25 rra:text-sm rra:italic rra:break-words">
-        <div className="rra:text-purple-400 rra:text-[10px] rra:uppercase rra:tracking-widest rra:font-mono rra:font-bold rra:mb-1 rra:flex rra:items-center rra:gap-1.5">
-          <span className="rra:w-1.5 rra:h-1.5 rra:rounded-full rra:bg-purple-400 rra:animate-pulse" />
+      <div className="rra-bubble rra:backdrop-blur-xl rra:px-5 rra:py-4 rra:rounded-3xl rra:shadow-[0_10px_30px_rgba(139,92,246,0.15)] rra:text-sm rra:italic rra:break-words">
+        <div className="rra-bubble-accent rra:text-[10px] rra:uppercase rra:tracking-widest rra:font-mono rra:font-bold rra:mb-1 rra:flex rra:items-center rra:gap-1.5">
+          <span className="rra:w-1.5 rra:h-1.5 rra:rounded-full rra:bg-current rra:animate-pulse" />
           {label}
         </div>
-        <p className="rra:leading-relaxed rra:text-zinc-200">{clean}</p>
+        <p className="rra:leading-relaxed">{clean}</p>
       </div>
     </div>
   );
@@ -156,7 +152,7 @@ export function ThoughtEmojiBubble({
       aria-label="Thinking"
     >
       <div
-        className="rra:relative rra:flex rra:items-center rra:justify-center rra:rounded-full rra:bg-zinc-900/90 rra:backdrop-blur-xl rra:border rra:border-purple-500/25 rra:shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
+        className="rra-bubble rra:relative rra:flex rra:items-center rra:justify-center rra:rounded-full rra:backdrop-blur-xl rra:shadow-[0_10px_30px_rgba(139,92,246,0.25)]"
         style={{ width: size, height: size }}
       >
         {/* Keyed by index: exactly one glyph is ever mounted, and each new one

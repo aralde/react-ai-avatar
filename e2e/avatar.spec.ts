@@ -148,6 +148,11 @@ test.describe('overlays', () => {
     await expect(pill).toHaveText('Working: search_web');
   });
 
+  test('restyles the overlays through the theme variables', async ({ page }) => {
+    await open(page, 'realtime', { style: { '--rra-pill-fg': '#ff0000' } });
+    await expect(page.locator('.rra-state-pill')).toHaveCSS('color', 'rgb(255, 0, 0)');
+  });
+
   test('names the avatar for assistive tech', async ({ page }) => {
     await open(page, 'realtime', { label: 'Asistente', state: 'speaking' });
     await expect(page.getByRole('img', { name: 'Asistente (Speaking)' })).toBeVisible();
@@ -160,6 +165,13 @@ test.describe('overlays', () => {
     expect(box?.height).toBe(300);
     // 28% of the measured 300 px
     await expect(page.locator('.rra-thought-emoji > div')).toHaveCSS('width', '84px');
+  });
+
+  test("hides the face's own thought bubble while the emoji reel shows", async ({ page }) => {
+    await open(page, 'realtime', { state: 'thinking', thinkingEmojis: true });
+    await expect(page.locator('#rra-think')).toHaveCSS('visibility', 'hidden');
+    await setProps(page, { thinkingEmojis: false });
+    await expect(page.locator('#rra-think')).toHaveCSS('visibility', 'visible');
   });
 
   test('cycles the thinking emojis', async ({ page }) => {

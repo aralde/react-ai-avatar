@@ -7,9 +7,9 @@
 <h1 align="center">react-ai-avatar</h1>
 
 <p align="center">
-  <strong>A face for your AI.</strong><br/>
-  A presentational React avatar for realtime LLM voice &amp; text UIs — you bring the connection,<br/>
-  it brings the face that visibly <strong>listens, thinks and speaks</strong>.
+  <strong>A face for your AI.</strong> One React component. No backend.<br/>
+  Pass the <code>state</code> you already track and your voice or token stream,<br/>
+  and the face <strong>listens, thinks, calls tools and speaks</strong>.
 </p>
 
 <p align="center">
@@ -31,7 +31,7 @@
 
 ---
 
-**react-ai-avatar** handles exactly one step of your voice/chat pipeline: turning audio amplitude and conversation-state changes into a face that visibly reacts. It is **completely LLM-agnostic** — it doesn't know about Gemini, OpenAI or ElevenLabs. You pass two live things — a `state` and (optionally) a WebAudio `AnalyserNode` — and it does the rest. No runtime dependencies besides React. Your host app keeps the microphone, the WebSocket and the AI provider; **none of those dependencies enter your bundle**. One thing, done well, embeddable in a few lines, no backend, MIT.
+It runs entirely in the browser and works with any model: Gemini Live, OpenAI Realtime, a streaming chat endpoint, a local LLM. Your app keeps the microphone, the connection and the provider; the library only draws the face.
 
 ```tsx
 import { RealtimeAvatar } from 'react-ai-avatar';
@@ -40,6 +40,22 @@ import 'react-ai-avatar/style.css';
 // The whole thing, minimally. Every prop has a sensible default.
 <RealtimeAvatar state="speaking" />
 ```
+
+### Pick a face
+
+One API, seven kinds of face. Every one reacts to the same five states and the same mouth drivers:
+
+| Face | What it is | How |
+|---|---|---|
+| **Video** | a filmed or generated person, one short clip per state | [`<VideoAvatar clips={…} />`](#video-avatars-videoavatar) |
+| **Orb** | the glossy sphere voice assistants use, no face | [`variant="orb"`](#the-orb-orb) |
+| **Flat presets** | four original SVG looks: geometric, memoji, pixel art, doodle | [`variant="memoji"`](#the-avatar-catalog) |
+| **Characters** | branded faces: a developer, a red squirrel, an illustrated portrait | [`react-ai-avatar/characters`](#building-blocks) |
+| **DiceBear** | a different face per seed, from a curated CC0 set | [`variant="dicebear"`](#dicebear-avatars-dicebear) |
+| **3D** | VRoid/VRM or glTF heads with ARKit blendshapes | [`variant="vrm"` / `"glb"`](#3d-avatars-vrm-and-glb) |
+| **Your SVG** | any drawing with five tagged layers | [children of `RealtimeAvatar`](#bring-your-own-svg-byos) |
+
+The pill, bubbles and subtitles around the face are [themable with CSS variables](#theming).
 
 <p align="center">
   <img src="./assets/banner.png" alt="The react-ai-avatar catalog reacting to conversation state" width="100%" />
@@ -124,8 +140,10 @@ What each import costs your bundle, tree-shaken, minified and gzipped, with Reac
 - [3D avatars (VRM and GLB)](#3d-avatars-vrm-and-glb)
 - [DiceBear avatars (`dicebear`)](#dicebear-avatars-dicebear)
 - [Video avatars (`VideoAvatar`)](#video-avatars-videoavatar)
+- [Theming](#theming)
 - [API reference](#api-reference)
 - [Building blocks](#building-blocks)
+- [Responsible use](#responsible-use)
 - [Positioning](#positioning)
 - [Migrating from 0.6](#migrating-from-06)
 - [Migrating from 0.5](#migrating-from-05)
@@ -148,6 +166,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
 - 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
+- 🖌️ **Themable overlays** — the pill, bubbles and subtitles read [CSS variables](#theming); the stylesheet is prefixed, so it never collides with your own Tailwind.
 - ♿ **Production quality** — SSR-safe (Next.js friendly), honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - 🎬 **Video avatars (`VideoAvatar`)** — bring your own footage: one short looping clip per state (generated with a text-to-video model or recorded), crossfaded on state changes, with speech-gated talking, idle variations and flicker-free tool bursts. Photoreal, still 100% client-side.
 - 🧊 **Optional 3D (VRM/GLB)** — `variant="vrm"` / `variant="glb"` render VRoid/VRM and ARKit-rigged glTF models with visemes and gaze tracking. The three.js stack is an *optional* peer dependency, lazy-loaded only if you use it.
@@ -372,7 +391,7 @@ npm install @dicebear/core @dicebear/collection
 
 ## Video avatars (`VideoAvatar`)
 
-Instead of drawing a face, play footage: one short looping clip per state, crossfaded when `state` changes. The package ships **no** footage — you pass the URLs.
+Instead of drawing a face, play footage: one short looping clip per state, crossfaded when `state` changes. The package ships **no** footage — you pass the URLs. A photoreal face is the one that most needs an "AI" label and the rights to the likeness: see [Responsible use](#responsible-use).
 
 ```tsx
 import { VideoAvatar, type VideoClips, type IdleVariation } from 'react-ai-avatar';
@@ -462,6 +481,26 @@ The person in the reference frame talks warmly to the camera, explaining somethi
 
 **Limits, honestly:** the mouth isn't synced to the words — speaking is gated on/off by speech energy, not phoneme-accurate. Speech detection runs on `requestAnimationFrame`, so it pauses in background tabs. Clips must be muted to autoplay (they are). Seven 512 px clips run about 3 MB as WebM; they're loaded up front (`preload="auto"`) so switches are instant. See [`examples/12-video-avatar.tsx`](examples/12-video-avatar.tsx).
 
+## Theming
+
+The face takes `stateColors` (ring, glow, pill and orb per state) and, for the flat presets, `customization`. Everything around the face reads CSS variables, so you can match your design system without touching the layout. Set them on `:root`, your app shell, or one avatar's `style`; the defaults are the dark look you see in the demos.
+
+```css
+:root {
+  --rra-bubble-bg: #ffffff;        /* thought and emoji bubbles */
+  --rra-bubble-fg: #1f2937;        /* thought text */
+  --rra-bubble-border: #0d9488;    /* bubble outline */
+  --rra-bubble-accent: #0d9488;    /* "Thought process" label */
+  --rra-caption-bg: #ffffff;       /* subtitles */
+  --rra-caption-fg: #111827;
+  --rra-caption-border: #d1d5db;
+  --rra-caption-shadow: none;      /* the default text-shadow suits dark backgrounds */
+  --rra-pill-fg: #ffffff;          /* state pill text; its fill is the state color */
+}
+```
+
+The overlays keep stable hook classes (`rra-avatar`, `rra-state-pill`, `rra-glow`, `rra-bubble`, `rra-caption-box`), and the root carries `data-state`, so you can go further in plain CSS: `.rra-avatar[data-state='thinking'] .rra-state-pill { … }`. For a fully custom HUD, turn the overlays off (`showStatePill={false}`, …) and render your own, or the in-flow `<AvatarCaption>` / `<AvatarThought>` widgets, next to the avatar.
+
 ## API reference
 
 ### `<RealtimeAvatar />`
@@ -483,8 +522,8 @@ The person in the reference frame talks warmly to the camera, explaining somethi
 - `thinkingEmojis` (`boolean | string[]`) — optional emulated "thinking" reel. While `state="thinking"`, a bubble in the avatar's top-right corner cross-fades through a set of emojis instead of showing raw reasoning: pass `true` for the default reasoning/study/web set (`🤔 💭 📚 🔍 🌐 💡 🧠 📝 ⚙️`) or your own array. It's anchored **inside** the avatar's own `size × size` box (not floating outside), so it never grows the component's footprint or collides with your surrounding layout. When active it takes the bubble slot, so the text `thought` overlay stands down — surface the real reasoning elsewhere (e.g. a Claude-Code-style panel in your chat). `thinkingEmojiInterval` (`number`, ms, default `900`) tunes the cadence; `thinkingEmojiSize` (`number`, px, default ~28% of `size`) tunes the bubble diameter. Honors `prefers-reduced-motion` (holds one emoji). See [`examples/09-thinking-emoji-reel.tsx`](examples/09-thinking-emoji-reel.tsx).
 - `showGlow` / `showStatePill` / `showThought` / `showSubtitle` (`boolean`) — HUD satellites, each `true` by default. Set any to `false` to hide it individually: the reactive glow, the state pill, the thought bubble, and the subtitle respectively. The built-in subtitle/thought float `absolute` around the face (needs open canvas); inside a constrained card, set `showSubtitle={false}` / `showThought={false}` and render `<AvatarCaption>` / `<AvatarThought>` in your own layout slot instead.
 - `maxMouthOpening`, `mouseTrackingIntensity`, `blinkIntervalMin/Max`, `blinkDuration` — animation tuning.
-- `stateColors`, `stateLabels` — theming; labels are announced via `aria-live` and used in the accessible name, so localize them there. Both cover all five states including `working`.
-- `customization` — preset colors and accessories (skin, hair, clothing, glasses, headphones…).
+- `stateColors`, `stateLabels` — theming; labels are announced via `aria-live` and used in the accessible name, so localize them there. Both cover all five states including `working`. The overlays' own colors are [CSS variables](#theming).
+- `customization` — flat presets only: colors and accessories (skin, hair, clothing, glasses, headphones…). Pass just the keys you change.
 
 ### `<VideoAvatar />`
 
@@ -523,6 +562,17 @@ From the main entry again:
 - `AvatarCaption` / `AvatarThought` — host-placed caption + thought widgets. In-flow (not `absolute`), so they fit your own layout slot without overflow; both flatten markdown to spoken prose and roll a trailing window.
 - `ThoughtEmojiBubble` — the standalone emoji reel behind `thinkingEmojis` (cross-fades through `emojis`, honors reduced motion). Drop it into your own slot to run it independent of `state`. `DEFAULT_THINKING_EMOJIS` is the exported default set.
 - `toPlainText(md)` / `tailWindow(text, { maxChars })` — the pure text helpers behind those widgets, for building your own caption.
+
+## Responsible use
+
+A face makes an assistant feel like someone. Some care keeps that honest:
+
+- **Say it's an AI.** Label the assistant as AI-generated wherever it appears, especially with `VideoAvatar` or any photoreal face. Several jurisdictions now require it for synthetic content that resembles a real person (the EU AI Act's transparency rules, for one).
+- **Use faces you have the rights to.** Footage of a real person needs their consent for this use; a generated person should not imitate a real one. Check the terms of the video model you generate clips with.
+- **Don't let the face promise more than the model.** A calm, confident face over a wrong answer still misleads. Show `thinking` and `working` honestly, and keep errors visible.
+- **Respect motion preferences.** Every face already honors `prefers-reduced-motion`; don't override it.
+
+The library ships no footage and no likeness of anyone but the author's own portrait.
 
 ## Positioning
 

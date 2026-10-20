@@ -40,6 +40,14 @@ describe('shared overlays', () => {
     expect(pill(realtime({ state: 'listening', stateLabels: { listening: 'Escuchando' } }))).toBe('Escuchando');
   });
 
+  it('marks an overlay bubble so the face hides its own', () => {
+    const marked = /class="rra-avatar[^"]*"[^>]*data-overlay-bubble=""|data-overlay-bubble=""[^>]*class="rra-avatar/;
+    expect(realtime({ state: 'thinking', thinkingEmojis: true })).toMatch(marked);
+    expect(realtime({ state: 'thinking', thought: 'Hmm' })).toMatch(marked);
+    expect(realtime({ state: 'thinking' })).not.toContain('data-overlay-bubble');
+    expect(realtime({ state: 'idle', thinkingEmojis: true })).not.toContain('data-overlay-bubble');
+  });
+
   it('defaults the state to idle', () => {
     expect(realtime({})).toContain('data-state="idle"');
     expect(video({})).toContain('data-state="idle"');

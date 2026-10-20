@@ -140,20 +140,24 @@ function Glow({ state, color, source }: { state: AvatarState; color: string; sou
   );
 }
 
-/** "Thinking" emoji bubble, anchored in the avatar's own top-right corner. */
+/** The bubble trail fades out: each dot mixes less of the border color in. */
+const trailMix = (percent: number) => ({ '--rra-bubble-border-mix': `${percent}%` }) as React.CSSProperties;
+
+/** "Thinking" emoji bubble at the avatar's top-right corner, raised above the
+ *  head so it doesn't cover the face. It overflows the box visually only. */
 function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: number; size: number }) {
   return (
-    <div className="rra:absolute rra:z-40" style={{ top: '2%', right: '2%' }}>
+    <div className="rra:absolute rra:z-40" style={{ top: -size * 0.45, right: '-2%' }}>
       <div className="rra:relative">
         <ThoughtEmojiBubble emojis={emojis} interval={interval} size={size} />
         {/* Trail circles leading down-left from the bubble toward the face */}
         <div
-          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/25 rra:shadow-md rra:backdrop-blur-md"
+          className="rra-bubble rra:absolute rra:rounded-full rra:shadow-md rra:backdrop-blur-md"
           style={{ width: size * 0.22, height: size * 0.22, bottom: -size * 0.14, left: -size * 0.02 }}
         />
         <div
-          className="rra:absolute rra:rounded-full rra:bg-zinc-900/90 rra:border rra:border-purple-500/20 rra:shadow-sm rra:backdrop-blur-md"
-          style={{ width: size * 0.14, height: size * 0.14, bottom: -size * 0.3, left: -size * 0.18 }}
+          className="rra-bubble rra:absolute rra:rounded-full rra:shadow-sm rra:backdrop-blur-md"
+          style={{ width: size * 0.14, height: size * 0.14, bottom: -size * 0.3, left: -size * 0.18, ...trailMix(20) }}
         />
       </div>
     </div>
@@ -164,13 +168,7 @@ function EmojiBubble({ emojis, interval, size }: { emojis: string[]; interval: n
 function ThoughtBubble({ text }: { text: string }) {
   return (
     <div className="rra:absolute rra:bottom-[108%] rra:left-1/2 rra:-translate-x-1/2 rra:w-[90vw] rra:max-w-[340px] rra:md:max-w-[420px] rra:z-40">
-      <div className="rra:relative">
-        <AvatarThought text={text} className="rra:max-w-none" />
-        {/* Thought trail circles pointing down toward the face */}
-        <div className="rra:absolute rra:-bottom-3 rra:left-1/2 rra:-translate-x-1/2 rra:w-4 rra:h-4 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/20 rra:shadow-md rra:backdrop-blur-md" />
-        <div className="rra:absolute rra:-bottom-6 rra:left-[48%] rra:-translate-x-1/2 rra:w-2.5 rra:h-2.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/15 rra:shadow-sm rra:backdrop-blur-md" />
-        <div className="rra:absolute rra:-bottom-8 rra:left-[47%] rra:-translate-x-1/2 rra:w-1.5 rra:h-1.5 rra:bg-zinc-900/90 rra:rounded-full rra:border rra:border-purple-500/10 rra:backdrop-blur-md" />
-      </div>
+      <AvatarThought text={text} className="rra:max-w-none" />
     </div>
   );
 }
@@ -180,11 +178,11 @@ function StatePill({ text, color, halo, ping }: { text: string; color: string; h
     <div
       role="status"
       aria-live="polite"
-      className="rra-state-pill rra:absolute rra:-bottom-6 rra:px-4 rra:py-1.5 rra:rounded-full rra:text-xs rra:font-bold rra:text-white rra:uppercase rra:tracking-widest rra:shadow-lg rra:z-30 rra:cursor-default rra:select-none rra:border rra:border-white/10"
+      className="rra-state-pill rra:absolute rra:-bottom-6 rra:px-4 rra:py-1.5 rra:rounded-full rra:text-xs rra:font-bold rra:uppercase rra:tracking-widest rra:shadow-lg rra:z-30 rra:cursor-default rra:select-none rra:border rra:border-white/10"
       style={{ backgroundColor: color, boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${hexToRgba(color, halo)}` }}
     >
       <span className="rra:flex rra:items-center rra:gap-1.5">
-        <span className={`rra:w-2 rra:h-2 rra:rounded-full rra:bg-white ${ping ? 'rra:animate-ping' : ''}`} />
+        <span className={`rra:w-2 rra:h-2 rra:rounded-full rra:bg-current ${ping ? 'rra:animate-ping' : ''}`} />
         {text}
       </span>
     </div>
@@ -227,12 +225,15 @@ export function AvatarFrame({
   const emojiReel = Array.isArray(thinkingEmojis) ? thinkingEmojis : thinkingEmojis ? DEFAULT_THINKING_EMOJIS : null;
   const emojiSize = thinkingEmojiSize ?? Math.round(width * 0.28);
   const showEmojis = state === 'thinking' && !!emojiReel && emojiReel.length > 0 && emojiSize > 0;
+  const showThoughtBubble = !showEmojis && showThought && !!thought;
 
   return (
     <AvatarStateContext.Provider value={state}>
       <div
         ref={rootRef}
         data-state={state}
+        // An overlay bubble replaces the face's own (#rra-think): one bubble at most (see lib.css).
+        data-overlay-bubble={showEmojis || showThoughtBubble ? '' : undefined}
         className={`rra-avatar rra:relative rra:flex rra:flex-col rra:items-center rra:justify-center ${className}`}
         style={{ width: resolvedSize, height: typeof resolvedSize === 'number' ? resolvedSize : undefined, aspectRatio: '1 / 1', ...style }}
       >
@@ -251,7 +252,7 @@ export function AvatarFrame({
         {showEmojis ? (
           <EmojiBubble emojis={emojiReel} interval={thinkingEmojiInterval} size={emojiSize} />
         ) : (
-          showThought && thought && <ThoughtBubble text={thought} />
+          showThoughtBubble && <ThoughtBubble text={thought} />
         )}
 
         {showStatePill && (
