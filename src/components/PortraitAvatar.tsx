@@ -1,5 +1,6 @@
 import React from 'react';
 import type { AvatarState } from '../lib/types';
+import { useAvatarState } from '../lib/avatarState';
 import {
   PORTRAIT_BACK,
   PORTRAIT_FRONT,
@@ -36,6 +37,7 @@ export interface PortraitAvatarProps {
   /** SVG width/height. Defaults to `'100%'` so it fills its (sized) container.
    *  Pass a number for a fixed pixel size. */
   size?: number | string;
+  /** Defaults to the enclosing avatar's state (inside `RealtimeAvatar`), else `'idle'`. */
   state?: AvatarState;
   /**
    * Opt in to the per-state poses: a coffee break every 20 s while `idle`, and
@@ -386,7 +388,8 @@ ${s} .rra-pt-cursor { animation: rra-pt-blink 1s steps(1) infinite; }
 
 // ---------- the avatar ----------
 
-export function PortraitAvatar({ size = '100%', state = 'idle', poses = false, className, style }: PortraitAvatarProps) {
+export function PortraitAvatar({ size = '100%', state: ownState, poses = false, className, style }: PortraitAvatarProps) {
+  const state = useAvatarState(ownState);
   // useId is stable across SSR/hydration; strip the characters CSS ids can't take.
   const root = `rra-pt-${React.useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const id = (name: string) => `${root}-${name}`;

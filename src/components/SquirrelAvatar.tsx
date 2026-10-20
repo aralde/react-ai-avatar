@@ -1,5 +1,5 @@
 import React from 'react';
-import type { AvatarCustomization } from './DefaultAvatar';
+import type { AvatarCustomization } from '../lib/types';
 
 /**
  * SquirrelAvatar — a full branded character (red-squirrel developer) drawn as a
@@ -18,6 +18,7 @@ import type { AvatarCustomization } from './DefaultAvatar';
  */
 
 import type { AvatarState } from '../lib/types';
+import { useAvatarState } from '../lib/avatarState';
 
 export interface SquirrelAvatarProps {
   /** SVG width/height. Defaults to `'100%'` so the squirrel fills its (sized)
@@ -25,6 +26,7 @@ export interface SquirrelAvatarProps {
    *  Pass a number for a fixed pixel size. */
   size?: number | string;
   customization?: Partial<AvatarCustomization>;
+  /** Defaults to the enclosing avatar's state (inside `RealtimeAvatar`), else `'idle'`. */
   state?: AvatarState;
   /**
    * Opt in to the character's per-state poses: head tilt + hand-on-chin while
@@ -40,11 +42,12 @@ export interface SquirrelAvatarProps {
 export function SquirrelAvatar({
   size = '100%',
   customization,
-  state,
+  state: ownState,
   poses = false,
   className,
   style,
 }: SquirrelAvatarProps) {
+  const state = useAvatarState(ownState);
   const {
     skinColor: fur = '#cf6b34', // fur — also used for the eyelids
     bgColor = '#6fb3bd',

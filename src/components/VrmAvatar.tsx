@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { AvatarProps } from './DefaultAvatar';
+import type { AvatarProps } from '../lib/types';
 import { createMouthEngine, MouthEngine, MouthSource } from '../lib/mouthEngine';
 import { useReducedMotion } from '../lib/useReducedMotion';
 

@@ -18,3 +18,14 @@ export function hexToRgba(color: string, opacity: number): string {
   }
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
+
+/** Darken a `#rrggbb` color by `percent` (0–100) of full scale, per channel. */
+export function darkenColor(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const channel = (v: number) => Math.min(255, Math.max(0, v - amt));
+  const r = channel(num >> 16);
+  const g = channel((num >> 8) & 0xff);
+  const b = channel(num & 0xff);
+  return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+}
