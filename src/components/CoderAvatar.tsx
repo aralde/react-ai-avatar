@@ -6,7 +6,7 @@ import { darkenColor } from '../lib/color';
  * CoderAvatar — a full branded character (young developer) drawn as a flat-vector
  * face: slouchy knit beanie, over-ear headphones, round glasses, hair escaping at
  * the temples, hoodie + circuit tee, and a neck bridging head and body. Own design
- * (MIT, no third-party assets). Sibling of `SquirrelAvatar`, same construction.
+ * (Apache 2.0, no third-party assets). Sibling of `SquirrelAvatar`, same construction.
  *
  * It implements the layer contract (see useAvatarRuntime) exactly like the built-in
  * presets, so the runtime drives blink / gaze / mouth for free. No state ring —

@@ -8,7 +8,7 @@ import { AvatarState } from '../lib/types';
  * into the paths; the runtime adds the life (blink, gaze, mouth).
  *
  * Implements the layer contract (see useAvatarRuntime).
- * License: MIT. Own design (no third-party assets).
+ * License: Apache 2.0. Own design (no third-party assets).
  */
 
 export interface DoodleAvatarProps {

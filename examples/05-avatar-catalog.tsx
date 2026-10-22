@@ -1,7 +1,7 @@
 /**
  * 05 · The avatar catalog — switching variants.
  *
- * Every built-in flat preset is original, MIT, CC0-safe (no attribution).
+ * Every built-in flat preset is original, Apache 2.0.
  * They all share the same animation runtime, so the only thing that changes is
  * `variant`. `orb` swaps the face for a voice-assistant sphere. `dicebear` is
  * included here too — it's generated client-side from a curated CC0 style set

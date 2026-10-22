@@ -6,7 +6,7 @@
  * (tufted ears, bushy tail, round glasses, brown quiff, hoodie + circuit tee, a
  * neck bridging head and body). It's still just an SVG implementing the same
  * `#rra-*` hooks — the runtime gives it blink, gaze, audio/text mouth and the
- * thinking bubble for free. Your design, your license (this one is MIT, own art).
+ * thinking bubble for free. Your design, your license (this one is Apache 2.0, own art).
  *
  * The only "special" parts are the contract hooks; everything else is plain flat
  * vector you draw freely. The eyes show the canonical three-layer build, in paint

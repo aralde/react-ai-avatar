@@ -19,7 +19,7 @@
   <a href="#entry-points-and-bundle-size"><img alt="core size: 17 kB gzip" src="https://img.shields.io/badge/core-17%20kB%20gzip-0d9488"></a>
   <img alt="zero dependencies" src="https://img.shields.io/badge/dependencies-0-0d9488">
   <img alt="types included" src="https://img.shields.io/npm/types/react-ai-avatar?color=0d9488">
-  <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/npm/l/react-ai-avatar?color=0d9488"></a>
+  <a href="./LICENSE"><img alt="Apache 2.0 license" src="https://img.shields.io/npm/l/react-ai-avatar?color=0d9488"></a>
 </p>
 
 <p align="center">
@@ -153,7 +153,7 @@ What each import costs your bundle, tree-shaken, minified and gzipped, with Reac
 
 ## Philosophy
 
-One thing, done well, embeddable in a few lines, no backend, MIT. The library handles exactly one step of your voice pipeline: turning audio amplitude + state changes into a face that visibly **listens, thinks and speaks**. Your host app keeps the microphone, the WebSocket and the AI provider — none of those dependencies enter your bundle.
+One thing, done well, embeddable in a few lines, no backend, Apache 2.0. The library handles exactly one step of your voice pipeline: turning audio amplitude + state changes into a face that visibly **listens, thinks and speaks**. Your host app keeps the microphone, the WebSocket and the AI provider — none of those dependencies enter your bundle.
 
 ## Features
 
@@ -163,7 +163,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 - 🧠 **A visible `thinking` state** — pulsing thought bubble + upward gaze. Your users *see* the LLM thinking, not just a color change.
 - 🛠️ **A `working` state for tool use** — the fifth state, for agentic UIs. While the LLM runs a tool, the face goes amber and the state pill reads `Working: {tool}` (pass the tool name via the `tool` prop). Your users see *which* tool is running, not just a spinner.
 - 🔮 **An orb, too** — `variant="orb"` (or `<OrbAvatar />`): the glossy sphere voice assistants use instead of a face. It breathes, swirls while thinking, spins a ring while working and swells with the voice.
-- 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four MIT, CC0-safe SVG presets. No third-party assets, no attribution headaches.
+- 🎨 **Own-design avatar catalog** — `geometric`, `memoji`, `pixelart`, `doodle`: four original Apache 2.0 SVG presets. No third-party assets.
 - 🎲 **DiceBear avatars (`dicebear`)** — generate deterministic [DiceBear](https://www.dicebear.com) avatars client-side, from a curated **CC0-only** style set (still no attribution). Animated with an audio-reactive bounce.
 - 🔌 **Bring your own SVG (`byos`)** — any SVG implementing the small layer contract gets the full animation runtime for free. Your avatar, your license.
 - 🖌️ **Themable overlays** — the pill, bubbles and subtitles read [CSS variables](#theming); the stylesheet is prefixed, so it never collides with your own Tailwind.
@@ -185,7 +185,7 @@ One thing, done well, embeddable in a few lines, no backend, MIT. The library ha
 | `glb` | 3D glTF + ARKit blendshapes | optional, lazy-loaded; pass `glbUrl`. Works with [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) (MIT), Ready Player Me, or any `.glb` exposing the 52 ARKit morph targets |
 | `byos` | **your** SVG | pass it as children (the variant is then implied); see the layer contract |
 
-All built-in presets are original designs licensed MIT — nothing inside this package requires attribution.
+All built-in presets are original designs licensed Apache 2.0, like the rest of the package. Keep the LICENSE and NOTICE files when you redistribute them.
 
 Want a photoreal face instead of a drawn one? That's not a `variant` but its own component: see [Video avatars](#video-avatars-videoavatar).
 
@@ -637,4 +637,4 @@ Issues and pull requests are welcome — bug fixes, new presets that follow the 
 
 ## License
 
-MIT — for the library, the runtime and all built-in presets. Use it commercially, fork it, reskin it. SVGs you bring via `byos` keep whatever license they had.
+Apache License 2.0 — for the library, the runtime and all built-in presets. Use it commercially, fork it, reskin it; keep the [LICENSE](LICENSE) and [NOTICE](NOTICE) files when you redistribute. SVGs you bring via `byos` keep whatever license they had.

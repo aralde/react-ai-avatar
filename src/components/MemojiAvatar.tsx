@@ -7,7 +7,7 @@ import { AvatarState } from '../lib/types';
  * radial gradients for skin volume, glossy eyes with highlights, blush.
  *
  * Implements the layer contract (see useAvatarRuntime).
- * License: MIT. Own design (no third-party assets).
+ * License: Apache 2.0. Own design (no third-party assets).
  */
 
 export interface MemojiAvatarProps {
