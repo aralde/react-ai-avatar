@@ -14,7 +14,7 @@ export interface ContractAvatarProps {
   state: AvatarState;
   /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
   analyser: MouthSource;
-  size?: number;
+  size?: number | string;
   className?: string;
   style?: React.CSSProperties;
   maxMouthOpening?: number;
@@ -56,7 +56,7 @@ export function ContractAvatar({
   return (
     <div
       ref={containerRef}
-      className={`relative flex items-center justify-center ${className}`}
+      className={`rra:relative rra:flex rra:items-center rra:justify-center ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {children}

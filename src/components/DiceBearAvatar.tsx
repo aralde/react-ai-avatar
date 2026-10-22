@@ -42,7 +42,7 @@ export interface DiceBearAvatarProps {
   state: AvatarState;
   /** Mouth source: AnalyserNode (audio), SpeechActivitySource (text), or null. */
   analyser: MouthSource;
-  size?: number;
+  size?: number | string;
   /** Curated CC0 style; any DiceBear style id also works at your own licensing discretion. */
   collection?: DiceBearCollection | string;
   /** Deterministic seed — same seed + style => same face. */
@@ -310,11 +310,11 @@ export function DiceBearAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center ${className}`}
+      className={`rra:relative rra:flex rra:items-center rra:justify-center ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {frames && (
-        <div ref={wrapRef} className="relative w-full h-full" role="img" aria-label="Avatar">
+        <div ref={wrapRef} className="rra:relative rra:w-full rra:h-full" role="img" aria-label="Avatar">
           {frames.map((f, i) => (
             <div
               key={f.key}
@@ -323,7 +323,7 @@ export function DiceBearAvatar({
                 else frameElsRef.current.delete(f.key);
               }}
               dangerouslySetInnerHTML={{ __html: f.html }}
-              className="absolute inset-0 [&>svg]:w-full [&>svg]:h-full"
+              className="rra:absolute rra:inset-0 rra:[&>svg]:w-full rra:[&>svg]:h-full"
               style={{ visibility: i === 0 ? 'visible' : 'hidden' }}
             />
           ))}
@@ -332,12 +332,12 @@ export function DiceBearAvatar({
 
       {/* Loading spinner while the packages + frames resolve */}
       {!frames && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center">
           <div
-            className="w-8 h-8 border-4 rounded-full animate-spin mb-2"
+            className="rra:w-8 rra:h-8 rra:border-4 rra:rounded-full rra:animate-spin rra:mb-2"
             style={{ borderColor: `${accent}33`, borderTopColor: accent }}
           />
-          <span className="text-[10px] font-mono font-bold tracking-widest text-zinc-400 animate-pulse">
+          <span className="rra:text-[10px] rra:font-mono rra:font-bold rra:tracking-widest rra:text-zinc-400 rra:animate-pulse">
             GENERATING AVATAR…
           </span>
         </div>
@@ -345,14 +345,14 @@ export function DiceBearAvatar({
 
       {/* Optional peer deps not installed */}
       {error === 'missing' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md rounded-2xl p-4 text-center">
-          <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider mb-2">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center rra:bg-zinc-950/90 rra:backdrop-blur-md rra:rounded-2xl rra:p-4 rra:text-center">
+          <span className="rra:text-xs rra:font-mono rra:font-bold rra:text-amber-400 rra:uppercase rra:tracking-wider rra:mb-2">
             DiceBear not installed
           </span>
-          <p className="text-[10px] text-zinc-500 max-w-[220px] leading-relaxed mb-2">
+          <p className="rra:text-[10px] rra:text-zinc-500 rra:max-w-[220px] rra:leading-relaxed rra:mb-2">
             Install the optional peer dependencies to use this variant:
           </p>
-          <code className="text-[10px] text-zinc-300 bg-zinc-900 px-2 py-1 rounded border border-zinc-800 break-all">
+          <code className="rra:text-[10px] rra:text-zinc-300 rra:bg-zinc-900 rra:px-2 rra:py-1 rra:rounded rra:border rra:border-zinc-800 rra:break-all">
             npm i @dicebear/core @dicebear/collection
           </code>
         </div>
@@ -360,11 +360,11 @@ export function DiceBearAvatar({
 
       {/* Other generation errors */}
       {error && error !== 'missing' && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md rounded-2xl p-4 text-center">
-          <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider mb-2">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center rra:bg-zinc-950/90 rra:backdrop-blur-md rra:rounded-2xl rra:p-4 rra:text-center">
+          <span className="rra:text-xs rra:font-mono rra:font-bold rra:text-red-400 rra:uppercase rra:tracking-wider rra:mb-2">
             Failed to generate
           </span>
-          <p className="text-[10px] text-zinc-500 max-w-[220px] leading-relaxed break-all">{error}</p>
+          <p className="rra:text-[10px] rra:text-zinc-500 rra:max-w-[220px] rra:leading-relaxed rra:break-all">{error}</p>
         </div>
       )}
     </div>

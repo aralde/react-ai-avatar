@@ -1,148 +1,144 @@
-import React, { Suspense, useEffect, useRef } from 'react';
-import { AvatarCustomization } from './DefaultAvatar';
+import React, { Suspense } from 'react';
 import { ContractAvatar } from './ContractAvatar';
 import { GeometricAvatar } from './GeometricAvatar';
 import { MemojiAvatar } from './MemojiAvatar';
 import { PixelArtAvatar } from './PixelArtAvatar';
 import { DoodleAvatar } from './DoodleAvatar';
-import { DiceBearAvatar } from './DiceBearAvatar';
-import { AvatarCaption, AvatarThought, ThoughtEmojiBubble, DEFAULT_THINKING_EMOJIS } from './AvatarCaption';
-import { AvatarState } from '../lib/types';
-import type { SpeechActivitySource } from '../lib/speechActivity';
-import { useStreamingTextActivity } from '../lib/useStreamingTextActivity';
+import { OrbAvatar } from './OrbAvatar';
+import { AvatarFrame, type AvatarChromeProps } from './AvatarFrame';
+import type { AvatarCustomization } from '../lib/types';
 import type { DiceBearCollection } from '../lib/dicebear';
-import { useReducedMotion } from '../lib/useReducedMotion';
-import { hexToRgba } from '../lib/color';
-import { motion, useMotionValue } from 'motion/react';
+import { useMouthSource, type MouthDriverProps } from '../lib/useMouthSource';
 
-// Lazy-loaded so the three.js stack (optional peer deps) is only fetched
-// when variant="vrm" is actually rendered.
-const VrmAvatarLazy = React.lazy(() =>
+// The heavy renderers are lazy chunks: the three.js stack (optional peers) is
+// only fetched when variant="vrm" / "glb" renders, and the DiceBear renderer
+// (whose @dicebear/* peers it imports dynamically itself) when variant="dicebear".
+const VrmAvatarLazy = /* @__PURE__ */ React.lazy(() =>
   import('./VrmAvatar').then((m) => ({ default: m.VrmAvatar }))
 );
-
-// Same deal for the GLB + ARKit renderer: the three.js stack is only fetched
-// when variant="glb" is actually rendered.
-const GlbAvatarLazy = React.lazy(() =>
+const GlbAvatarLazy = /* @__PURE__ */ React.lazy(() =>
   import('./GlbArkitAvatar').then((m) => ({ default: m.GlbArkitAvatar }))
 );
+const DiceBearAvatarLazy = /* @__PURE__ */ React.lazy(() =>
+  import('./DiceBearAvatar').then((m) => ({ default: m.DiceBearAvatar }))
+);
 
-// Note: DiceBearAvatar itself is lightweight and imported directly. The
-// heavy, optional @dicebear/* packages are deferred at runtime by a dynamic
-// import *inside* the component — so they're only fetched when actually used.
+export type RealtimeAvatarVariant =
+  | 'geometric'
+  | 'memoji'
+  | 'pixelart'
+  | 'doodle'
+  | 'orb'
+  | 'vrm'
+  | 'glb'
+  | 'dicebear'
+  | 'byos';
 
-export interface RealtimeAvatarProps {
-  state: AvatarState;
-  /**
-   * WebAudio AnalyserNode for the audio-reactive mouth (voice pipelines).
-   * Optional: omit it (or pass `null`) and `speaking` falls back to a
-   * synthetic speech-like pattern — so the minimal usage is just
-   * `<RealtimeAvatar state={state} />`.
-   */
-  analyser?: AnalyserNode | null;
-  /**
-   * Token-rate mouth driver for text-streaming LLMs (OpenAI-style
-   * `/chat/completions` or `/responses` with `stream: true`). Create one with
-   * `createSpeechActivity()` and `push()` each streamed chunk. When provided,
-   * it drives the mouth instead of `analyser` — so a text-only assistant still
-   * gets a face that tracks the stream. See `createSpeechActivity`.
-   */
-  speechActivity?: SpeechActivitySource;
-  /**
-   * Declarative mouth driver for text-streaming chats. Pass the *accumulated*
-   * assistant text (the kind a hook like the Vercel AI SDK's `useChat` hands
-   * you — it grows each render); the avatar diffs its growth internally and
-   * drives the mouth from token cadence. No `createSpeechActivity`, no reader
-   * loop. Ignored when `speechActivity` is set; takes precedence over
-   * `analyser`. See `useStreamingTextActivity`.
-   */
-  streamingText?: string;
-  size?: number;
-  variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle' | 'vrm' | 'glb' | 'dicebear' | 'byos';
-  /** Your own contract-compliant SVG, rendered when variant="byos". */
-  children?: React.ReactNode;
-  vrmUrl?: string;
-  /** CORS-enabled .glb URL with ARKit blendshapes, for variant="glb". */
-  glbUrl?: string;
-  /** DiceBear style id (curated CC0 set), for variant="dicebear". */
-  dicebearCollection?: DiceBearCollection | string;
-  /** Deterministic DiceBear seed, for variant="dicebear". */
-  dicebearSeed?: string;
-  subtitle?: string;
-  thought?: string;
-  tool?: string;
-  /**
-   * Emulated "thinking" reel: a comic bubble that cross-fades through emojis
-   * while `state === 'thinking'`, instead of surfacing the raw reasoning on the
-   * avatar. Pass `true` for the default reasoning/study/web set, or your own
-   * emoji array. When active, it takes the bubble slot above the face and the
-   * text `thought` overlay is suppressed (show the real reasoning elsewhere,
-   * e.g. a Claude-Code-style panel in your chat).
-   */
-  thinkingEmojis?: boolean | string[];
-  /** Milliseconds each emoji stays before the next. Default 900. */
-  thinkingEmojiInterval?: number;
-  /**
-   * Emoji bubble diameter in px. Defaults to ~28% of `size`, so it scales with
-   * the avatar. The bubble is anchored inside the avatar's own box (top-right
-   * corner), so it never enlarges the component's footprint.
-   */
-  thinkingEmojiSize?: number;
-  /** HUD satellites — all on by default; set false to hide individually. */
-  showGlow?: boolean;
-  showStatePill?: boolean;
-  showThought?: boolean;
-  showSubtitle?: boolean;
-  className?: string;
-  style?: React.CSSProperties;
-
-  // Customizable Animation Parameters
+/** Animation tuning for the faces with eyes and a mouth (presets, byos, 3D). */
+export interface FaceTuningProps {
   maxMouthOpening?: number;
   blinkIntervalMin?: number;
   blinkIntervalMax?: number;
   blinkDuration?: number;
   mouseTrackingIntensity?: number;
-
-  // Customizable Theming
-  stateColors?: {
-    idle?: string;
-    listening?: string;
-    thinking?: string;
-    speaking?: string;
-    working?: string;
-  };
-  stateLabels?: {
-    idle?: string;
-    listening?: string;
-    thinking?: string;
-    speaking?: string;
-    working?: string;
-  };
-  customization?: AvatarCustomization;
 }
 
+/** Every variant-specific prop. Each variant allows its own and forbids the rest. */
+interface VariantOnlyProps extends FaceTuningProps {
+  children?: React.ReactNode;
+  customization?: Partial<AvatarCustomization>;
+  vrmUrl?: string;
+  glbUrl?: string;
+  dicebearCollection?: DiceBearCollection | string;
+  dicebearSeed?: string;
+}
+
+/** Marks the variant-specific props a variant doesn't take, so passing one is a type error. */
+type Without<K extends keyof VariantOnlyProps> = { [P in K]?: never };
+
+type CommonProps = AvatarChromeProps & MouthDriverProps;
+
+/** A flat preset. `variant` defaults to `'geometric'` when there are no children. */
+export type PresetAvatarProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'vrmUrl' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant?: 'geometric' | 'memoji' | 'pixelart' | 'doodle';
+    /** Colors and accessories; only the ones you pass change. */
+    customization?: Partial<AvatarCustomization>;
+  };
+
+/** Your own face: children imply `variant="byos"`, and they inherit `state`. */
+export type ByosAvatarProps = CommonProps &
+  FaceTuningProps &
+  Without<'customization' | 'vrmUrl' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant?: 'byos';
+    /**
+     * An SVG on the `#rra-*` contract, or a component like `SquirrelAvatar`.
+     * It inherits `state` from the avatar, so there is no need to pass it twice.
+     */
+    children: React.ReactNode;
+  };
+
+/** The voice-assistant sphere: no eyes or mouth, so no face tuning. */
+export type OrbVariantProps = CommonProps &
+  Without<keyof VariantOnlyProps> & {
+    variant: 'orb';
+  };
+
+export type DiceBearVariantProps = CommonProps &
+  Without<Exclude<keyof VariantOnlyProps, 'maxMouthOpening' | 'dicebearCollection' | 'dicebearSeed'>> & {
+    variant: 'dicebear';
+    maxMouthOpening?: number;
+    /** DiceBear style id (curated CC0 set). */
+    dicebearCollection?: DiceBearCollection | string;
+    /** Deterministic seed: same seed and style, same face. */
+    dicebearSeed?: string;
+  };
+
+export type VrmVariantProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'customization' | 'glbUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant: 'vrm';
+    /** VRM model URL. */
+    vrmUrl: string;
+  };
+
+export type GlbVariantProps = CommonProps &
+  FaceTuningProps &
+  Without<'children' | 'customization' | 'vrmUrl' | 'dicebearCollection' | 'dicebearSeed'> & {
+    variant: 'glb';
+    /** CORS-enabled .glb URL with ARKit blendshapes. */
+    glbUrl: string;
+  };
+
+/**
+ * One shape per `variant`: each takes the shared overlay and mouth-driver
+ * props plus its own, and a prop that doesn't apply (say `vrmUrl` on the orb)
+ * is a type error instead of being ignored.
+ */
+export type RealtimeAvatarProps =
+  | PresetAvatarProps
+  | ByosAvatarProps
+  | OrbVariantProps
+  | DiceBearVariantProps
+  | VrmVariantProps
+  | GlbVariantProps;
+
+const PRESETS = {
+  geometric: GeometricAvatar,
+  memoji: MemojiAvatar,
+  pixelart: PixelArtAvatar,
+  doodle: DoodleAvatar,
+} as const;
+
+/** The face fills the frame; the frame owns the size. */
+const FILL = '100%';
+
 export function RealtimeAvatar({
-  state,
-  analyser = null,
-  speechActivity,
-  streamingText,
-  size = 280,
-  variant = 'geometric',
+  variant,
   children,
   vrmUrl,
   glbUrl,
-  subtitle,
-  thought,
-  tool,
-  thinkingEmojis,
-  thinkingEmojiInterval = 900,
-  thinkingEmojiSize,
-  showGlow = true,
-  showStatePill = true,
-  showThought = true,
-  showSubtitle = true,
-  className = '',
-  style,
   dicebearCollection,
   dicebearSeed,
   maxMouthOpening,
@@ -150,264 +146,63 @@ export function RealtimeAvatar({
   blinkIntervalMax,
   blinkDuration,
   mouseTrackingIntensity,
-  stateColors,
-  stateLabels,
-  customization
+  customization,
+  analyser,
+  speechActivity,
+  streamingText,
+  ...chrome
 }: RealtimeAvatarProps) {
-  // A token-rate speech activity source takes precedence over the audio
-  // analyser as the mouth driver, so a text-streaming LLM gets a face too.
-  // It can come two ways: the explicit `speechActivity` prop (imperative —
-  // host owns the stream and calls push()), or `streamingText` (declarative —
-  // host passes accumulated text and we diff its growth here). Both collapse
-  // to one SpeechActivitySource; explicit wins. Whatever we land on rides the
-  // same internal channel (createMouthEngine detects the kind).
-  const textActivity = useStreamingTextActivity(streamingText);
-  const activitySource = speechActivity ?? textActivity;
-  const mouthSource = activitySource ?? analyser;
+  const mouthSource = useMouthSource({ analyser, speechActivity, streamingText });
+  const state = chrome.state ?? 'idle';
+  const stateColors = chrome.stateColors;
+  const kind = variant ?? (children ? 'byos' : 'geometric');
 
-  const avatarProps = {
+  const runtimeProps = {
     state,
     analyser: mouthSource,
-    size,
+    size: FILL,
     maxMouthOpening,
     blinkIntervalMin,
     blinkIntervalMax,
     blinkDuration,
     mouseTrackingIntensity,
     stateColors,
-    customization
   };
 
-  let AvatarComponent;
-  if (variant === 'vrm') {
-    AvatarComponent = (
-      <Suspense fallback={null}>
-        <VrmAvatarLazy {...avatarProps} vrmUrl={vrmUrl} />
-      </Suspense>
-    );
-  } else if (variant === 'glb') {
-    AvatarComponent = (
-      <Suspense fallback={null}>
-        <GlbAvatarLazy {...avatarProps} glbUrl={glbUrl} />
-      </Suspense>
-    );
-  } else if (variant === 'dicebear') {
-    AvatarComponent = (
-      <DiceBearAvatar
+  let face: React.ReactNode;
+  if (kind === 'vrm') {
+    face = <VrmAvatarLazy {...runtimeProps} vrmUrl={vrmUrl} />;
+  } else if (kind === 'glb') {
+    face = <GlbAvatarLazy {...runtimeProps} glbUrl={glbUrl} />;
+  } else if (kind === 'dicebear') {
+    face = (
+      <DiceBearAvatarLazy
         state={state}
         analyser={mouthSource}
-        size={size}
+        size={FILL}
         maxMouthOpening={maxMouthOpening}
         stateColors={stateColors}
         collection={dicebearCollection}
         seed={dicebearSeed}
       />
     );
-  } else if (variant === 'byos') {
-    AvatarComponent = <ContractAvatar {...avatarProps}>{children}</ContractAvatar>;
+  } else if (kind === 'orb') {
+    face = <OrbAvatar state={state} analyser={mouthSource} stateColors={stateColors} />;
+  } else if (kind === 'byos') {
+    face = <ContractAvatar {...runtimeProps}>{children}</ContractAvatar>;
   } else {
-    const presets = {
-      geometric: GeometricAvatar,
-      memoji: MemojiAvatar,
-      pixelart: PixelArtAvatar,
-      doodle: DoodleAvatar,
-    } as const;
-    const Preset = presets[variant] ?? GeometricAvatar;
-    AvatarComponent = (
+    const Preset = PRESETS[kind] ?? GeometricAvatar;
+    face = (
       // Keyed by variant so switching presets remounts the runtime cleanly
-      <ContractAvatar key={variant} {...avatarProps}>
-        <Preset size={size} customization={customization} state={state} />
+      <ContractAvatar key={kind} {...runtimeProps}>
+        <Preset size={FILL} customization={customization} state={state} />
       </ContractAvatar>
     );
   }
 
-  // Motion values for volume-reactive pulsing
-  const glowScaleValue = useMotionValue(1);
-  const glowOpacityValue = useMotionValue(0.15);
-  const requestRef = useRef<number | null>(null);
-  const reducedMotion = useReducedMotion();
-
-  // Resolved theme mappings with standard fallbacks
-  const resolvedStateColors = {
-    idle: stateColors?.idle ?? '#4b5563', // gray-600
-    listening: stateColors?.listening ?? '#3b82f6', // blue-500
-    thinking: stateColors?.thinking ?? '#8b5cf6', // purple-500
-    speaking: stateColors?.speaking ?? '#10b981', // emerald-500
-    working: stateColors?.working ?? '#f59e0b', // amber-500
-  };
-
-  const resolvedStateLabels = {
-    idle: stateLabels?.idle ?? 'Idle',
-    listening: stateLabels?.listening ?? 'Listening',
-    thinking: stateLabels?.thinking ?? 'Thinking...',
-    speaking: stateLabels?.speaking ?? 'Speaking',
-    working: stateLabels?.working ?? 'Working',
-  };
-
-  const glowShadows = {
-    idle: hexToRgba(resolvedStateColors.idle, 0.15),
-    listening: hexToRgba(resolvedStateColors.listening, 0.35),
-    thinking: hexToRgba(resolvedStateColors.thinking, 0.4),
-    speaking: hexToRgba(resolvedStateColors.speaking, 0.45),
-    working: hexToRgba(resolvedStateColors.working, 0.4),
-  };
-
-  useEffect(() => {
-    // Glow reacts to whichever driver is live: audio amplitude when an
-    // analyser is present, otherwise token-rate energy in text-stream mode.
-    const audioReactive = analyser && (state === 'speaking' || state === 'listening');
-    const textReactive = !analyser && activitySource && state === 'speaking';
-
-    if (!audioReactive && !textReactive) {
-      glowScaleValue.set(state === 'thinking' || state === 'working' ? 1.05 : 1);
-      glowOpacityValue.set(state === 'thinking' || state === 'working' ? 0.35 : 0.15);
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-      return;
-    }
-
-    const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
-
-    const updateGlow = () => {
-      let vol: number;
-      if (analyser && dataArray) {
-        analyser.getByteTimeDomainData(dataArray);
-        let maxVal = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          const dev = Math.abs(dataArray[i] - 128);
-          if (dev > maxVal) maxVal = dev;
-        }
-        vol = Math.min(1.0, maxVal / 128);
-      } else {
-        vol = activitySource ? activitySource.sample() : 0;
-      }
-
-      glowScaleValue.set(1 + vol * 0.35);
-      glowOpacityValue.set(0.15 + vol * 0.35);
-
-      requestRef.current = requestAnimationFrame(updateGlow);
-    };
-
-    requestRef.current = requestAnimationFrame(updateGlow);
-    return () => {
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
-    };
-  }, [analyser, activitySource, state, glowScaleValue, glowOpacityValue]);
-
-  // Emoji reel is only meaningful while thinking. `true` -> default set; an
-  // array -> that set (empty array disables). When it wins the bubble slot, the
-  // text `thought` overlay stands down so the two never stack.
-  const emojiReel = Array.isArray(thinkingEmojis)
-    ? thinkingEmojis
-    : thinkingEmojis
-      ? DEFAULT_THINKING_EMOJIS
-      : null;
-  const showThinkingEmojis = state === 'thinking' && !!emojiReel && emojiReel.length > 0;
-  // Bubble scales with the avatar and lives INSIDE the size×size box (top-right
-  // corner, where a circular avatar leaves empty canvas), so the component's
-  // declared footprint stays exactly `size` — no overflow for the host layout.
-  const emojiBubbleSize = thinkingEmojiSize ?? Math.round(size * 0.28);
-
   return (
-    <div className={`relative flex flex-col items-center justify-center ${className}`} style={{ width: size, height: size, ...style }}>
-      
-      {/* Soft ambient color glow behind the avatar, reacting to audio + state.
-          The old dashed "holographic projection ring" was removed: several
-          avatars already carry their own container, so the rotating border was
-          redundant and clashed with the realistic 3D model. */}
-      {showGlow && (
-        <motion.div
-          className="absolute rounded-[1.75rem] pointer-events-none filter blur-2xl"
-          style={{
-            width: size * 0.9,
-            height: size * 0.9,
-            backgroundColor: resolvedStateColors[state],
-            scale: glowScaleValue,
-            opacity: glowOpacityValue,
-          }}
-        />
-      )}
-      
-      {/* Absolute center of the avatar image */}
-      <div className="w-full h-full relative flex items-center justify-center z-10">
-        {AvatarComponent}
-      </div>
-
-      {/* Emulated-thinking emoji bubble. Unlike the text thought overlay it does
-          NOT float outside the box: it's anchored in the avatar's own top-right
-          corner (empty canvas on a circular avatar) so the component keeps its
-          `size × size` footprint and never collides with the host layout. Trail
-          dots lead down-left from the bubble toward the face. */}
-      {showThinkingEmojis ? (
-        <div
-          className="absolute z-40"
-          style={{ top: Math.round(size * 0.02), right: Math.round(size * 0.02) }}
-        >
-          <div className="relative">
-            <ThoughtEmojiBubble
-              emojis={emojiReel!}
-              interval={thinkingEmojiInterval}
-              size={emojiBubbleSize}
-            />
-            {/* Trail circles leading down-left from the bubble toward the face */}
-            <div
-              className="absolute rounded-full bg-zinc-900/90 border border-purple-500/25 shadow-md backdrop-blur-md"
-              style={{
-                width: emojiBubbleSize * 0.22,
-                height: emojiBubbleSize * 0.22,
-                bottom: -emojiBubbleSize * 0.14,
-                left: -emojiBubbleSize * 0.02,
-              }}
-            />
-            <div
-              className="absolute rounded-full bg-zinc-900/90 border border-purple-500/20 shadow-sm backdrop-blur-md"
-              style={{
-                width: emojiBubbleSize * 0.14,
-                height: emojiBubbleSize * 0.14,
-                bottom: -emojiBubbleSize * 0.3,
-                left: -emojiBubbleSize * 0.18,
-              }}
-            />
-          </div>
-        </div>
-      ) : showThought && thought && (
-        <div className="absolute bottom-[108%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[340px] md:max-w-[420px] z-40">
-          <div className="relative">
-            <AvatarThought text={thought} className="max-w-none" />
-            {/* Elegant thought trail bubble circles pointing down toward avatar center */}
-            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-4 bg-zinc-900/90 rounded-full border border-purple-500/20 shadow-md backdrop-blur-md"></div>
-            <div className="absolute -bottom-6 left-[48%] -translate-x-1/2 w-2.5 h-2.5 bg-zinc-900/90 rounded-full border border-purple-500/15 shadow-sm backdrop-blur-md"></div>
-            <div className="absolute -bottom-8 left-[47%] -translate-x-1/2 w-1.5 h-1.5 bg-zinc-900/90 rounded-full border border-purple-500/10 backdrop-blur-md"></div>
-          </div>
-        </div>
-      )}
-
-      {/* Unified State Indicator Pill (Positioned right under the avatar, consistent for all) */}
-      {showStatePill && (
-        <motion.div
-          role="status"
-          aria-live="polite"
-          className="absolute -bottom-6 px-4 py-1.5 rounded-full text-xs font-bold text-white uppercase tracking-widest shadow-lg z-30 cursor-default select-none border border-white/10"
-          animate={{
-            backgroundColor: resolvedStateColors[state],
-            boxShadow: `0 4px 14px rgba(0,0,0,0.4), 0 0 16px ${glowShadows[state]}`
-          }}
-          transition={{ duration: 0.3 }}
-        >
-          <span className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full bg-white ${!reducedMotion && (state === 'speaking' || state === 'thinking') ? 'animate-ping' : ''}`} />
-            {state === 'working' && tool ? `Working: ${tool}` : resolvedStateLabels[state]}
-          </span>
-        </motion.div>
-      )}
-
-      {/* Movie-style Subtitles Overlay (Floats Centered BELOW the indicator).
-          Content shaping (markdown -> plain prose, rolling window) lives in
-          AvatarCaption; here we only position it. */}
-      {showSubtitle && subtitle && (
-        <div className="absolute top-[115%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[500px] md:max-w-[640px] z-50 pb-8">
-          <AvatarCaption text={subtitle} />
-        </div>
-      )}
-    </div>
+    <AvatarFrame {...chrome} defaultSize={280} mouthSource={mouthSource}>
+      <Suspense fallback={null}>{face}</Suspense>
+    </AvatarFrame>
   );
 }

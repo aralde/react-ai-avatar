@@ -15,7 +15,7 @@
  * Optional data-* attrs: data-base-x / data-base-y (pupil rest), data-max-height
  * (closed lid height), data-quantize (snap motion to a grid).
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { RealtimeAvatar } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';

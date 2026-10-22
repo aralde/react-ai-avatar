@@ -23,10 +23,11 @@
  *   #rra-mouth   an ellipse resting thin over the mouth (ry ≈ 1–3)
  *   #rra-think   a bubble of circles/rects outside the clip
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { useState } from 'react';
-import { RealtimeAvatar, PortraitAvatar, type AvatarState } from 'react-ai-avatar';
+import { RealtimeAvatar, type AvatarState } from 'react-ai-avatar';
+import { PortraitAvatar } from 'react-ai-avatar/characters';
 import 'react-ai-avatar/style.css';
 
 const STATES: AvatarState[] = ['idle', 'listening', 'thinking', 'speaking', 'working'];
@@ -36,9 +37,9 @@ export default function PortraitAvatarExample() {
 
   return (
     <div style={{ display: 'grid', justifyItems: 'center', gap: 16 }}>
-      {/* byos children don't receive `state` from RealtimeAvatar — pass it yourself */}
-      <RealtimeAvatar state={state} variant="byos" size={320}>
-        <PortraitAvatar state={state} poses />
+      {/* Children inherit `state` from RealtimeAvatar — no need to pass it twice */}
+      <RealtimeAvatar state={state} size={320}>
+        <PortraitAvatar poses />
       </RealtimeAvatar>
 
       <div style={{ display: 'flex', gap: 8 }}>

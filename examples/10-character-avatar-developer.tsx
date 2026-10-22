@@ -23,7 +23,7 @@
  * hand on chin while thinking, and a typing-on-a-laptop / reading-a-book scene
  * while working.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { RealtimeAvatar } from 'react-ai-avatar';
 import 'react-ai-avatar/style.css';

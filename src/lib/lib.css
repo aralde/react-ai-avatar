@@ -4,11 +4,95 @@
  * Deliberately NOT the demo's stylesheet:
  * - no preflight (we must not reset the consumer's app styles)
  * - utilities are generated only from the library's components
+ * - everything is prefixed (`rra:flex`, `--rra-color-*`), so it can't collide
+ *   with the consumer's own Tailwind classes or theme variables
  */
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) prefix(rra);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 
 @source "../components";
 /* inlined base64 images: nothing to scan, and random runs could match utilities */
 @source not "../components/portraitAssets.ts";
+
+/*
+ * Entrance animations for the overlays (caption, thought, emoji bubble, glow).
+ * Plain CSS instead of an animation library: they are one-shot fades, and
+ * `prefers-reduced-motion` turns them off here instead of in every component.
+ */
+/*
+ * Theming. The overlays read these variables; set any of them on an ancestor
+ * (`:root`, your app shell, or the avatar's own `style`) to restyle the pill,
+ * bubbles and subtitles without touching the layout. The fallbacks are the
+ * default look. State colors come from the `stateColors` prop.
+ *
+ *   --rra-bubble-bg       thought and emoji bubbles, and their trail
+ *   --rra-bubble-fg       thought text
+ *   --rra-bubble-border   bubble outline (mixed with transparency per element)
+ *   --rra-bubble-accent   the "Thought process" label and its dot
+ *   --rra-caption-bg      subtitle box
+ *   --rra-caption-fg      subtitle text
+ *   --rra-caption-border  subtitle outline
+ *   --rra-caption-shadow  subtitle text-shadow (`none` on light backgrounds)
+ *   --rra-pill-fg         state pill text and dot
+ */
+@layer components {
+  .rra-bubble {
+    background-color: var(--rra-bubble-bg, color-mix(in oklab, oklch(21% 0.006 285.885) 90%, transparent));
+    color: var(--rra-bubble-fg, oklch(92% 0.004 286.32));
+    border: 1px solid
+      color-mix(in oklab, var(--rra-bubble-border, oklch(62.7% 0.265 303.9)) var(--rra-bubble-border-mix, 25%), transparent);
+  }
+  .rra-bubble-accent {
+    color: var(--rra-bubble-accent, oklch(71.4% 0.203 305.504));
+  }
+  .rra-caption-box {
+    background: var(--rra-caption-bg, rgba(9, 9, 11, 0.8));
+    color: var(--rra-caption-fg, oklch(96.7% 0.001 286.375));
+    border: 1px solid var(--rra-caption-border, color-mix(in oklab, oklch(37% 0.013 285.805) 40%, transparent));
+    text-shadow: var(--rra-caption-shadow, 0 1px 3px rgba(0, 0, 0, 0.5));
+  }
+  .rra-state-pill {
+    color: var(--rra-pill-fg, #fff);
+  }
+  /* While the emoji reel or the text thought bubble shows, the face's own
+     thought bubble steps aside, so the two never stack up. */
+  .rra-avatar[data-overlay-bubble] #rra-think {
+    visibility: hidden;
+  }
+  .rra-enter {
+    animation: rra-enter var(--rra-enter-duration, 180ms) ease-out both;
+  }
+  .rra-enter-pop {
+    animation: rra-enter-pop 180ms ease-out both;
+  }
+  .rra-state-pill,
+  .rra-glow {
+    transition-property: background-color, box-shadow;
+    transition-duration: 300ms;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rra-enter,
+    .rra-enter-pop {
+      animation: none;
+    }
+    .rra-state-pill,
+    .rra-glow {
+      transition: none;
+    }
+  }
+}
+
+@keyframes rra-enter {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rra-enter-y, 4px)) scale(var(--rra-enter-scale, 1));
+  }
+}
+
+@keyframes rra-enter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-15deg);
+  }
+}

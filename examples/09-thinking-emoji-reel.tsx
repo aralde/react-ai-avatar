@@ -14,7 +14,7 @@
  * This example needs no backend — it streams from the client-side mock in
  * `./shared/mockChatStream`.
  *
- * Run: npm install react-ai-avatar motion
+ * Run: npm install react-ai-avatar
  */
 import { useState } from 'react';
 import { RealtimeAvatar, AvatarThought } from 'react-ai-avatar';

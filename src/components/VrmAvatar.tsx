@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { VRM, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { AvatarProps } from './DefaultAvatar';
+import type { AvatarProps } from '../lib/types';
 import { createMouthEngine, MouthEngine, MouthSource } from '../lib/mouthEngine';
 import { useReducedMotion } from '../lib/useReducedMotion';
 
@@ -373,7 +373,7 @@ export function VrmAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-3xl overflow-hidden border border-zinc-800/40 bg-zinc-950/40 ${className}`}
+      className={`rra:relative rra:flex rra:items-center rra:justify-center rra:rounded-3xl rra:overflow-hidden rra:border rra:border-zinc-800/40 rra:bg-zinc-950/40 ${className}`}
       style={{ width: size, height: size, ...style }}
     >
       {/* 3D R3F Canvas */}
@@ -434,11 +434,11 @@ export function VrmAvatar({
 
       {/* Missing URL overlay */}
       {!vrmUrl && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md z-20 p-4 text-center">
-          <span className="text-xs font-mono font-bold text-amber-400 uppercase tracking-wider mb-2">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center rra:bg-zinc-950/90 rra:backdrop-blur-md rra:z-20 rra:p-4 rra:text-center">
+          <span className="rra:text-xs rra:font-mono rra:font-bold rra:text-amber-400 rra:uppercase rra:tracking-wider rra:mb-2">
             Missing vrmUrl
           </span>
-          <p className="text-[10px] text-zinc-500 max-w-[200px] leading-relaxed">
+          <p className="rra:text-[10px] rra:text-zinc-500 rra:max-w-[200px] rra:leading-relaxed">
             Pass a CORS-enabled .vrm URL via the vrmUrl prop.
           </p>
         </div>
@@ -446,9 +446,9 @@ export function VrmAvatar({
 
       {/* Loading indicator overlay */}
       {vrmUrl && !loaded && !loadError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/80 backdrop-blur-md z-20">
-          <div className="w-10 h-10 border-4 border-t-emerald-500 border-emerald-500/20 rounded-full animate-spin mb-3"></div>
-          <span className="text-[10px] font-mono font-bold tracking-widest text-zinc-400 animate-pulse">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center rra:bg-zinc-950/80 rra:backdrop-blur-md rra:z-20">
+          <div className="rra:w-10 rra:h-10 rra:border-4 rra:border-t-emerald-500 rra:border-emerald-500/20 rra:rounded-full rra:animate-spin rra:mb-3"></div>
+          <span className="rra:text-[10px] rra:font-mono rra:font-bold rra:tracking-widest rra:text-zinc-400 rra:animate-pulse">
             LOADING NEURAL VRM MODEL...
           </span>
         </div>
@@ -456,11 +456,11 @@ export function VrmAvatar({
 
       {/* Error indicator overlay */}
       {loadError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/90 backdrop-blur-md z-20 p-4 text-center">
-          <span className="text-xs font-mono font-bold text-red-400 uppercase tracking-wider mb-2">
+        <div className="rra:absolute rra:inset-0 rra:flex rra:flex-col rra:items-center rra:justify-center rra:bg-zinc-950/90 rra:backdrop-blur-md rra:z-20 rra:p-4 rra:text-center">
+          <span className="rra:text-xs rra:font-mono rra:font-bold rra:text-red-400 rra:uppercase rra:tracking-wider rra:mb-2">
             Failed to load VRM
           </span>
-          <p className="text-[10px] text-zinc-500 max-w-[200px] leading-relaxed break-all">
+          <p className="rra:text-[10px] rra:text-zinc-500 rra:max-w-[200px] rra:leading-relaxed rra:break-all">
             {loadError}
           </p>
         </div>

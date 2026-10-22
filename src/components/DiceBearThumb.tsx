@@ -35,17 +35,17 @@ export function DiceBearThumb({ collection, seed, size = 44, className = '' }: D
 
   return (
     <div
-      className={`flex items-center justify-center overflow-hidden ${className}`}
+      className={`rra:flex rra:items-center rra:justify-center rra:overflow-hidden ${className}`}
       style={{ width: size, height: size }}
       aria-hidden
     >
       {svg ? (
         <div
-          className="w-full h-full [&>svg]:w-full [&>svg]:h-full"
+          className="rra:w-full rra:h-full rra:[&>svg]:w-full rra:[&>svg]:h-full"
           dangerouslySetInnerHTML={{ __html: svg }}
         />
       ) : (
-        <div className="w-full h-full rounded-md bg-zinc-800/40 animate-pulse" />
+        <div className="rra:w-full rra:h-full rra:rounded-md rra:bg-zinc-800/40 rra:animate-pulse" />
       )}
     </div>
   );
