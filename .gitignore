@@ -2,7 +2,9 @@ node_modules/
 build/
 dist/
 coverage/
-.claude/
+.claude/*
+# The Agent Skill is part of the repo: users install it with degit (see README)
+!.claude/skills/
 .agents/
 .DS_Store
 *.log

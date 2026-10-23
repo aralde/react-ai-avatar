@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>rra-character-avatar — contract preview harness</title>
+<style>
+  body { margin:0; font-family: system-ui, sans-serif; background:#0f1115; color:#e7e9ee;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; gap:18px; padding:28px 12px; }
+  h1 { font-size:15px; font-weight:500; color:#aab; margin:0; }
+  .stage { background:#1a1d24; border-radius:16px; padding:20px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  button { background:#23262e; color:#e7e9ee; border:1px solid #333; border-radius:8px;
+           padding:8px 14px; font-size:13px; cursor:pointer; }
+  button.active { background:#2e3340; border-color:#5b6; }
+  .hint { font-size:12px; color:#8a90a0; margin:0; max-width:440px; text-align:center; line-height:1.6; }
+  code { color:#bcd; }
+</style>
+</head>
+<body>
+  <h1>react-ai-avatar · #rra-* contract preview</h1>
+  <p class="hint">Paste your contract-compliant <code>&lt;svg&gt;</code> into the
+    <code>HARNESS SLOT</code> below (replace the example), reload, and watch it animate.
+    This runs the same selectors and math as the library's <code>useAvatarRuntime</code>.
+    Move the mouse to test gaze tracking.</p>
+
+  <div class="stage">
+    <!-- ============================ HARNESS SLOT ============================ -->
+    <!-- Replace everything between these markers with your own <svg id="sq"> -->
+    <svg id="sq" viewBox="0 0 200 200" width="320" height="320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Avatar">
+      <circle id="rra-ring" cx="100" cy="100" r="92" fill="none" stroke="#4b5563" stroke-width="5"/>
+      <circle cx="100" cy="100" r="79" fill="#6fb3bd"/>
+      <clipPath id="sqclip"><circle cx="100" cy="100" r="79"/></clipPath>
+      <g clip-path="url(#sqclip)">
+        <ellipse cx="100" cy="100" rx="42" ry="40" fill="#cf6b34"/>
+        <ellipse cx="100" cy="114" rx="24" ry="18" fill="#ecc090"/>
+        <circle cx="82" cy="94" r="13" fill="#fbf7ef" stroke="#1a1a1a" stroke-width="3"/>
+        <circle cx="118" cy="94" r="13" fill="#fbf7ef" stroke="#1a1a1a" stroke-width="3"/>
+        <g id="rra-eyeL">
+          <ellipse cx="82" cy="95" rx="8" ry="8.5" fill="#ffffff"/>
+          <circle class="rra-pupil" data-base-x="82" data-base-y="95" cx="82" cy="95" r="4.6" fill="#2b1b12"/>
+          <rect class="rra-lid" data-max-height="18" x="73" y="85" width="18" height="0" fill="#cf6b34"/>
+        </g>
+        <g id="rra-eyeR">
+          <ellipse cx="118" cy="95" rx="8" ry="8.5" fill="#ffffff"/>
+          <circle class="rra-pupil" data-base-x="118" data-base-y="95" cx="118" cy="95" r="4.6" fill="#2b1b12"/>
+          <rect class="rra-lid" data-max-height="18" x="109" y="85" width="18" height="0" fill="#cf6b34"/>
+        </g>
+        <path d="M93 109 Q100 103 107 109 Q100 115 93 109 Z" fill="#7a4a32"/>
+        <ellipse id="rra-mouth" cx="100" cy="123" rx="7" ry="2.3" fill="#5a3324"/>
+      </g>
+      <g id="rra-think" opacity="0">
+        <circle cx="150" cy="54" r="4" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+        <circle cx="165" cy="42" r="5.5" fill="#fff" stroke="#8b5cf6" stroke-width="2"/>
+        <circle cx="182" cy="28" r="7" fill="#fff" stroke="#8b5cf6" stroke-width="2.5"/>
+      </g>
+    </svg>
+    <!-- ========================== END HARNESS SLOT ========================== -->
+  </div>
+
+  <div class="row">
+    <button data-st="idle" class="active">idle</button>
+    <button data-st="listening">listening</button>
+    <button data-st="thinking">thinking</button>
+    <button data-st="speaking">speaking</button>
+  </div>
+  <p class="hint">state: <b id="lbl">idle</b></p>
+
+<script>
+/* Faithful re-implementation of useAvatarRuntime for offline testing.
+   Same selectors and the same attribute math as the real library. */
+(function(){
+  var svg = document.getElementById('sq');
+  if (!svg) return;
+  var ring   = svg.querySelector('#rra-ring');
+  var mouth  = svg.querySelector('#rra-mouth');
+  var think  = svg.querySelector('#rra-think');
+  var pupils = [].slice.call(svg.querySelectorAll('.rra-pupil'));
+  var lids   = [].slice.call(svg.querySelectorAll('.rra-lid'));
+
+  var mouthIsRect = mouth && mouth.tagName.toLowerCase() === 'rect';
+  var baseRy = mouth ? parseFloat(mouth.getAttribute(mouthIsRect?'height':'ry') || '3') : 3;
+  var baseRx = mouth ? parseFloat(mouth.getAttribute(mouthIsRect?'width':'rx')  || '9') : 9;
+  var pBase = pupils.map(function(p){
+    var isRect = p.tagName.toLowerCase()==='rect';
+    return { isRect:isRect,
+      x: parseFloat(p.getAttribute('data-base-x') || p.getAttribute(isRect?'x':'cx') || '0'),
+      y: parseFloat(p.getAttribute('data-base-y') || p.getAttribute(isRect?'y':'cy') || '0') };
+  });
+  var lidMax = lids.map(function(l){ return parseFloat(l.getAttribute('data-max-height')||'16'); });
+
+  var colors = { idle:'#4b5563', listening:'#3b82f6', thinking:'#8b5cf6', speaking:'#10b981' };
+  var maxMouthOpening = 30;
+  var state = 'idle', pointer = { x:0, y:0 };
+  addEventListener('mousemove', function(e){
+    pointer.x = Math.max(-1, Math.min(1, (e.clientX / innerWidth)  * 2 - 1));
+    pointer.y = Math.max(-1, Math.min(1, (e.clientY / innerHeight) * 2 - 1));
+  });
+
+  var blinkTimer = 1500 + Math.random()*2000, blinkProg = 0, blinking = false;
+  var mouthLevel = 0, pc = pupils.map(function(){return {x:0,y:0};}), thinkOp = 0, last = performance.now();
+
+  function tick(now){
+    var dt = Math.min(100, now - last); last = now;
+    if (ring) ring.setAttribute('stroke', colors[state]);
+
+    // mouth (procedural speech-like pattern, matching the null-source path)
+    var target = 0;
+    if (state === 'speaking')
+      target = Math.min(1, 0.45 + 0.55*Math.abs(Math.sin(now*0.011) + 0.4*Math.sin(now*0.021)));
+    mouthLevel += (target - mouthLevel) * 0.3;
+    if (mouth){
+      if (mouthIsRect){
+        mouth.setAttribute('height', Math.max(baseRy, baseRy + mouthLevel*maxMouthOpening*0.4).toFixed(2));
+      } else {
+        mouth.setAttribute('ry', (baseRy + mouthLevel*maxMouthOpening*0.4).toFixed(2));
+        mouth.setAttribute('rx', (baseRx*(1 + mouthLevel*0.18)).toFixed(2));
+      }
+    }
+
+    // blink
+    if (!blinking){ blinkTimer -= dt; if (blinkTimer <= 0){ blinking = true; blinkProg = 0; } }
+    else { blinkProg += dt/100; if (blinkProg >= 2){ blinking = false; blinkTimer = 2000 + Math.random()*4000; } }
+    var closed = blinking ? 1 - Math.abs(1 - Math.min(2, blinkProg)) : 0;
+    lids.forEach(function(l,i){ l.setAttribute('height', (closed*lidMax[i]).toFixed(2)); });
+
+    // pupils
+    var tx = pointer.x*3, ty = pointer.y*2.2;
+    if (state === 'thinking'){ tx = -2.5; ty = -3; }
+    else if (state === 'listening'){ tx += Math.sin(now*0.0021)*0.6; ty += Math.cos(now*0.0017)*0.5; }
+    pupils.forEach(function(p,i){
+      pc[i].x += (tx - pc[i].x)*0.12; pc[i].y += (ty - pc[i].y)*0.12;
+      var px = pBase[i].x + pc[i].x, py = pBase[i].y + pc[i].y;
+      if (pBase[i].isRect){ p.setAttribute('x', px.toFixed(2)); p.setAttribute('y', py.toFixed(2)); }
+      else { p.setAttribute('cx', px.toFixed(2)); p.setAttribute('cy', py.toFixed(2)); }
+    });
+
+    // thought bubble
+    if (think){
+      var to = state === 'thinking' ? 1 : 0; thinkOp += (to - thinkOp)*0.12;
+      think.setAttribute('opacity', thinkOp < 0.01 ? 0 : thinkOp.toFixed(3));
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  var lbl = document.getElementById('lbl');
+  [].slice.call(document.querySelectorAll('button[data-st]')).forEach(function(b){
+    b.addEventListener('click', function(){
+      state = b.getAttribute('data-st'); lbl.textContent = state;
+      [].slice.call(document.querySelectorAll('button[data-st]')).forEach(function(x){ x.classList.remove('active'); });
+      b.classList.add('active');
+    });
+  });
+})();
+</script>
+</body>
+</html>
