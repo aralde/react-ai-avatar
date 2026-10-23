@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1] — 2026-10-23
+
+No code changes: a license, docs and tooling release, so npm shows the new license and README.
+
+### Changed
+- **License: Apache 2.0** (was MIT), with a `NOTICE` file. The library, its runtime and every built-in face are covered; keep `LICENSE` and `NOTICE` when you redistribute. Versions up to 0.7.0 stay MIT.
+- Author is now "Aralde" in `package.json` and `LICENSE`.
+
 ### Added
 - `CONTRIBUTING.md`, and the `rra-character-avatar` Agent Skill is now part of the repo (`.claude/skills/`), so an AI coding agent can draw a face on the `#rra-*` contract. Install it with `npx degit aralde/react-ai-avatar/.claude/skills/rra-character-avatar .claude/skills/rra-character-avatar`.
 - `scripts/prepare-video-clips.ts --mode xfade` (repo only) — a forward-only loop whose tail dissolves into its head (`--fade`, default 0.75 s), for footage where the boomerang's reversed half shows (smoke flowing back, hair, steam).
@@ -130,6 +138,8 @@ Initial public release.
 - **Production quality** — SSR-safe, honors `prefers-reduced-motion`, announces state changes via `aria-live`.
 - Copy-pasteable examples for every integration pattern, including a reference relay server.
 
+[Unreleased]: https://github.com/aralde/react-ai-avatar/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/aralde/react-ai-avatar/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/aralde/react-ai-avatar/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/aralde/react-ai-avatar/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/aralde/react-ai-avatar/compare/v0.4.0...v0.5.0
