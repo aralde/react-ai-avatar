@@ -4,6 +4,15 @@ All notable changes to **react-ai-avatar** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- `CONTRIBUTING.md`, and the `rra-character-avatar` Agent Skill is now part of the repo (`.claude/skills/`), so an AI coding agent can draw a face on the `#rra-*` contract. Install it with `npx degit aralde/react-ai-avatar/.claude/skills/rra-character-avatar .claude/skills/rra-character-avatar`.
+- `scripts/prepare-video-clips.ts --mode xfade` (repo only) — a forward-only loop whose tail dissolves into its head (`--fade`, default 0.75 s), for footage where the boomerang's reversed half shows (smoke flowing back, hair, steam).
+
+### Docs
+- README rewritten around what the library shows: video faces up top, a product demo GIF, the 18 faces, and a shorter reference. The long guides (video recipe, full API, migrations) moved to the docs site.
+
 ## [0.7.0] — 2026-10-20
 
 Hardening release: the type checker catches props that do nothing, the stylesheet can't clash with yours, and a rounded `VideoAvatar` is round again. See "Migrating from 0.6" in the README.
