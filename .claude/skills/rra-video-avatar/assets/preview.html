@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>rra-video-avatar — clip preview</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/react-ai-avatar@0.7/dist/lib/react-ai-avatar.css"/>
+<script type="importmap">
+{ "imports": {
+  "react": "https://esm.sh/react@19",
+  "react-dom/client": "https://esm.sh/react-dom@19/client?external=react",
+  "react-ai-avatar": "https://esm.sh/react-ai-avatar@0.7?external=react,react-dom"
+} }
+</script>
+<style>
+  body { margin:0; font-family: system-ui, sans-serif; background:#0f1115; color:#e7e9ee; padding:28px 12px; }
+  main { max-width:880px; margin:0 auto; display:flex; flex-direction:column; align-items:center; gap:18px; }
+  h1 { font-size:15px; font-weight:500; color:#aab; margin:0; }
+  h2 { font-size:13px; font-weight:500; color:#aab; margin:0 0 8px; }
+  .stage { background:#1a1d24; border-radius:16px; padding:20px; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  button { background:#23262e; color:#e7e9ee; border:1px solid #333; border-radius:8px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  button.active { background:#2e3340; border-color:#5b6; }
+  .hint { font-size:12px; color:#8a90a0; margin:0; max-width:560px; text-align:center; line-height:1.6; }
+  code { color:#bcd; }
+  .badge { font-size:12px; color:#8a90a0; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  td, th { padding:8px; border-bottom:1px solid #262a33; text-align:left; vertical-align:middle; }
+  canvas, td video { width:96px; height:96px; border-radius:8px; background:#000; display:block; }
+  .ok { color:#6c6; } .bad { color:#f87; }
+  .label { font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:#e7e9ee; background:#7a3b3b; border-radius:6px; padding:3px 8px; }
+  #error { color:#f87; }
+</style>
+</head>
+<body>
+<main>
+  <h1>react-ai-avatar · video avatar preview</h1>
+  <p class="hint">Serve the folder that holds your clips, this page and <code>report.json</code> (the output of
+    <code>build-video-avatar.ts</code>), for example <code>npx serve .</code>, then open
+    <code>preview.html?dir=./clips</code>. This is the real <code>VideoAvatar</code>, so cuts and crossfades are what users will see.</p>
+  <p id="error"></p>
+  <div class="stage">
+    <div id="avatar"></div>
+    <span class="label">AI-generated</span>
+    <div class="row" id="states"></div>
+    <div class="row"><button id="auto" class="active">Auto-cycle</button></div>
+  </div>
+  <div style="width:100%">
+    <h2>Seams</h2>
+    <table id="seams"></table>
+  </div>
+</main>
+<script type="module">
+import { createElement as h, useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { VideoAvatar } from 'react-ai-avatar';
+
+const dir = (new URLSearchParams(location.search).get('dir') ?? './').replace(/\/$/, '');
+const STATES = ['idle', 'listening', 'thinking', 'working', 'speaking'];
+const clip = (key) => ({ webm: `${dir}/${key}.webm`, mp4: `${dir}/${key}.mp4` });
+const errorEl = document.getElementById('error');
+
+let report;
+try {
+  const res = await fetch(`${dir}/report.json`);
+  if (!res.ok) throw new Error(`${res.status}`);
+  report = await res.json();
+} catch (e) {
+  errorEl.textContent = `Could not load ${dir}/report.json (${e.message}). Serve this folder over http and pass ?dir=.`;
+  throw e;
+}
+
+const available = report.clips.filter((c) => !c.variation).map((c) => c.key);
+const variations = report.clips.filter((c) => c.variation);
+const clips = Object.fromEntries(available.map((k) => [k, clip(k)]));
+const idleVariations = variations.map((v) => ({ clip: clip(v.key), cooldownMs: 0 }));
+
+function App() {
+  const [state, setState] = useState('idle');
+  const [auto, setAuto] = useState(true);
+  useEffect(() => {
+    if (!auto) return;
+    const id = setInterval(() => setState((s) => STATES[(STATES.indexOf(s) + 1) % STATES.length]), 4000);
+    return () => clearInterval(id);
+  }, [auto]);
+  window.__setAuto = setAuto;
+  const buttons = document.getElementById('states');
+  useEffect(() => {
+    buttons.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.state === state));
+  }, [state]);
+  window.__setState = (s) => { setAuto(false); setState(s); document.getElementById('auto').classList.remove('active'); };
+  return h(VideoAvatar, { clips, state, idleVariations, poster: `${dir}/idle.jpg`, size: 320, style: { borderRadius: '50%' } });
+}
+createRoot(document.getElementById('avatar')).render(h(App));
+
+for (const s of STATES) {
+  const b = document.createElement('button');
+  b.textContent = s + (available.includes(s) ? '' : ' (fallback)');
+  b.dataset.state = s;
+  b.onclick = () => window.__setState(s);
+  document.getElementById('states').append(b);
+}
+const autoBtn = document.getElementById('auto');
+autoBtn.onclick = () => { const on = !autoBtn.classList.contains('active'); autoBtn.classList.toggle('active', on); window.__setAuto(on); };
+
+const seek = (video, t) => new Promise((resolve) => { video.onseeked = resolve; video.currentTime = t; });
+async function frames(key, first, last) {
+  const video = document.createElement('video');
+  video.muted = true; video.preload = 'auto'; video.src = clip(key).webm;
+  await new Promise((r) => { video.onloadedmetadata = r; video.onerror = r; });
+  for (const [canvas, t] of [[first, 0], [last, Math.max(0, video.duration - 0.05)]]) {
+    await seek(video, t);
+    canvas.width = canvas.height = 96;
+    canvas.getContext('2d').drawImage(video, 0, 0, 96, 96);
+  }
+}
+
+const table = document.getElementById('seams');
+table.innerHTML = '<tr><th>clip</th><th>first</th><th>last</th><th>loop</th><th>seam</th><th>mode</th></tr>';
+for (const c of report.clips) {
+  const tr = document.createElement('tr');
+  const first = document.createElement('canvas');
+  const last = document.createElement('canvas');
+  const loop = document.createElement('video');
+  loop.src = clip(c.key).webm; loop.muted = true; loop.loop = true; loop.autoplay = true; loop.playsInline = true;
+  loop.title = 'Click to jump to the last second and watch the loop seam';
+  loop.onclick = () => { loop.currentTime = Math.max(0, loop.duration - 1); loop.play(); };
+  const mode = c.mode === 'loop' ? 'boomerang' : c.mode;
+  const cells = [c.key, first, last, loop, c.regenerate ? `${c.seam.toFixed(2)} — regenerate` : c.seam.toFixed(2), mode];
+  cells.forEach((cell, i) => {
+    const td = document.createElement('td');
+    if (typeof cell === 'string') td.textContent = cell; else td.append(cell);
+    if (i === 4) td.className = c.regenerate ? 'bad' : 'ok';
+    tr.append(td);
+  });
+  table.append(tr);
+  frames(c.key, first, last);
+}
+</script>
+</body>
+</html>
