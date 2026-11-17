@@ -87,8 +87,8 @@ function xfadeFilter(): string {
   // Play [f, end] and dissolve its last f seconds into [0, f]: the output ends exactly
   // where it starts (at f), so looping it is seamless and motion never runs backwards.
   return `[0:v]${frame},split[a][b];` +
-    `[a]trim=start=${f},setpts=PTS-STARTPTS[body];` +
-    `[b]trim=end=${f},setpts=PTS-STARTPTS[head];` +
+    `[a]trim=start=${f},setpts=PTS-STARTPTS,fps=24[body];` +
+    `[b]trim=end=${f},setpts=PTS-STARTPTS,fps=24[head];` +
     `[body][head]xfade=transition=fade:duration=${f}:offset=${length - 2 * f},format=yuv420p[v]`;
 }
 
