@@ -113,6 +113,7 @@ The main entry is the core: `RealtimeAvatar`, `VideoAvatar`, the orb, the four f
 | `react-ai-avatar/characters` | `SquirrelAvatar`, `CoderAvatar`, `PortraitAvatar` |
 | `react-ai-avatar/dicebear` | `DiceBearAvatar`, `DiceBearThumb` and the style catalog |
 | `react-ai-avatar/3d` | `VrmAvatar`, `GlbArkitAvatar` (also at `react-ai-avatar/vrm`) |
+| `react-ai-avatar/gemini-live` | `useGeminiLive`: state and audio from a Gemini Live session (`@google/genai` is an optional peer) |
 
 What each import costs your bundle, tree-shaken, minified and gzipped, with React and the optional peers left out ([`scripts/size.mjs`](scripts/size.mjs), checked in CI against the budgets):
 
@@ -121,13 +122,30 @@ What each import costs your bundle, tree-shaken, minified and gzipped, with Reac
 |---|---:|---:|
 | `RealtimeAvatar` (core) | 17.0 kB | 18 kB |
 | `OrbAvatar` | 1.9 kB | 3 kB |
-| `VideoAvatar` | 5.9 kB | 7 kB |
+| `VideoAvatar` | 5.8 kB | 7 kB |
 | `createSpeechActivity` only | 0.4 kB | 1 kB |
 | `react-ai-avatar/characters` (Squirrel) | 2.9 kB | 4 kB |
 | `react-ai-avatar/characters` (Portrait) | 39.8 kB | 42 kB |
 | `react-ai-avatar/dicebear` | 3.7 kB | 5 kB |
 | `react-ai-avatar/3d` | 3.7 kB | 5 kB |
+| `react-ai-avatar/gemini-live` | 1.0 kB | 2 kB |
 <!-- size:end -->
+
+### Gemini Live in one line
+
+```tsx
+import { useGeminiLive } from 'react-ai-avatar/gemini-live';
+
+const live = useGeminiLive();
+const session = await ai.live.connect({
+  model,
+  callbacks: { onmessage: live.onMessage, onclose: live.onClose },
+});
+
+<RealtimeAvatar {...live.avatar} /> // or <VideoAvatar {...live.avatar} clips={clips} />
+```
+
+The hook maps session messages to the five states, plays the model's PCM audio and hands the avatar the analyser. It stays in `speaking` until the queued audio has played out, and interruptions stop playback.
 
 `variant="dicebear"`, `"vrm"` and `"glb"` load their renderer as a separate chunk only when they render, so they don't count toward the core.
 

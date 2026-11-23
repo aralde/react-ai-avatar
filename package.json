@@ -60,6 +60,11 @@
       "import": "./dist/lib/vrm.js",
       "require": "./dist/lib/vrm.cjs"
     },
+    "./gemini-live": {
+      "types": "./dist/lib/lib/gemini-live.d.ts",
+      "import": "./dist/lib/gemini-live.js",
+      "require": "./dist/lib/gemini-live.cjs"
+    },
     "./style.css": "./dist/lib/react-ai-avatar.css"
   },
   "files": [
@@ -80,6 +85,7 @@
     "node": ">=18"
   },
   "peerDependencies": {
+    "@google/genai": ">=1.0.0",
     "@dicebear/collection": "^9.0.0",
     "@dicebear/core": "^9.0.0",
     "@pixiv/three-vrm": "^3.0.0",
@@ -90,6 +96,9 @@
     "three": ">=0.160.0"
   },
   "peerDependenciesMeta": {
+    "@google/genai": {
+      "optional": true
+    },
     "@dicebear/collection": {
       "optional": true
     },
@@ -121,6 +130,8 @@
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^5.0.4",
     "autoprefixer": "^10.4.21",
+    "esbuild": "^0.28.2",
+    "jsdom": "^26.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwindcss": "^4.1.14",

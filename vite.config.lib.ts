@@ -22,6 +22,7 @@ export default defineConfig({
         dicebear: path.resolve(__dirname, 'src/lib/dicebear-entry.ts'),
         '3d': path.resolve(__dirname, 'src/lib/three.ts'),
         vrm: path.resolve(__dirname, 'src/lib/vrm.ts'),
+        'gemini-live': path.resolve(__dirname, 'src/lib/gemini-live.ts'),
       },
       name: 'ReactAiAvatar',
       fileName: (format, entryName) => `${entryName}.${format === 'es' ? 'js' : 'cjs'}`,
@@ -38,6 +39,7 @@ export default defineConfig({
         /^@react-three\//,
         /^@pixiv\/three-vrm($|\/)/,
         /^@dicebear\//,
+        /^@google\/genai($|\/)/,
       ],
       // One output file per source module, so a consumer's bundler drops
       // whatever it doesn't import (one big file defeats tree-shaking).
