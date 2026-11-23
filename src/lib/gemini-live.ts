@@ -78,8 +78,10 @@ export function useGeminiLive(): GeminiLive {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
   const nextStartRef = useRef(0);
+  const listenWhenDrainedRef = useRef(false);
 
   const stopPlayback = useCallback(() => {
+    listenWhenDrainedRef.current = false;
     for (const source of sourcesRef.current) {
       try {
         source.stop();
@@ -120,7 +122,12 @@ export function useGeminiLive(): GeminiLive {
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(node);
-    source.onended = () => sourcesRef.current.delete(source);
+    source.onended = () => {
+      const sources = sourcesRef.current;
+      if (!sources.delete(source) || sources.size || !listenWhenDrainedRef.current) return;
+      listenWhenDrainedRef.current = false;
+      setState('listening');
+    };
     sourcesRef.current.add(source);
 
     const start = Math.max(ctx.currentTime, nextStartRef.current);
@@ -137,7 +144,13 @@ export function useGeminiLive(): GeminiLive {
         if (inline?.data) play(inline.data, parseSampleRate(inline.mimeType));
       }
       const next = stateForMessage(message);
-      if (next) setState(next);
+      if (!next) return;
+      if (next === 'listening' && content?.turnComplete && sourcesRef.current.size) {
+        listenWhenDrainedRef.current = true;
+        return;
+      }
+      listenWhenDrainedRef.current = false;
+      setState(next);
     },
     [play, stopPlayback]
   );

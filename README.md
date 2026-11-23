@@ -145,7 +145,7 @@ const session = await ai.live.connect({
 <RealtimeAvatar {...live.avatar} /> // or <VideoAvatar {...live.avatar} clips={clips} />
 ```
 
-The hook maps session messages to the five states, plays the model's PCM audio and hands the avatar the analyser. Interruptions stop playback.
+The hook maps session messages to the five states, plays the model's PCM audio and hands the avatar the analyser. It stays in `speaking` until the queued audio has played out, and interruptions stop playback.
 
 `variant="dicebear"`, `"vrm"` and `"glb"` load their renderer as a separate chunk only when they render, so they don't count toward the core.
 
