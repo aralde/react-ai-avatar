@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `react-ai-avatar/gemini-live`: `useGeminiLive()` wires a Gemini Live session to `RealtimeAvatar` or `VideoAvatar` (state from messages, PCM playback through one analyser). Separate entry point; `@google/genai` is an optional peer and the core bundle is unchanged.
+
 ## [0.7.1] — 2026-10-23
 
 No code changes: a license, docs and tooling release, so npm shows the new license and README.

@@ -3,6 +3,7 @@ import * as main from './index';
 import * as characters from './characters';
 import * as dicebear from './dicebear-entry';
 import * as vrm from './vrm';
+import * as geminiLive from './gemini-live';
 
 /**
  * The main entry is the core; the heavy or optional parts live in subpaths.
@@ -25,6 +26,8 @@ describe('entry points', () => {
     expect(Object.keys(characters).sort()).toEqual(['CoderAvatar', 'PortraitAvatar', 'SquirrelAvatar']);
     expect(dicebear).toHaveProperty('DiceBearAvatar');
     expect(dicebear).toHaveProperty('DICEBEAR_STYLES');
+    expect(geminiLive).toHaveProperty('useGeminiLive');
+    expect(main).not.toHaveProperty('useGeminiLive');
     expect(Object.keys(vrm).sort()).toEqual(['GlbArkitAvatar', 'VrmAvatar']);
   });
 });

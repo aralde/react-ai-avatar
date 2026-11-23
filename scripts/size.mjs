@@ -31,6 +31,7 @@ const SCENARIOS = [
   ['`react-ai-avatar/characters` (Portrait)', `import { PortraitAvatar as X } from 'react-ai-avatar/characters';`, 42],
   ['`react-ai-avatar/dicebear`', `import { DiceBearAvatar as X } from 'react-ai-avatar/dicebear';`, 5],
   ['`react-ai-avatar/3d`', `import { VrmAvatar as X } from 'react-ai-avatar/3d';`, 5],
+  ['`react-ai-avatar/gemini-live`', `import { useGeminiLive as X } from 'react-ai-avatar/gemini-live';`, 2],
 ];
 
 // React is already in every consumer's app, and the optional peers (three.js,
@@ -44,6 +45,7 @@ const external = [
     .filter(([, meta]) => meta.optional)
     .map(([name]) => name),
   '@dicebear/*',
+  '@google/genai',
   'three/*',
 ];
 
