@@ -370,6 +370,12 @@ node --experimental-strip-types scripts/prepare-video-clips.ts raw/idle.mp4 --na
 node --experimental-strip-types scripts/prepare-video-clips.ts raw/coffee.mp4 --name idle-coffee --mode once --out public/clips
 ```
 
+Or hand the whole download folder to [`scripts/build-video-avatar.ts`](scripts/build-video-avatar.ts): it assigns clips to states by file name (`hub.png`, `idle.mp4`, `speaking.mp4`, `idle-coffee.mp4`…), scores every frame against the hub with SSIM, trims each clip to the stretch that starts and ends closest to it, picks `xfade` or boomerang, and writes the clips, `clips.ts`, a poster and a report with the seam score per clip and a "regenerate" warning when one never returns to the hub. `--threshold` (default 0.9) sets when the end counts as matching the start. The [`rra-video-avatar` skill](.claude/skills/rra-video-avatar/SKILL.md) writes the seven Flow prompts from a character brief and has a preview page.
+
+```bash
+node --experimental-strip-types scripts/build-video-avatar.ts raw/ --out public/clips
+```
+
 `--mode loop` (default) plays the clip forward and then back; `--mode xfade` always plays forward and dissolves the end into the start, for footage where reversed motion shows (smoke, hair); `--mode once` is for idle variations. `--from` / `--to` keep only the usable part.
 
 **Limits, honestly:** the mouth isn't synced to the words; speaking is gated on and off by speech energy. Clips are muted (so they can autoplay) and loaded up front: seven 512 px clips are about 3 MB as WebM. See [`examples/12-video-avatar.tsx`](examples/12-video-avatar.tsx).

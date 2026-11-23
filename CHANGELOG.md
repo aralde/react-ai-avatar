@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `scripts/build-video-avatar.ts` (repo only): turns a folder of downloaded clips into a ready `VideoAvatar`: states by file name, SSIM seam scores against the hub frame, automatic trim and xfade/boomerang choice, `clips.ts`, poster and a report with "regenerate" warnings.
+- `rra-video-avatar` Agent Skill: writes the Flow prompts from a character brief, a preview page that cycles the states and shows each seam, and the responsible-use checklist.
 - `react-ai-avatar/gemini-live`: `useGeminiLive()` wires a Gemini Live session to `RealtimeAvatar` or `VideoAvatar` (state from messages, PCM playback through one analyser). Separate entry point; `@google/genai` is an optional peer and the core bundle is unchanged.
+
+### Fixed
+- `scripts/prepare-video-clips.ts --mode xfade` failed on recent ffmpeg ("constant frame rate" error).
 
 ## [0.7.1] — 2026-10-23
 
